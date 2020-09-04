@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:title="Signed In Gordon Macaraeg">
+        <group android:checkableBehavior="single">
+        </group>
+    </item>
+    <item android:title="Settings">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_logOut"
+                    android:title="Logout" />
+                <item
+                    android:id="@+id/nav_cutOff"
+                    android:title="Cut Off" />
+            </menu>
+        </group>
+    </item>
+    <item android:title="Items">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_scanItem"
+                    android:title="Scan Item" />
+                <item
+                    android:id="@+id/nav_exploreItems"
+                    android:title="Menu Items" />
+                <item
+                    android:id="@+id/nav_shoppingCart"
+                    android:title="Shopping Cart" />
+            </menu>
+        </group>
+    </item>
+    <item android:title="Inventory">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_inventory"
+                    android:title="Inventory" />
+            </menu>
+        </group>
+    </item>
+    <item android:title="Received from Production">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_receivedProduction"
+                    android:title="List Items" />
+                <item
+                    android:id="@+id/nav_receivedProduction2"
+                    android:title="Selected Items" />
+            </menu>
+        </group>
+    </item>
+
+    <item android:title="Received from Other Branch">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_receivedBranch"
+                    android:title="List Items" />
+                <item
+                    android:id="@+id/nav_receivedBranch2"
+                    android:title="Selected Items" />
+            </menu>
+        </group>
+    </item>
+
+    <item android:title="Received from Direct Supplier">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_receivedSupplier"
+                    android:title="List Items" />
+
+                <item
+                    android:id="@+id/nav_receivedSupplier2"
+                    android:title="Selected Items" />
+            </menu>
+        </group>
+    </item>
+
+    <item android:title="Transfer Out">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_transferOut"
+                    android:title="Selected Items" />
+                <item
+                    android:id="@+id/nav_transferOut2"
+                    android:title="List Items" />
+            </menu>
+        </group>
+    </item>
+
+    <item android:title="Adjustment In">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_adjusmentIn"
+                    android:title="List Items" />
+
+                <item
+                    android:id="@+id/nav_adjusmentIn2"
+                    android:title="Selected Items" />
+            </menu>
+        </group>
+    </item>
+
+    <item android:title="Adjustment Out">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_adjustmentOut"
+                    android:title="List Items" />
+
+                <item
+                    android:id="@+id/nav_adjustmentOut2"
+                    android:title="Selected Items" />
+            </menu>
+        </group>
+    </item>
+
+    <item android:title="Cancel Rec/Trans">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_cancelRecTrans"
+                    android:title="Cancel Rec/Trans" />
+            </menu>
+        </group>
+    </item>
+</menu>

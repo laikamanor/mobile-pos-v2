@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/navDrawer">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/btnScan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="25dp"
+            android:layout_marginStart="33dp"
+            android:layout_marginEnd="33dp"
+            android:layout_marginRight="21dp"
+            android:background="@color/colorBlue"
+            android:drawableLeft="@drawable/ic_baseline_settings_overscan_24"
+            android:paddingStart="50dp"
+            android:paddingEnd="50dp"
+            android:text="Scan QR Code"
+            android:textColor="@android:color/white"
+            android:textSize="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Result: N/A"
+            android:id="@+id/lblResult"
+            android:textSize="22sp"
+            android:layout_marginTop="20dp"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/btnScan"
+            android:textAlignment="center"
+            android:gravity="center_horizontal" />
+
+        <Button
+            android:id="@+id/btnAddCart"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/lblResult"
+            android:layout_centerInParent="true"
+            android:layout_marginStart="33dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="33dp"
+            android:text="Add to Cart"
+            android:background="@color/colorPrimary"
+            android:drawableLeft="@drawable/ic_cart"
+            android:paddingStart="50dp"
+            android:paddingEnd="50dp"
+            android:textColor="@android:color/white" />
+
+        <ProgressBar
+            android:id="@+id/progWait"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btnAddCart"
+            android:layout_marginTop="10dp"
+            android:layout_centerInParent="true"/>
+    </RelativeLayout>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="@color/colorWhite"
+        app:menu="@menu/drawmenu"
+        android:layout_gravity="start">
+    </com.google.android.material.navigation.NavigationView>
+
+</androidx.drawerlayout.widget.DrawerLayout>
