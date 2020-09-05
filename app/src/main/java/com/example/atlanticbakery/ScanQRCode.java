@@ -51,7 +51,7 @@ public class ScanQRCode extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan_q_r_code);
 
-        final NavigationView navigationView = findViewById(R.id.nav);
+        NavigationView navigationView = findViewById(R.id.nav);
         drawerLayout = findViewById(R.id.navDrawer);
         toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
 
@@ -108,9 +108,23 @@ public class ScanQRCode extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_receivedProduction2 :
+                        result = true;
+                        intent = new Intent(getBaseContext(), Received.class);
+                        intent.putExtra("title", "Received from Production");
+                        startActivity(intent);
+                        finish();
+                        break;
                     case R.id.nav_receivedBranch :
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Received from Other Branch");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_receivedBranch2 :
+                        result = true;
+                        intent = new Intent(getBaseContext(), Received.class);
                         intent.putExtra("title", "Received from Other Branch");
                         startActivity(intent);
                         finish();
@@ -122,9 +136,23 @@ public class ScanQRCode extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_receivedSupplier2 :
+                        result = true;
+                        intent = new Intent(getBaseContext(), Received.class);
+                        intent.putExtra("title", "Received from Direct Supplier");
+                        startActivity(intent);
+                        finish();
+                        break;
                     case R.id.nav_transferOut :
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Transfer Out");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_transferOut2 :
+                        result = true;
+                        intent = new Intent(getBaseContext(), Received.class);
                         intent.putExtra("title", "Transfer Out");
                         startActivity(intent);
                         finish();

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -26,6 +27,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -61,9 +63,9 @@ public class ShoppingCart extends AppCompatActivity {
     private ActionBarDrawerToggle toggle;
     shoppingCart_class sc = new shoppingCart_class();
     ui_class uic = new ui_class();
+    prefs_class pc = new prefs_class();
     user_class uc = new user_class();
     connection_class cc = new connection_class();
-    prefs_class pc = new prefs_class();
     DecimalFormat df = new DecimalFormat("#,###.00");
     @SuppressLint("RestrictedApi")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -122,9 +124,23 @@ public class ShoppingCart extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_receivedProduction2 :
+                        result = true;
+                        intent = new Intent(getBaseContext(), Received.class);
+                        intent.putExtra("title", "Received from Production");
+                        startActivity(intent);
+                        finish();
+                        break;
                     case R.id.nav_receivedBranch :
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Received from Other Branch");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_receivedBranch2 :
+                        result = true;
+                        intent = new Intent(getBaseContext(), Received.class);
                         intent.putExtra("title", "Received from Other Branch");
                         startActivity(intent);
                         finish();
@@ -136,9 +152,23 @@ public class ShoppingCart extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_receivedSupplier2 :
+                        result = true;
+                        intent = new Intent(getBaseContext(), Received.class);
+                        intent.putExtra("title", "Received from Direct Supplier");
+                        startActivity(intent);
+                        finish();
+                        break;
                     case R.id.nav_transferOut :
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Transfer Out");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_transferOut2 :
+                        result = true;
+                        intent = new Intent(getBaseContext(), Received.class);
                         intent.putExtra("title", "Transfer Out");
                         startActivity(intent);
                         finish();
@@ -178,10 +208,9 @@ public class ShoppingCart extends AppCompatActivity {
         getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
 
         loadData();
-        computeTotal();
     }
 
-    public  void onBtnLogout(){
+    public void onBtnLogout(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Are you sure want to logout?")
                 .setCancelable(false)
@@ -222,48 +251,72 @@ public class ShoppingCart extends AppCompatActivity {
 
     @SuppressLint({"SetTextI18n", "ResourceType", "RtlHardcoded"})
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public void loadData(){
+    public void loadData() {
         final LinearLayout layout = findViewById(R.id.parentLayout);
         layout.removeAllViews();
+        final LinearLayout.LayoutParams layoutParamsNoItems = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        layoutParamsNoItems.setMargins(50, 20, 50, 0);
+        final LinearLayout.LayoutParams layoutParamsLblError = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        int totalItems = myDb.countItems();
+        if (totalItems <= 0) {
+            ImageView imageView = new ImageView(this);
+            imageView.setLayoutParams(layoutParamsNoItems);
+            imageView.setImageResource(R.drawable.ic_sad_face);
+            layout.addView(imageView);
+            TextView lblNoItemFound = new TextView(this);
+            lblNoItemFound.setLayoutParams(layoutParamsNoItems);
+            lblNoItemFound.setText("Your Shopping Cart is currently empty. Tap the button below to shop for items.");
+            lblNoItemFound.setBackgroundColor(Color.WHITE);
+            lblNoItemFound.setTextSize(15);
+            lblNoItemFound.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            layout.addView(lblNoItemFound);
+
+            Button btnGotoShoppingCart = new Button(this);
+            btnGotoShoppingCart.setText("Go Menu Items");
+            btnGotoShoppingCart.setBackgroundResource(R.color.colorPrimary);
+            btnGotoShoppingCart.setLayoutParams(layoutParamsNoItems);
+            btnGotoShoppingCart.setTextColor(Color.WHITE);
+
+            btnGotoShoppingCart.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+                    Intent intent;
+                    intent = new Intent(getBaseContext(), AvailableItems.class);
+                    intent.putExtra("title", "Menu Items");
+                    startActivity(intent);
+                }
+            });
+
+            layout.addView(btnGotoShoppingCart);
+        } else {
+            LinearLayout.LayoutParams layoutParamsPay = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+            LinearLayout.LayoutParams layoutParamsBtnRemoveItem = new LinearLayout.LayoutParams(70, 70);
+            LinearLayout.LayoutParams layoutParamsItems = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+            LinearLayout.LayoutParams layoutParamsBtnPay = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+            LinearLayout.LayoutParams layoutParamsView = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
+            LinearLayout.LayoutParams layoutParamsQuantity = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+
+            LinearLayout.LayoutParams layoutParamsDiscount = new LinearLayout.LayoutParams(200, LinearLayout.LayoutParams.WRAP_CONTENT);
+            LinearLayout.LayoutParams lpDiscountType = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+            layoutParamsBtnRemoveItem.gravity = Gravity.RIGHT;
+
+            layoutParamsQuantity.setMargins(20, 0, 20, 20);
+            lpDiscountType.setMargins(20, 20, 20, 20);
+            layoutParamsDiscount.setMargins(20, 0, 20, 20);
+            layout.setOrientation(LinearLayout.VERTICAL);
 
 
-        LinearLayout.LayoutParams layoutParamsPay = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-        LinearLayout.LayoutParams layoutParamsBtnRemoveItem = new LinearLayout.LayoutParams(100, LinearLayout.LayoutParams.MATCH_PARENT);
-        LinearLayout.LayoutParams layoutParamsItems = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-        LinearLayout.LayoutParams layoutParamsLblError = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-        LinearLayout.LayoutParams layoutParamsBtnPay = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-        LinearLayout.LayoutParams layoutParamsView = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
-        LinearLayout.LayoutParams layoutParamsQuantity = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            layout.setOrientation(LinearLayout.VERTICAL);
+            layout.setPadding(20, 20, 20, 20);
 
-        LinearLayout.LayoutParams layoutParamsDiscount = new LinearLayout.LayoutParams(200, LinearLayout.LayoutParams.WRAP_CONTENT);
-        LinearLayout.LayoutParams lpDiscountType = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-        layoutParamsBtnRemoveItem.gravity = Gravity.RIGHT;
-
-        layoutParamsQuantity.setMargins(20,0,20,20);
-        lpDiscountType.setMargins(20,20,20,20);
-        layoutParamsDiscount.setMargins(20,0,20,20);
-        layout.setOrientation(LinearLayout.VERTICAL);
-
-        final TextView lblNoItemFetch = new TextView(this);
-        lblNoItemFetch.setText("No item fetch :(");
-
-        lblNoItemFetch.setLayoutParams(layoutParamsLblError);
-        lblNoItemFetch.setTextColor(Color.GRAY);
-        lblNoItemFetch.setTag("lblError");
-        lblNoItemFetch.setTextSize(20);
-        lblNoItemFetch.setVisibility(View.GONE);
-
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(20,20,20,20);
-        layout.addView(lblNoItemFetch);
-
-        final Cursor result = myDb.getAllData();
-        if(result.getCount() < 0){
-            removeItem();
-        }else {
+            final Cursor result = myDb.getAllData();
             while (result.moveToNext()) {
                 final LinearLayout layout1 = new LinearLayout(this);
-                layoutParamsItems.setMargins(10,10,10,10);
+                layoutParamsItems.setMargins(10, 10, 10, 10);
                 layout1.setLayoutParams(layoutParamsItems);
                 layout1.setOrientation(LinearLayout.VERTICAL);
                 layout1.setTag("layout" + result.getString(0));
@@ -272,7 +325,7 @@ public class ShoppingCart extends AppCompatActivity {
                 final Button btnRemoveItem = new Button(this);
                 btnRemoveItem.setLayoutParams(layoutParamsBtnRemoveItem);
                 btnRemoveItem.setText("X");
-                btnRemoveItem.setTextSize(20);
+                btnRemoveItem.setTextSize(13);
                 btnRemoveItem.setBackgroundColor(Color.RED);
                 btnRemoveItem.setTextColor(Color.WHITE);
                 btnRemoveItem.setTag(result.getString(0));
@@ -282,344 +335,39 @@ public class ShoppingCart extends AppCompatActivity {
                 btnRemoveItem.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
+                        if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
                             return;
                         }
                         mLastClickTime = SystemClock.elapsedRealtime();
                         deleteData(btnRemoveItem.getTag().toString());
                         computeTotal();
                         layout.removeView(layout1);
-                        toastMsg("Item Removed",0);
-                        if(layout.getChildCount() == 2){
-                            removeItem();
+                        toastMsg("Item Removed", 0);
+                        System.out.println(layout.getChildCount());
+                        if (layout.getChildCount() == 1) {
+                            loadData();
                         }
                     }
                 });
-
                 layout1.addView(btnRemoveItem);
-
-
-                final CheckBox checkFree = new CheckBox(this);
-                checkFree.setLayoutParams(layoutParamsItems);
-                checkFree.setPadding(20,20,20,20);
-                checkFree.setTextSize(20);
-                checkFree.setTag(result.getString(0));
-                checkFree.setText("Free");
-                boolean isCheck;
-                isCheck = Integer.parseInt(result.getString(6)) == 1;
-                checkFree.setChecked(isCheck);
-                final int generatedFreeID = View.generateViewId();
-                checkFree.setId(generatedFreeID);
-                checkFree.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                        View root = getWindow().getDecorView().getRootView();
-                        LinearLayout currentParentLayout =root.findViewWithTag("layout" + checkFree.getTag());
-                        EditText currentDiscount = (EditText) currentParentLayout.getChildAt(4);
-                        EditText currentTotalPrice = (EditText) currentParentLayout.getChildAt(5);
-                        ElegantNumberButton currentQuantity = (ElegantNumberButton) currentParentLayout.getChildAt(3);
-                        if(isChecked){
-                            currentDiscount.setText("0");
-                            currentTotalPrice.setText("0.00");
-                            currentDiscount.setEnabled(false);
-                            currentTotalPrice.setEnabled(false);
-                        }else{
-                            double getPrice = myDb.getPrice(Integer.parseInt((String) currentQuantity.getTag()));
-                            double priceBefore = getPrice * Double.parseDouble(currentQuantity.getNumber());
-                            currentTotalPrice.setText(Double.toString(priceBefore));
-                            currentDiscount.setEnabled(true);
-                            currentTotalPrice.setEnabled(true);
-                        }
-                        String id = checkFree.getTag().toString();
-                        double quantity = Double.parseDouble(currentQuantity.getNumber());
-                        double disocuntpercent = Double.parseDouble(currentDiscount.getText().toString());
-                        double totalprice = Double.parseDouble(currentTotalPrice.getText().toString());
-                        int free;
-                        if(checkFree.isChecked()){
-                            free = 1;
-                        }else{
-                            free = 0;
-                        }
-                        updateData(id,quantity,disocuntpercent,totalprice,free);
-                        computeTotal();
-                    }
-                });
-                layout1.addView(checkFree);
 
                 final TextView itemname = new TextView(this);
                 Double price = result.getDouble(3);
-                itemname.setText(result.getString(1) + "\n" + df.format(price));
-                itemname.setPadding(20,20,20,20);
+                String isFree = (result.getInt(6) > 0 ? "Free" : "");
+                itemname.setText((isFree.equals("") ? "" : isFree + "\n") + result.getString(1) + "\n" + "₱" + df.format(price) + "\n" + result.getDouble(4) + "%" + "\n" + "₱" + result.getDouble(5));
+                itemname.setPadding(20, 20, 20, 20);
                 itemname.setTag(result.getString(0));
 
                 itemname.setLayoutParams(layoutParamsItems);
                 itemname.setTextColor(Color.BLACK);
 
-                itemname.setTextSize(30);
+                itemname.setTextSize(17);
                 layout1.addView(itemname);
-
-                final ElegantNumberButton quantity = new ElegantNumberButton(this);
-                quantity.setLayoutParams(layoutParamsQuantity);
-                quantity.setTag(result.getString(0));
-                quantity.setNumber(result.getString(2));
-                final int generatedQuantityID = View.generateViewId();
-                quantity.setId(generatedQuantityID);
-                quantity.setOnValueChangeListener(new ElegantNumberButton.OnValueChangeListener() {
-                    @Override
-                    public void onValueChange(ElegantNumberButton view, int oldValue, int newValue) {
-
-                        View root = getWindow().getDecorView().getRootView();
-                        LinearLayout currentParentLayout =root.findViewWithTag("layout" + quantity.getTag());
-                        CheckBox currentFree = (CheckBox) currentParentLayout.getChildAt(1);
-                        EditText currentDiscount = (EditText) currentParentLayout.getChildAt(4);
-                        EditText currentTotalPrice = (EditText) currentParentLayout.getChildAt(5);
-
-                        closeKeyboard(currentDiscount);
-                        closeKeyboard(currentTotalPrice);
-
-
-                        if(Integer.parseInt(quantity.getNumber()) == 0){
-                            quantity.setNumber("1");
-                        }
-                        double getPrice = myDb.getPrice(Integer.parseInt((String) quantity.getTag()));
-                        double priceBefore = getPrice * Double.parseDouble(quantity.getNumber());
-
-                        if(!currentFree.isChecked()){
-                            if(Double.parseDouble(currentDiscount.getText().toString()) < 0){
-                                currentTotalPrice.setText(Double.toString(priceBefore));
-                            }else{
-                                double discountedTotalPrice = (priceBefore - (Double.parseDouble(currentDiscount.getText().toString()) / 100) * priceBefore);
-                                currentTotalPrice.setText(Double.toString(discountedTotalPrice));
-                            }
-                        }else{
-
-                            currentTotalPrice.setText("0.00");
-                            currentDiscount.setText("0");
-                        }
-
-                        String id = currentFree.getTag().toString();
-                        Double qquantity = Double.parseDouble(quantity.getNumber());
-                        Double disocuntpercent = Double.parseDouble(currentDiscount.getText().toString());
-                        Double totalprice = Double.parseDouble(currentTotalPrice.getText().toString());
-                        int free;
-                        if(currentFree.isChecked()){
-                            free = 1;
-                        }else{
-                            free = 0;
-                        }
-                        updateData(id,qquantity,disocuntpercent,totalprice,free);
-                        computeTotal();
-                    }
-                });
-                layout1.addView(quantity);
-
-                final EditText txtDiscount = new EditText(this);
-                txtDiscount.setLayoutParams(layoutParamsDiscount);
-                txtDiscount.setTag(result.getString(0));
-                txtDiscount.setText(result.getString(4));
-                txtDiscount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                txtDiscount.setBackgroundColor(Color.GRAY);
-                txtDiscount.setTextColor(Color.BLACK);
-                txtDiscount.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                final int generatedDiscountPercentID = View.generateViewId();
-                txtDiscount.setId(generatedDiscountPercentID);
-
-                txtDiscount.addTextChangedListener(new TextWatcher() {
-                    @Override
-                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-                    }
-
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {
-                        if(txtDiscount.hasFocus()){
-                            View root = getWindow().getDecorView().getRootView();
-                            LinearLayout currentParentLayout =root.findViewWithTag("layout" + txtDiscount.getTag());
-                            EditText currentTotalPrice = (EditText) currentParentLayout.getChildAt(5);
-                            CheckBox currentFree = (CheckBox) currentParentLayout.getChildAt(1);
-                            ElegantNumberButton currentQuantity = (ElegantNumberButton) currentParentLayout.getChildAt(3);
-                            double discountPercent, getPrice = myDb.getPrice(Integer.parseInt((String) currentQuantity.getTag()));
-                            double priceBefore = Double.parseDouble(currentQuantity.getNumber()) * getPrice;
-                            try{
-                                if(Double.parseDouble(txtDiscount.getText().toString()) > 25){
-                                    txtDiscount.setText("25.00");
-                                    txtDiscount.setSelection(txtDiscount.getText().length()-3);
-                                }
-                                if(txtDiscount.getText().toString().isEmpty()){
-                                    txtDiscount.setText("0");
-                                    txtDiscount.setSelection(txtDiscount.getText().length());
-                                }
-                                else if (Integer.parseInt(currentQuantity.getNumber()) < 0){
-                                    txtDiscount.setText("0");
-                                    txtDiscount.setSelection(txtDiscount.getText().length());
-                                }
-                                else if(Integer.parseInt(currentQuantity.getNumber()) > 0){
-                                    double totalAmount;
-                                    if(!currentFree.isChecked()){
-                                        discountPercent = Double.parseDouble(txtDiscount.getText().toString());
-                                        totalAmount = (priceBefore - (discountPercent / 100) * priceBefore);
-                                        currentTotalPrice.setText(Double.toString(totalAmount));
-
-                                    }
-                                }
-
-                                String id = currentFree.getTag().toString();
-                                Double quantity = Double.parseDouble(currentQuantity.getNumber());
-                                Double disocuntpercent = Double.parseDouble(txtDiscount.getText().toString());
-                                Double totalprice = Double.parseDouble(currentTotalPrice.getText().toString());
-                                int free = 0;
-                                if(currentFree.isChecked()){
-                                    free = 1;
-                                }
-                                updateData(id,quantity,disocuntpercent,totalprice,free);
-                                computeTotal();
-                            }catch (Exception ex){
-                                if(txtDiscount.getText().toString().equals("")){
-                                    currentTotalPrice.setText(Double.toString(priceBefore));
-                                }
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void afterTextChanged(Editable s) {
-                    }
-                });
-
-                txtDiscount.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                    @Override
-                    public void onFocusChange(View v, boolean hasFocus) {
-                        if(!hasFocus){
-                            if(txtDiscount.getText().toString().isEmpty()){
-                                View root = getWindow().getDecorView().getRootView();
-                                LinearLayout currentParentLayout =root.findViewWithTag("layout" + txtDiscount.getTag());
-                                EditText currentTotalPrice = (EditText) currentParentLayout.getChildAt(5);
-                                CheckBox currentFree = (CheckBox) currentParentLayout.getChildAt(1);
-                                ElegantNumberButton currentQuantity = (ElegantNumberButton) currentParentLayout.getChildAt(3);
-
-                                txtDiscount.setText("0");
-
-                                String id = currentFree.getTag().toString();
-                                double quantity = Double.parseDouble(currentQuantity.getNumber());
-                                double disocuntpercent = Double.parseDouble(txtDiscount.getText().toString());
-                                double  getPrice = myDb.getPrice(Integer.parseInt((String) currentQuantity.getTag()));
-                                double priceBefore = Double.parseDouble(currentQuantity.getNumber()) * getPrice;
-                                double totalAmount = (priceBefore - (disocuntpercent / 100) * priceBefore);
-                                currentTotalPrice.setText(Double.toString(totalAmount));
-                                int free = 0;
-                                if(currentFree.isChecked()){
-                                    free = 1;
-                                }
-                                updateData(id,quantity,disocuntpercent,totalAmount,free);
-                                computeTotal();
-                            }
-                        }
-                    }
-                });
-
-                layout1.addView(txtDiscount);
-
-                final EditText txtTotalPrice = new EditText(this);
-                txtTotalPrice.setLayoutParams(layoutParamsDiscount);
-                double totalPrice = result.getDouble(5);
-                txtTotalPrice.setTag(result.getString(0));
-                txtTotalPrice.setText(df.format(totalPrice));
-                txtTotalPrice.setInputType(InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_CLASS_NUMBER);
-                txtTotalPrice.setBackgroundColor(Color.GRAY);
-                txtTotalPrice.setTextColor(Color.BLACK);
-                txtTotalPrice.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                final int generatedTotalPriceID = View.generateViewId();
-                txtTotalPrice.setId(generatedTotalPriceID);
-
-                txtTotalPrice.addTextChangedListener(new TextWatcher() {
-                    @Override
-                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-                    }
-
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {
-                        View root = getWindow().getDecorView().getRootView();
-                        LinearLayout currentParentLayout =root.findViewWithTag("layout" + txtTotalPrice.getTag());
-                        EditText currentDiscount = (EditText) currentParentLayout.getChildAt(4);
-                        ElegantNumberButton currentQuantity = (ElegantNumberButton) currentParentLayout.getChildAt(3);
-                        CheckBox currentFree = (CheckBox) currentParentLayout.getChildAt(1);
-                        double getPrice = myDb.getPrice(Integer.parseInt((String) txtTotalPrice.getTag()));
-                        double priceBefore  = Double.parseDouble(currentQuantity.getNumber()) * getPrice;
-                        if(txtTotalPrice.hasFocus()){
-                            try {
-                                if(!currentFree.isChecked()){
-                                    if(Double.parseDouble(txtTotalPrice.getText().toString()) > priceBefore){
-                                        double doubleTotalPrice = Double.parseDouble(txtTotalPrice.getText().toString());
-                                        double calculatedDiscount = ((priceBefore -  doubleTotalPrice) / priceBefore) * 100;
-                                        currentDiscount.setText(Double.toString(calculatedDiscount));
-                                        txtTotalPrice.setText(Double.toString(priceBefore));
-                                        txtTotalPrice.setSelection(txtTotalPrice.getText().length());
-                                    }else{
-                                        double doubleTotalPrice = Double.parseDouble(txtTotalPrice.getText().toString());
-                                        double calculatedDiscount = ((priceBefore -  doubleTotalPrice) / priceBefore) * 100;
-                                        currentDiscount.setText(Double.toString(calculatedDiscount));
-                                    }
-                                }
-                                String id = currentFree.getTag().toString();
-                                Double quantity = Double.parseDouble(currentQuantity.getNumber());
-                                Double disocuntpercent = Double.parseDouble(currentDiscount.getText().toString());
-                                Double totalprice = Double.parseDouble(txtTotalPrice.getText().toString());
-                                int free = 0;
-                                if(currentFree.isChecked()){
-                                    free = 1;
-                                }
-                                updateData(id,quantity,disocuntpercent,totalprice,free);
-                                computeTotal();
-                            }catch (Exception ignored){
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void afterTextChanged(Editable s) {
-
-                    }
-                });
-
-                txtTotalPrice.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                    @Override
-                    public void onFocusChange(View v, boolean hasFocus) {
-                        if(!hasFocus){
-                            if(txtTotalPrice.getText().toString().isEmpty()){
-                                View root = getWindow().getDecorView().getRootView();
-                                LinearLayout currentParentLayout =root.findViewWithTag("layout" + txtTotalPrice.getTag());
-                                ElegantNumberButton currentQuantity = (ElegantNumberButton) currentParentLayout.getChildAt(3);
-                                EditText currentDiscount = (EditText) currentParentLayout.getChildAt(4);
-                                CheckBox currentFree = (CheckBox) currentParentLayout.getChildAt(1);
-                                double getPrice = myDb.getPrice(Integer.parseInt((String) txtTotalPrice.getTag()));
-                                double priceBefore  = Double.parseDouble(currentQuantity.getNumber()) * getPrice;
-                                txtTotalPrice.setText(Double.toString(priceBefore));
-                                txtDiscount.setText("0.00");
-
-                                String id = currentFree.getTag().toString();
-                                Double quantity = Double.parseDouble(currentQuantity.getNumber());
-                                Double disocuntpercent = Double.parseDouble(currentDiscount.getText().toString());
-                                Double totalprice = Double.parseDouble(txtTotalPrice.getText().toString());
-                                int free = 0;
-                                if(currentFree.isChecked()){
-                                    free = 1;
-                                }
-                                updateData(id,quantity,disocuntpercent,totalprice,free);
-                                computeTotal();
-                            }
-                        }
-                    }
-                });
-
-
-                layout1.addView(txtTotalPrice);
 
                 View view = new View(this);
                 view.setLayoutParams(layoutParamsView);
                 view.setBackgroundColor(Color.BLACK);
                 layout1.addView(view);
-
             }
             LinearLayout layoutPay = new LinearLayout(this);
             layoutPay.setBackgroundColor(Color.WHITE);
@@ -637,12 +385,12 @@ public class ShoppingCart extends AppCompatActivity {
             cmbDiscountType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    if(position > 0){
+                    if (position > 0) {
                         AlertDialog.Builder myDialog = new AlertDialog.Builder(ShoppingCart.this);
                         myDialog.setCancelable(false);
                         myDialog.setTitle("Senior/PWD/Employee Discount");
                         LinearLayout layout = new LinearLayout(ShoppingCart.this);
-                        layout.setPadding(40,40,40,40);
+                        layout.setPadding(40, 40, 40, 40);
                         layout.setOrientation(LinearLayout.VERTICAL);
 
                         final EditText txtId = new EditText(ShoppingCart.this);
@@ -657,13 +405,13 @@ public class ShoppingCart extends AppCompatActivity {
                         myDialog.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                if(txtId.getText().toString().equals("")){
+                                if (txtId.getText().toString().equals("")) {
                                     toastMsg("ID field is required", 0);
                                     cmbDiscountType.setSelection(0);
-                                }else if(txtName.getText().toString().equals("")){
+                                } else if (txtName.getText().toString().equals("")) {
                                     toastMsg("Name field is required", 0);
                                     cmbDiscountType.setSelection(0);
-                                }else{
+                                } else {
                                     discountID = txtId.getText().toString();
                                     discountName = txtName.getText().toString();
                                     computeTotal();
@@ -682,7 +430,7 @@ public class ShoppingCart extends AppCompatActivity {
                         });
 
                         myDialog.show();
-                    }else{
+                    } else {
                         computeTotal();
                     }
                 }
@@ -703,17 +451,18 @@ public class ShoppingCart extends AppCompatActivity {
 
             btnPay.setOnClickListener(new View.OnClickListener() {
                 String noStock = sc.checkEndingBalance(ShoppingCart.this);
+
                 @RequiresApi(api = Build.VERSION_CODES.KITKAT)
                 @Override
                 public void onClick(View v) {
-                    if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
                         return;
                     }
                     mLastClickTime = SystemClock.elapsedRealtime();
                     layout.clearFocus();
-                    if(myDb.countItems() <= 0){
-                        showMessage("Atlantic Bakery","No Item found");
-                    }else if(!noStock.equals("")){
+                    if (myDb.countItems() <= 0) {
+                        showMessage("Atlantic Bakery", "No Item found");
+                    } else if (!noStock.equals("")) {
                         AlertDialog.Builder endbalDialog = new AlertDialog.Builder(ShoppingCart.this);
                         endbalDialog.setCancelable(false);
                         endbalDialog.setTitle("Confirmation");
@@ -724,7 +473,7 @@ public class ShoppingCart extends AppCompatActivity {
                                 final AlertDialog.Builder getPasswordDialog = new AlertDialog.Builder(ShoppingCart.this);
                                 getPasswordDialog.setTitle("Enter Your Password");
                                 LinearLayout layout = new LinearLayout(ShoppingCart.this);
-                                layout.setPadding(40,40,40,40);
+                                layout.setPadding(40, 40, 40, 40);
                                 layout.setOrientation(LinearLayout.VERTICAL);
 
                                 final EditText txtPassword = new EditText(ShoppingCart.this);
@@ -737,12 +486,11 @@ public class ShoppingCart extends AppCompatActivity {
                                     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
-                                        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN",MODE_PRIVATE);
-                                        int userID = Integer.parseInt(Objects.requireNonNull(Objects.requireNonNull(sharedPreferences.getString("userid", ""))));
+                                        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
                                         int isPasswordCorrect = uc.checkManagerPassword(ShoppingCart.this, txtPassword.getText().toString());
-                                        if(isPasswordCorrect < 0){
+                                        if (isPasswordCorrect < 0) {
                                             toastMsg("Wrong Password", 0);
-                                        }else{
+                                        } else {
                                             confirmationDialog();
                                         }
                                     }
@@ -767,7 +515,7 @@ public class ShoppingCart extends AppCompatActivity {
                         });
 
                         endbalDialog.show();
-                    }else{
+                    } else {
                         confirmationDialog();
                     }
                 }
@@ -785,8 +533,9 @@ public class ShoppingCart extends AppCompatActivity {
             layoutPay.addView(lblSubTotal);
             layoutPay.addView(btnPay);
             layoutPay.setOrientation(LinearLayout.VERTICAL);
-            layoutPay.setPadding(20,20,20,20);
+            layoutPay.setPadding(20, 20, 20, 20);
             layout.addView(layoutPay);
+            computeTotal();
         }
     }
 
@@ -967,26 +716,14 @@ public class ShoppingCart extends AppCompatActivity {
         return new ArrayAdapter<>(this, android.R.layout.simple_expandable_list_item_1, names);
     }
 
-    public void removeItem(){
-
-        View root = getWindow().getDecorView().getRootView();
-        TextView lblError = root.findViewWithTag("lblError");
-        Button btnPay = root.findViewWithTag("Pay");
-        Spinner cmbDiscountType = root.findViewWithTag("cmbDiscountType");
-
-        lblError.setVisibility(View.VISIBLE);
-        btnPay.setEnabled(false);
-        cmbDiscountType.setEnabled(false);
-    }
-
-    @SuppressLint({"WrongConstant", "ShowToast"})
-    public void updateData(String id, Double quantity, Double discountpercent, Double totalprice, Integer free){
-
-        boolean isUpdate = myDb.updateData(id,quantity,discountpercent,totalprice,free);
-        if(!isUpdate){
-            Toast.makeText(this,"Data not Updated", 0).show();
-        }
-    }
+//    @SuppressLint({"WrongConstant", "ShowToast"})
+//    public void updateData(String id, Double quantity, Double discountpercent, Double totalprice, Integer free){
+//
+//        boolean isUpdate = myDb.updateData(id,quantity,discountpercent,totalprice,free);
+//        if(!isUpdate){
+//            Toast.makeText(this,"Data not Updated", 0).show();
+//        }
+//    }
 
     @SuppressLint({"WrongConstant", "ShowToast"})
     public void deleteData(String id){

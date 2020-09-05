@@ -12,7 +12,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".CancelRecTrans"></activity>
+        <activity android:name=".Received"></activity>
+        <activity android:name=".CancelRecTrans" />
         <activity android:name=".ScanQRCode" />
         <activity android:name=".ScanCode" />
         <activity android:name=".Inventory" />

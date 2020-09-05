@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -20,6 +21,13 @@
             android:layout_margin="20dp">
 
 
+            <CheckBox
+                android:id="@+id/checkFree"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Free"
+                android:textSize="20sp"/>
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -27,6 +35,14 @@
                 android:textSize="40sp"
                 android:id="@+id/itemName"
                 />
+
+            <TextView
+                android:id="@+id/lblPrice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="30sp"
+                android:text="₱0.00" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="83dp"
@@ -67,14 +83,51 @@
                     android:textSize="20sp"
                     android:id="@+id/btnPlus"/>
             </LinearLayout>
-            <Button
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <EditText
+                android:layout_width="100dp"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:background="@color/colorGray"
+                android:inputType="numberDecimal"
+                android:text="0"
+                android:textSize="30sp"
+                android:id="@+id/txtDisount" />
+
+            <TextView
+                android:id="@+id/lblPercent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Add to Cart"
-                android:background="@color/colorPrimary"
-                android:textColor="@color/colorWhite"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:text="%"
+                android:textSize="30sp" />
+        </LinearLayout>
+
+            <EditText
+                android:id="@+id/txtTotalPrice"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:inputType="numberDecimal"
+                android:textSize="30sp"
+                android:background="@color/colorGray"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:text="0" />
+
+            <Button
                 android:id="@+id/btnAddCart"
-                />
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/colorPrimary"
+                android:text="Add to Cart"
+                android:textColor="@color/colorWhite" />
         </LinearLayout>
 
     </ScrollView>

@@ -12,13 +12,14 @@ import java.util.Objects;
 
 public class SplashScreen extends AppCompatActivity {
     DatabaseHelper myDb = new DatabaseHelper(this);
+    DatabaseHelper2 myDb2;
     prefs_class pc = new prefs_class();
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash_screen);
-
+        myDb2 = new DatabaseHelper2(this);
         Objects.requireNonNull(getSupportActionBar()).hide();
 
         Handler handler = new Handler();
@@ -33,6 +34,7 @@ public class SplashScreen extends AppCompatActivity {
 
     public void goTO(){
         myDb.truncateTable();
+        myDb2.truncateTable();
         pc.loggedOut(SplashScreen.this);
         Intent intent = new Intent(this, IPAddress.class);
         startActivity(intent);
