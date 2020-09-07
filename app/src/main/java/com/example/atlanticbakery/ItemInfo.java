@@ -534,14 +534,18 @@ public class ItemInfo extends AppCompatActivity {
         checkItem.execute("");
         Intent intent;
         String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
-        if(title.equals("Menu Items")){
-            intent = new Intent(getBaseContext(), ShoppingCart.class);
-            startActivity(intent);
-        }else{
-            intent = new Intent(getBaseContext(), Received.class);
-            intent.putExtra("title", title);
-            startActivity(intent);
-        }
+//        if(title.equals("Menu Items")){
+//            intent = new Intent(getBaseContext(), ShoppingCart.class);
+//            startActivity(intent);
+//        }else{
+//            intent = new Intent(getBaseContext(), Received.class);
+//            intent.putExtra("title", title);
+//            startActivity(intent);
+//        }
+        intent = new Intent(getBaseContext(), AvailableItems.class);
+        intent.putExtra("title", title);
+        startActivity(intent);
+        finish();
     }
 
     @SuppressLint("StaticFieldLeak")

@@ -7,6 +7,11 @@
     android:id="@+id/navDrawer">
 
 
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swiperefresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent">
@@ -22,14 +27,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
-                    android:inputType="textPersonName"
+                    android:inputType="number"
                     android:textColor="@android:color/black"
                     android:textSize="25sp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginRight="20dp"
                     android:layout_marginBottom="10dp"
                     android:layout_marginTop="20dp"
-                    android:hint="Search Item"/>
+                    android:hint="Search IT#"
+                    />
 
                 <Button
                     android:id="@+id/btnSearch"
@@ -46,12 +52,14 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:id="@+id/parentLayout"
-                    android:background="@android:color/white">
+                    android:background="@android:color/white"
+                    android:layout_margin="20dp">
                 </LinearLayout>
-                
+
             </LinearLayout>
 
         </ScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav"

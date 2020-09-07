@@ -166,6 +166,12 @@ public class Nav extends AppCompatActivity  {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_receivedSap :
+                        result = true;
+                        intent = new Intent(getBaseContext(), ReceivedSap.class);
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
             }

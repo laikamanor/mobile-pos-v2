@@ -12,7 +12,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".Received"></activity>
+        <activity android:name=".Counter1">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".ReceivedSap" />
+        <activity android:name=".Received" />
         <activity android:name=".CancelRecTrans" />
         <activity android:name=".ScanQRCode" />
         <activity android:name=".ScanCode" />
@@ -21,11 +29,7 @@
         <activity android:name=".ItemInfo" />
         <activity android:name=".AvailableItems" />
         <activity android:name=".SplashScreen">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity android:name=".IPAddress" />
         <activity android:name=".Nav" />

@@ -46,6 +46,7 @@ import com.cepheuen.elegantnumberbutton.view.ElegantNumberButton;
 import com.google.android.material.navigation.NavigationView;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DecimalFormat;
@@ -313,14 +314,23 @@ public class ShoppingCart extends AppCompatActivity {
             layout.setOrientation(LinearLayout.VERTICAL);
             layout.setPadding(20, 20, 20, 20);
 
+            final LinearLayout layout1 = new LinearLayout(this);
+            layoutParamsItems.setMargins(10, 10, 10, 10);
+            layout1.setLayoutParams(layoutParamsItems);
+            layout1.setOrientation(LinearLayout.VERTICAL);
+            layout.addView(layout1);
+
+            TextView lblheader = new TextView(this);
+            lblheader.setText("Item   Quantity   Price   %   Total Price" );
+            lblheader.setPadding(20, 20, 20, 20);
+            lblheader.setLayoutParams(layoutParamsItems);
+            lblheader.setTextColor(Color.BLACK);
+            lblheader.setTextSize(17);
+            layout1.addView(lblheader);
+
             final Cursor result = myDb.getAllData();
-            while (result.moveToNext()) {
-                final LinearLayout layout1 = new LinearLayout(this);
-                layoutParamsItems.setMargins(10, 10, 10, 10);
-                layout1.setLayoutParams(layoutParamsItems);
-                layout1.setOrientation(LinearLayout.VERTICAL);
-                layout1.setTag("layout" + result.getString(0));
-                layout.addView(layout1);
+                while (result.moveToNext()) {
+
 
                 final Button btnRemoveItem = new Button(this);
                 btnRemoveItem.setLayoutParams(layoutParamsBtnRemoveItem);
@@ -343,7 +353,6 @@ public class ShoppingCart extends AppCompatActivity {
                         computeTotal();
                         layout.removeView(layout1);
                         toastMsg("Item Removed", 0);
-                        System.out.println(layout.getChildCount());
                         if (layout.getChildCount() == 1) {
                             loadData();
                         }
@@ -354,7 +363,8 @@ public class ShoppingCart extends AppCompatActivity {
                 final TextView itemname = new TextView(this);
                 Double price = result.getDouble(3);
                 String isFree = (result.getInt(6) > 0 ? "Free" : "");
-                itemname.setText((isFree.equals("") ? "" : isFree + "\n") + result.getString(1) + "\n" + "₱" + df.format(price) + "\n" + result.getDouble(4) + "%" + "\n" + "₱" + result.getDouble(5));
+                double quantity = result.getDouble(2);
+                itemname.setText((isFree.equals("") ? "" : isFree + "  ") + result.getString(1) + "  " + df.format(quantity) + " pcs." + "  "  +  "₱" + df.format(price) + "  " + result.getDouble(4) + "%" + "  " + "₱" + result.getDouble(5));
                 itemname.setPadding(20, 20, 20, 20);
                 itemname.setTag(result.getString(0));
 
@@ -556,10 +566,68 @@ public class ShoppingCart extends AppCompatActivity {
         final AutoCompleteTextView txtCustomer = new AutoCompleteTextView(ShoppingCart.this);
         txtCustomer.setHint("Customer Name");
 
+
+        View root = getWindow().getDecorView().getRootView();
+        Spinner cmbDiscount =root.findViewWithTag("cmbDiscountType");
+        double discountType = 0.00;
+        if(cmbDiscount.getSelectedItemPosition() != 0){
+            String spinnerText = (String) cmbDiscount.getSelectedItem();
+            discountType = sc.getDiscountPercent(ShoppingCart.this, spinnerText);
+        }
+
+        final double getSubTotal = myDb.getSubTotal() - (myDb.getSubTotal() * (discountType / 100));
+        TextView lblSubtotal = new TextView(ShoppingCart.this);
+        lblSubtotal.setText("Total: " + df.format(getSubTotal));
+        lblSubtotal.setTextSize(20);
+        lblSubtotal.setGravity(View.TEXT_ALIGNMENT_CENTER);
+
         final EditText txttendered = new EditText(ShoppingCart.this);
+        final TextView lblChange = new TextView(ShoppingCart.this);
         txttendered.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         txttendered.setText("0.0");
-        txttendered.setHint("Enter Amount");
+        txttendered.setHint("Enter Tendered Amount");
+        final double[] change = {0.00};
+
+        txttendered.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                String value = txttendered.getText().toString();
+                if(value.matches("")){
+                    change[0] = 0 - getSubTotal;
+                }else{
+                    change[0] = Double.parseDouble(txttendered.getText().toString()) - getSubTotal;
+                }
+                lblChange.setText("Change: " + df.format(change[0]));
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
+        txttendered.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean b) {
+                if(!b){
+                    String value = txttendered.getText().toString();
+                    if(value.matches("")){
+                        txttendered.setText("0");
+                    }
+                }
+            }
+        });
+
+
+        double v = 0 - getSubTotal;
+        lblChange.setText("Change: " + df.format(v));
+        lblChange.setTextSize(20);
+        lblChange.setGravity(View.TEXT_ALIGNMENT_CENTER);
 
         final RadioGroup rbGroup = new RadioGroup(ShoppingCart.this);
         rbGroup.setId(View.generateViewId());
@@ -626,7 +694,9 @@ public class ShoppingCart extends AppCompatActivity {
         rbGroup.addView(rbARCharge);
 
         layout.addView(txtCustomer);
+        layout.addView(lblSubtotal);
         layout.addView(txttendered);
+        layout.addView(lblChange);
 
         myDialog.setView(layout);
         myDialog.setCancelable(false);
@@ -765,7 +835,7 @@ public class ShoppingCart extends AppCompatActivity {
         Toast.makeText(this, value, duration).show();
     }
 
-    public  void showMessage(String title, String message){
+    public void showMessage(String title, String message){
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setCancelable(true);
         builder.setTitle(title);

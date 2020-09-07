@@ -243,7 +243,6 @@ public class AvailableItems extends AppCompatActivity {
                         double endBal = rs.getDouble("endbal");
                         String price = "₱ " + df.format(rs.getDouble("price"));
                         int itemId = rs.getInt("itemid");
-
                         CardView cardView = new CardView(AvailableItems.this);
                         LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(300, 300);
                         layoutParamsCv.setMargins(20, 10, 10, 10);
@@ -251,7 +250,7 @@ public class AvailableItems extends AppCompatActivity {
                         cardView.setRadius(12);
                         cardView.setCardElevation(5);
 
-
+                        cardView.setVisibility(View.VISIBLE);
                         gridLayout.addView(cardView);
 
                         LinearLayout linearLayout = new LinearLayout(AvailableItems.this);
@@ -261,6 +260,7 @@ public class AvailableItems extends AppCompatActivity {
 
                         linearLayout.setOrientation(LinearLayout.VERTICAL);
                         linearLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                        linearLayout.setVisibility(View.VISIBLE);
                         cardView.addView(linearLayout);
 
                         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
@@ -274,6 +274,7 @@ public class AvailableItems extends AppCompatActivity {
                         txtItemName.setText(c + "\n" + price);
                         txtItemName.setLayoutParams(layoutParams);
                         txtItemName.setTextSize(20);
+                        txtItemName.setVisibility(View.VISIBLE);
                         linearLayout.addView(txtItemName);
 
                         TextView txtItemLeft = new TextView(AvailableItems.this);
@@ -281,18 +282,19 @@ public class AvailableItems extends AppCompatActivity {
                         txtItemLeft.setTextSize(15);
                         if (title.equals("Menu Items")){
                             if(endBal == 0.0){
-                                txtItemLeft.setText("Not Available");
+                                txtItemLeft.setText(df.format(endBal) + " left");
                                 txtItemLeft.setTextColor(Color.RED);
                             }else if(endBal <= 10){
-                                txtItemLeft.setText(df.format(endBal) + " Item Left!");
+                                txtItemLeft.setText(df.format(endBal) + " left!");
                                 txtItemLeft.setTextColor(Color.rgb(247,154,22));
                             }else{
-                                txtItemLeft.setText("In Stock");
+                                txtItemLeft.setText(df.format(endBal) + " left");
                                 txtItemLeft.setTextColor(Color.rgb(30,203,6));
                             }
                         }
+                        txtItemLeft.setVisibility(View.VISIBLE);
+                        System.out.println(rs.getString("itemname"));
                         linearLayout.addView(txtItemLeft);
-
                         linearLayout.setOnClickListener(new View.OnClickListener() {
                             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
                             @Override
@@ -316,7 +318,7 @@ public class AvailableItems extends AppCompatActivity {
                 }
             }
         }catch (Exception ex){
-            Toast.makeText(AvailableItems.this, ex.getMessage(), Toast.LENGTH_SHORT).show();
+            System.out.println(ex.getMessage());
         }
     }
 

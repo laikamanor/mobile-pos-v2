@@ -40,6 +40,17 @@
             </menu>
         </group>
     </item>
+
+    <item android:title="Received from SAP">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_receivedSap"
+                    android:title="Received from SAP" />
+            </menu>
+        </group>
+    </item>
+
     <item android:title="Received from Production">
         <group android:checkableBehavior="single">
             <menu>
