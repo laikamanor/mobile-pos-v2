@@ -12,13 +12,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".Counter1">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        <activity android:name=".SalesInventory_Received"></activity>
+        <activity android:name=".SalesInventory_AvailableItems" />
+        <activity android:name=".UpdateActualEndingBalance" />
+        <activity android:name=".ItemInfo2" />
+        <activity android:name=".StoreAuditorSelected" />
+        <activity android:name=".ReceivedSap2" />
+        <activity android:name=".Counter1" />
         <activity android:name=".ReceivedSap" />
         <activity android:name=".Received" />
         <activity android:name=".CancelRecTrans" />
@@ -27,9 +27,14 @@
         <activity android:name=".Inventory" />
         <activity android:name=".ShoppingCart" />
         <activity android:name=".ItemInfo" />
+        <activity android:name=".CreateUsers" />
         <activity android:name=".AvailableItems" />
         <activity android:name=".SplashScreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
         <activity android:name=".IPAddress" />
         <activity android:name=".Nav" />

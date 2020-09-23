@@ -1,21 +1,4 @@
 package com.example.atlanticbakery;
-import android.annotation.SuppressLint;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.os.AsyncTask;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.SystemClock;
-import android.text.Html;
-import android.view.Gravity;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -24,36 +7,65 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import android.annotation.SuppressLint;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.graphics.Color;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.SystemClock;
+import android.text.Html;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import com.google.android.material.navigation.NavigationView;
 
+import java.text.DecimalFormat;
 import java.util.Objects;
 
-public class ScanQRCode extends AppCompatActivity {
-    @SuppressLint("StaticFieldLeak")
-    public static TextView resultText;
-    ProgressBar progressBar;
-
-    DatabaseHelper myDb = new DatabaseHelper(this);
-
-    long mLastClickTime = 0;
-
+public class StoreAuditorSelected extends AppCompatActivity {
+    ui_class uic = new ui_class();
+    prefs_class pc = new prefs_class();
+    user_class uc = new user_class();
+    actualendbal_class ac = new actualendbal_class();
+    receivedsap_class recsap = new receivedsap_class();
+    DatabaseHelper4 myDb4;
     private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle toggle;
     NavigationView navigationView;
 
-    //   Classes
-    item_class itemc = new item_class();
-    prefs_class pc = new prefs_class();
-    user_class uc = new user_class();
-    actualendbal_class ac = new actualendbal_class();
-    ui_class uic = new ui_class();
-    receivedsap_class recsap = new receivedsap_class();
+    DatabaseHelper myDb;
+    DatabaseHelper3 myDb3;
+    Button btnProeed;
+
+    long mLastClickTime = 0;
+    String type;
+    String title;
+    DecimalFormat df = new DecimalFormat("#,###");
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    @SuppressLint("RestrictedApi")
     @Override
-    protected void onCreate(final Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_scan_q_r_code);
+        setContentView(R.layout.activity_store_auditor_selected);
+        myDb = new DatabaseHelper(this);
+        myDb4 = new DatabaseHelper4(this);
+        type = getIntent().getStringExtra("type");
+        title = getIntent().getStringExtra("title");
+        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
 
         navigationView = findViewById(R.id.nav);
         drawerLayout = findViewById(R.id.navDrawer);
@@ -61,28 +73,20 @@ public class ScanQRCode extends AppCompatActivity {
 
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
-        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
-
-        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>Scan QR Code</font>"));
-
-        resultText =  findViewById(R.id.lblResult);
-        Button btnScan = findViewById(R.id.btnScan);
-        Button btnCart = findViewById(R.id.btnAddCart);
-        progressBar = findViewById(R.id.progWait);
-        progressBar.setVisibility(View.GONE);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @SuppressLint("WrongConstant")
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean isStoreExist = ac.isTypeExist(ScanQRCode.this, "Store Count");
-                boolean isAuditorExist = ac.isTypeExist(ScanQRCode.this, "Auditor Count");
-                boolean isFinalExist = ac.isTypeExist(ScanQRCode.this, "Final Count");
+                boolean isStoreExist = ac.isTypeExist(StoreAuditorSelected.this, "Store Count");
+                boolean isAuditorExist = ac.isTypeExist(StoreAuditorSelected.this, "Auditor Count");
+                boolean isFinalExist = ac.isTypeExist(StoreAuditorSelected.this, "Final Count");
 
-                boolean isStorePullOutExist = ac.isTypeExist(ScanQRCode.this, "Store Count Pull Out");
-                boolean isAuditorPullOutExist = ac.isTypeExist(ScanQRCode.this, "Auditor Count Pull Out");
-                boolean isFinalPullOutExist = ac.isTypeExist(ScanQRCode.this, "Final Count Pull Out");
+                boolean isStorePullOutExist = ac.isTypeExist(StoreAuditorSelected.this, "PO Store Count");
+                boolean isAuditorPullOutExist = ac.isTypeExist(StoreAuditorSelected.this, "PO Auditor Count");
+                boolean isFinalPullOutExist = ac.isTypeExist(StoreAuditorSelected.this, "PO Final Count");
                 boolean result = false;
                 Intent intent;
                 switch (menuItem.getItemId()) {
@@ -94,7 +98,7 @@ public class ScanQRCode extends AppCompatActivity {
                     case R.id.nav_scanItem:
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
-                        startActivity(uic.goTo(ScanQRCode.this, ScanQRCode.class));
+                        startActivity(uic.goTo(StoreAuditorSelected.this, ScanQRCode.class));
                         finish();
                         break;
                     case R.id.nav_exploreItems:
@@ -107,7 +111,7 @@ public class ScanQRCode extends AppCompatActivity {
                     case R.id.nav_shoppingCart:
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
-                        startActivity(uic.goTo(ScanQRCode.this, ShoppingCart.class));
+                        startActivity(uic.goTo(StoreAuditorSelected.this, ShoppingCart.class));
                         finish();
                         break;
                     case R.id.nav_receivedProduction:
@@ -124,6 +128,7 @@ public class ScanQRCode extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+
                     case R.id.nav_receivedSupplier:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
@@ -169,7 +174,7 @@ public class ScanQRCode extends AppCompatActivity {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
-                        }else if(!uc.returnWorkgroup(ScanQRCode.this).equals("Manager")){
+                        }else if(!uc.returnWorkgroup(StoreAuditorSelected.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                         }else {
                             result = true;
@@ -210,7 +215,7 @@ public class ScanQRCode extends AppCompatActivity {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (!isAuditorExist & !isStoreExist) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
-                        }else if(!uc.returnWorkgroup(ScanQRCode.this).equals("Manager")){
+                        }else if(!uc.returnWorkgroup(StoreAuditorSelected.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                         }else {
                             result = true;
@@ -256,59 +261,118 @@ public class ScanQRCode extends AppCompatActivity {
                 return result;
             }
         });
-
-        btnScan.setOnClickListener(new View.OnClickListener() {
+        btnProeed = findViewById(R.id.btnProceed);
+        loadData();
+        btnProeed.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
-                    return;
-                }
-                mLastClickTime = SystemClock.elapsedRealtime();
-                startActivity(new Intent(getApplicationContext(), ScanCode.class));
-            }
-        });
-        btnCart.setOnClickListener(new View.OnClickListener() {
-            @SuppressLint("SetTextI18n")
-            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-            @Override
-            public void onClick(View v) {
-                String itemName = resultText.getText().toString();
-                boolean hasStock = itemc.checkItemNameStock(ScanQRCode.this, itemName,1.00);
-                if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
-                    return;
-                }
-                mLastClickTime = SystemClock.elapsedRealtime();
-                if (itemName.equals("Result: N/A")) {
-                    Toast.makeText(ScanQRCode.this, "Scan Item first", Toast.LENGTH_SHORT).show();
-                } else {
-                    boolean isItemNameExist = itemc.checkItemName(ScanQRCode.this, itemName);
-                    if (!isItemNameExist) {
-                        Toast.makeText(ScanQRCode.this, "item not found", Toast.LENGTH_SHORT).show();
-                    } else if (hasStock) {
-                        saveData();
-                    }else if(!hasStock) {
-                        final AlertDialog.Builder myDialog = new AlertDialog.Builder(ScanQRCode.this);
-                        myDialog.setTitle("Atlantic Bakery");
-                        myDialog.setMessage("This item is out of stock! Are you sure you want to add to cart?");
-                        myDialog.setCancelable(false);
-                        myDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                saveData();
-                            }
-                        });
-
-                        myDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        });
-                        myDialog.show();
+            public void onClick(View view) {
+                AlertDialog.Builder dialogConfirmation = new AlertDialog.Builder(StoreAuditorSelected.this);
+                dialogConfirmation.setTitle("Confirmation");
+                dialogConfirmation.setMessage("Are you sure you want to proceed?");
+                dialogConfirmation.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+                        int userid = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+                        boolean isSuccess = ac.insertActualEnding(StoreAuditorSelected.this, type,userid);
+                        if(isSuccess) {
+                            Toast.makeText(StoreAuditorSelected.this, "Transaction Completed", Toast.LENGTH_SHORT).show();
+                            startActivity(getIntent());
+                            finish();
+                        }else {
+                            Toast.makeText(StoreAuditorSelected.this, "Error Occurred", Toast.LENGTH_SHORT).show();
+                        }
                     }
-                }
+                });
+                dialogConfirmation.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                });
+                dialogConfirmation.show();
             }
         });
+    }
+
+    @SuppressLint("SetTextI18n")
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+    public void loadData() {
+        if (myDb4.countItems(type) > 0) {
+            btnProeed.setVisibility(View.VISIBLE);
+
+            TableLayout tableLayout = findViewById(R.id.table_main);
+            tableLayout.removeAllViews();
+            Cursor cursor = myDb4.getAllData(type);
+            if (cursor != null) {
+                btnProeed.setVisibility(View.VISIBLE);
+                TableRow tableColumn = new TableRow(StoreAuditorSelected.this);
+                String[] columns = {"Item", "Qty.", "Action"};
+
+                for (String s : columns) {
+                    TextView lblColumn1 = new TextView(StoreAuditorSelected.this);
+                    lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    lblColumn1.setText(s);
+                    lblColumn1.setPadding(10, 0, 10, 0);
+                    tableColumn.addView(lblColumn1);
+                }
+                tableLayout.addView(tableColumn);
+
+                cursor = myDb4.getAllData(type);
+                while (cursor.moveToNext()) {
+                    final TableRow tableRow = new TableRow(StoreAuditorSelected.this);
+                    String itemName = cursor.getString(1);
+                    String v = cutWord(itemName);
+                    double quantity = cursor.getDouble(2);
+                    final int id = cursor.getInt(0);
+
+                    TextView lblColumn1 = new TextView(StoreAuditorSelected.this);
+                    lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    lblColumn1.setText(v);
+                    lblColumn1.setPadding(10, 0, 10, 0);
+                    tableRow.addView(lblColumn1);
+
+                    TextView lblColumn2 = new TextView(StoreAuditorSelected.this);
+                    lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    lblColumn2.setText(df.format(quantity));
+                    lblColumn2.setPadding(10, 10, 10, 10);
+                    tableRow.addView(lblColumn2);
+
+                    TextView lblColumn5 = new TextView(StoreAuditorSelected.this);
+                    lblColumn5.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    lblColumn5.setTag(id);
+                    lblColumn5.setText("Remove");
+                    lblColumn5.setPadding(10, 10, 10, 10);
+                    lblColumn5.setTextColor(Color.RED);
+
+                    lblColumn5.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            int deletedItem = myDb4.deleteData(Integer.toString(id));
+                            if (deletedItem <= 0) {
+                                Toast.makeText(StoreAuditorSelected.this, "Item not remove", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(StoreAuditorSelected.this, "Item removed", Toast.LENGTH_SHORT).show();
+                                startActivity(getIntent());
+                                finish();
+                            }
+                        }
+                    });
+                    tableRow.addView(lblColumn5);
+                    tableLayout.addView(tableRow);
+                }
+            }
+        }else{
+            btnProeed.setVisibility(View.GONE);
+        }
+    }
+
+    public String cutWord(String value){
+        String result;
+        int limit = 30;
+        int limitTo = limit - 3;
+        result = (value.length() > limit ? value.substring(0, limitTo) + "..." : value);
+        return result;
     }
 
     public  void onBtnLogout(){
@@ -318,8 +382,8 @@ public class ScanQRCode extends AppCompatActivity {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        pc.loggedOut(ScanQRCode.this);
-                        startActivity(uic.goTo(ScanQRCode.this, MainActivity.class));
+                        pc.loggedOut(StoreAuditorSelected.this);
+                        startActivity(uic.goTo(StoreAuditorSelected.this, MainActivity.class));
                         finish();
                     }
                 })
@@ -333,16 +397,6 @@ public class ScanQRCode extends AppCompatActivity {
         alertDialog.show();
     }
 
-    public void loadCount(){
-        Menu menu = navigationView.getMenu();
-        MenuItem nav_shoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        MenuItem nav_ReceivedSAP = menu.findItem(R.id.nav_receivedSap);
-        int totalCart = myDb.countItems();
-        int totalPendingSAP = recsap.returnPendingSAPNotif(ScanQRCode.this, "");
-        nav_shoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
-        nav_ReceivedSAP.setTitle("List Items (" + totalPendingSAP + ")");
-    }
-
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         loadCount();
@@ -352,49 +406,13 @@ public class ScanQRCode extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressLint("SetTextI18n")
-    public void saveData() {
-        checkItem checkItem = new checkItem();
-        checkItem.execute("");
-    }
-
-    @SuppressLint("StaticFieldLeak")
-    public class checkItem extends AsyncTask<String, String, String> {
-        String z = "";
-
-        final LoadingDialog loadingDialog = new LoadingDialog(ScanQRCode.this);
-
-        @Override
-        protected void onPreExecute() {
-            loadingDialog.startLoadingDialog();
-        }
-
-        @SuppressLint("SetTextI18n")
-        @Override
-        protected String doInBackground(String... params) {
-            String itemName = resultText.getText().toString();
-            double price = itemc.returnItemNamePrice(ScanQRCode.this, itemName);
-            boolean isInserted = myDb.insertData(1.0, 0.00, price, 0, price, itemName);
-            if (isInserted) {
-                z = "Item Added";
-            } else {
-                z = "Item Not Added";
-            }
-            resultText.setText("Result: N/A");
-            return z;
-        }
-
-        @Override
-        protected void onPostExecute(final String s) {
-            Handler handler = new Handler();
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(ScanQRCode.this, s, Toast.LENGTH_LONG).show();
-                    loadingDialog.dismissDialog();
-                }
-            };
-            handler.postDelayed(r, 1000);
-        }
+    public void loadCount(){
+        Menu menu = navigationView.getMenu();
+        MenuItem nav_shoppingCart = menu.findItem(R.id.nav_shoppingCart);
+        MenuItem nav_ReceivedSAP = menu.findItem(R.id.nav_receivedSap);
+        int totalCart =  myDb.countItems();
+        int totalPendingSAP = recsap.returnPendingSAPNotif(StoreAuditorSelected.this, "");
+        nav_shoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
+        nav_ReceivedSAP.setTitle("List Items (" + totalPendingSAP + ")");
     }
 }

@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.text.Html;
 import android.view.Gravity;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
@@ -37,16 +38,22 @@ import java.util.Objects;
     long mLastClickTime = 0;
     inventory_class ic = new inventory_class();
     connection_class cc = new connection_class();
+    receivedsap_class recsap = new receivedsap_class();
     ui_class uic = new ui_class();
     prefs_class pc = new prefs_class();
+    user_class uc = new user_class();
+    actualendbal_class ac = new actualendbal_class();
     Connection con;
     AutoCompleteTextView txtSearch;
 
 
     DecimalFormat df = new DecimalFormat("#,###");
 
+    DatabaseHelper myDb;
+
     private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle toggle;
+    NavigationView navigationView;
     @SuppressLint("RestrictedApi")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -54,11 +61,12 @@ import java.util.Objects;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cancel_rec_trans);
 
+        myDb = new DatabaseHelper(this);
 
         Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>Cancel Rec/Trans</font>"));
         getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
 
-        NavigationView navigationView = findViewById(R.id.nav);
+        navigationView = findViewById(R.id.nav);
         drawerLayout = findViewById(R.id.navDrawer);
         toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
 
@@ -70,112 +78,179 @@ import java.util.Objects;
             @SuppressLint("WrongConstant")
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                boolean isStoreExist = ac.isTypeExist(CancelRecTrans.this, "Store Count");
+                boolean isAuditorExist = ac.isTypeExist(CancelRecTrans.this, "Auditor Count");
+                boolean isFinalExist = ac.isTypeExist(CancelRecTrans.this, "Final Count");
+
+                boolean isStorePullOutExist = ac.isTypeExist(CancelRecTrans.this, "PO Store Count");
+                boolean isAuditorPullOutExist = ac.isTypeExist(CancelRecTrans.this, "PO Auditor Count");
+                boolean isFinalPullOutExist = ac.isTypeExist(CancelRecTrans.this, "PO Final Count");
                 boolean result = false;
                 Intent intent;
-                switch (menuItem.getItemId()){
-                    case R.id.nav_logOut :
+                switch (menuItem.getItemId()) {
+                    case R.id.nav_logOut:
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
                         onBtnLogout();
                         break;
-                    case R.id.nav_scanItem :
+                    case R.id.nav_scanItem:
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
                         startActivity(uic.goTo(CancelRecTrans.this, ScanQRCode.class));
                         finish();
                         break;
-                    case R.id.nav_exploreItems :
+                    case R.id.nav_exploreItems:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
                         intent.putExtra("title", "Menu Items");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_shoppingCart :
+                    case R.id.nav_shoppingCart:
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
                         startActivity(uic.goTo(CancelRecTrans.this, ShoppingCart.class));
                         finish();
                         break;
-                    case R.id.nav_receivedProduction :
+                    case R.id.nav_receivedProduction:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Received from Production");
+                        intent.putExtra("title", "Manual Received from Production");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_receivedProduction2 :
-                        result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
-                        intent.putExtra("title", "Received from Production");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_receivedBranch :
+                    case R.id.nav_receivedBranch:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Received from Other Branch");
+                        intent.putExtra("title", "Manual Received from Other Branch");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_receivedBranch2 :
-                        result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
-                        intent.putExtra("title", "Received from Other Branch");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_receivedSupplier :
+                    case R.id.nav_receivedSupplier:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Received from Direct Supplier");
+                        intent.putExtra("title", "Manual Received from Direct Supplier");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_receivedSupplier2 :
+                    case R.id.nav_transferOut2:
                         result = true;
                         intent = new Intent(getBaseContext(), Received.class);
-                        intent.putExtra("title", "Received from Direct Supplier");
+                        intent.putExtra("title", "Manual Transfer Out");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_transferOut :
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Transfer Out");
-                        startActivity(intent);
-                        finish();
+                    case R.id.nav_storeCountListPullOut:
+                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (isStorePullOutExist) {
+                            Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
+                        }else{
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "PO Store Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
-                    case R.id.nav_transferOut2 :
-                        result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
-                        intent.putExtra("title", "Transfer Out");
-                        startActivity(intent);
-                        finish();
+                    case R.id.nav_auditorCountListPullOut:
+                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (isAuditorPullOutExist) {
+                            Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else{
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "PO Auditor Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
-//                    case R.id.nav_adjusmentIn :
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), Received.class);
-//                        intent.putExtra("type", "Received from Adjustment");
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-//                    case R.id.nav_adjustmentOut :
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), Received.class);
-//                        intent.putExtra("type", "Adjustment Out");
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-                    case R.id.nav_inventory :
+                    case R.id.nav_finalCountListPullOut:
+                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
+                            Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(CancelRecTrans.this).equals("Manager")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "PO Final Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
+                        break;
+                    case R.id.nav_storeCountList:
+                        if(isAuditorExist && isStoreExist && isFinalExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (isStoreExist) {
+                            Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
+                        }else{
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "AC Store Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
+                        break;
+                    case R.id.nav_auditorCountList:
+                        if(isAuditorExist && isStoreExist && isFinalExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (isAuditorExist) {
+                            Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else{
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "AC Auditor Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
+                        break;
+                    case R.id.nav_finalCountList:
+                        if(isAuditorExist && isStoreExist && isFinalExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (!isAuditorExist & !isStoreExist) {
+                            Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(CancelRecTrans.this).equals("Manager")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "AC Final Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
+                        break;
+                    case R.id.nav_inventory:
                         result = true;
                         intent = new Intent(getBaseContext(), Inventory.class);
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_cancelRecTrans :
+                    case R.id.nav_cancelRecTrans:
                         result = true;
                         intent = new Intent(getBaseContext(), CancelRecTrans.class);
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_receivedSap:
+                        result = true;
+                        intent = new Intent(getBaseContext(), ReceivedSap.class);
+                        intent.putExtra("title", "Received from SAP");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_updateActualEndingBalance:
+                        result = true;
+                        intent = new Intent(getBaseContext(), UpdateActualEndingBalance.class);
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_addsalesinventory:
+                        result = true;
+                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
+                        intent.putExtra("title", "Add Sales Inventory");
                         startActivity(intent);
                         finish();
                         break;
@@ -228,11 +303,22 @@ import java.util.Objects;
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        loadCount();
         if(toggle.onOptionsItemSelected(item)){
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
+
+     public void loadCount(){
+         Menu menu = navigationView.getMenu();
+         MenuItem nav_shoppingCart = menu.findItem(R.id.nav_shoppingCart);
+         MenuItem nav_ReceivedSAP = menu.findItem(R.id.nav_receivedSap);
+         int totalCart = myDb.countItems();
+         int totalPendingSAP = recsap.returnPendingSAPNotif(CancelRecTrans.this, "");
+         nav_shoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
+         nav_ReceivedSAP.setTitle("List Items (" + totalPendingSAP + ")");
+     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     public void loadTransactions(final String transactionNumber){

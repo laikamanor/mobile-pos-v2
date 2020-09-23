@@ -10,9 +10,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import androidx.annotation.Nullable;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
-    public  static  final String DATABASE_NAME = "AKPOS.db";
-    public  static  final String TABLE_NAME = "tblorders";
-    public  static  final String TABLE_NAME2 = "tblreceived";
+    public  static  final String DATABASE_NAME = "QWE.db";
+    public  static  final String TABLE_NAME = "qwe";
     public  static  final String COL_2 = "itemname";
     public  static  final String COL_3 = "price";
     public  static  final String COL_4 = "quantity";
@@ -26,14 +25,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table tblorders " + "(id INTEGER PRIMARY KEY AUTOINCREMENT,itemname TEXT, quantity FLOAT,price FLOAT, discountpercent FLOAT, totalprice FLOAT, free INTEGER)");
-        db.execSQL("create table " + TABLE_NAME2 + "(id INTEGER PRIMARY KEY AUTOINCREMENT,itemname TEXT, quantity FLOAT)");
+        db.execSQL("create table " + TABLE_NAME + "(id INTEGER PRIMARY KEY AUTOINCREMENT,itemname TEXT, quantity FLOAT,price FLOAT, discountpercent FLOAT, totalprice FLOAT, free INTEGER)");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME2);
         onCreate(db);
     }
 
@@ -70,6 +67,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return resultPrice;
     }
 
+    public boolean checkItem(String itemName){
+        boolean result = false;
+        SQLiteDatabase db = this.getReadableDatabase();
+        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE itemname='" + itemName + "';", null);
+        if(cursor.moveToFirst()){
+            do{
+                result = true;
+            }
+            while (cursor.moveToNext());
+        }
+        return result;
+    }
+
     public Double getSubTotal(){
         double resultSubTotal = 0.00;
         SQLiteDatabase db = this.getReadableDatabase();
@@ -94,18 +104,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             while (result.moveToNext());
         }
         return resultSubTotal;
-    }
-
-    public boolean updateData(String id, Double quantity,Double discountpercent,Double totalprice, Integer free){
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues contentValues = new ContentValues();
-        contentValues.put("id", id);
-        contentValues.put("quantity", quantity);
-        contentValues.put("discountpercent", discountpercent);
-        contentValues.put("totalprice", totalprice);
-        contentValues.put("free", free);
-        db.update(TABLE_NAME, contentValues, "id = ?", new String[] {id});
-        return true;
     }
 
     public  Integer deleteData(String id){

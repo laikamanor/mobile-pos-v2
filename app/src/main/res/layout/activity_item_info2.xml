@@ -21,52 +21,41 @@
             android:layout_margin="20dp">
 
 
-            <CheckBox
-                android:id="@+id/checkFree"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Free"
-                android:textSize="20sp"/>
-
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="BIGDESAL"
                 android:textSize="40sp"
-                android:id="@+id/itemName"
+                android:id="@+id/lblItemName"
                 />
 
             <TextView
-                android:id="@+id/lblPrice"
+                android:id="@+id/lblVariance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="30sp"
-                android:text="₱0.00" />
-
-            <TextView
-                android:id="@+id/lblReceivedQuantity"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="30sp"
-                android:text="Received Qty. : 0" />
+                android:text="Variance: 0"
+                android:textSize="20sp"
+                android:textColor="@color/colorPrimary"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="83dp"
-                android:orientation="horizontal">
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:layout_marginBottom="20dp">
 
                 <Button
+                    android:id="@+id/btnMinus"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_marginTop="20dp"
                     android:layout_marginRight="2dp"
                     android:background="@color/colorPrimaryDark"
-                    android:textColor="@color/colorWhite"
                     android:text="-"
-                    android:textSize="20sp"
-                    android:id="@+id/btnMinus"/>
+                    android:textColor="@color/colorWhite"
+                    android:textSize="20sp" />
 
                 <EditText
+                    android:id="@+id/txtQuantity"
                     android:layout_width="100dp"
                     android:layout_height="50dp"
                     android:layout_marginTop="20dp"
@@ -75,67 +64,19 @@
                     android:inputType="number"
                     android:text="0"
                     android:textAlignment="center"
-                    android:textSize="30sp"
-                    android:id="@+id/txtQuantity"
-                    />
+                    android:textSize="30sp" />
 
                 <Button
+                    android:id="@+id/btnPlus"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_marginLeft="2dp"
                     android:layout_marginTop="20dp"
                     android:background="@color/colorPrimaryDark"
-                    android:textColor="@color/colorWhite"
                     android:text="+"
-                    android:textSize="20sp"
-                    android:id="@+id/btnPlus"/>
+                    android:textColor="@color/colorWhite"
+                    android:textSize="20sp" />
             </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <EditText
-                android:layout_width="100dp"
-                android:layout_height="50dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp"
-                android:background="@color/colorGray"
-                android:inputType="numberDecimal"
-                android:text="0"
-                android:textSize="30sp"
-                android:id="@+id/txtDisount" />
-
-            <TextView
-                android:id="@+id/lblPercent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp"
-                android:text="%"
-                android:textSize="30sp" />
-        </LinearLayout>
-
-            <EditText
-                android:id="@+id/txtTotalPrice"
-                android:layout_width="150dp"
-                android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="numberDecimal"
-                android:textSize="30sp"
-                android:background="@color/colorGray"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp"
-                android:text="0" />
-
-            <TextView
-                android:id="@+id/lblVariance"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp"
-                android:text="Variance: 0"
-                android:textSize="30sp" />
 
             <Button
                 android:id="@+id/btnAddCart"

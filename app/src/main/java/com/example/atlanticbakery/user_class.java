@@ -11,7 +11,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 import static android.content.Context.MODE_PRIVATE;
@@ -170,5 +172,28 @@ public class user_class {
                 Toast.makeText(activity, ex.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    public List<String> returnUsernames(Activity activity){
+        List<String> discounts = new ArrayList<>();
+        try{
+            con = cc.connectionClass(activity);
+            if (con == null) {
+                Toast.makeText(activity, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
+
+            } else {
+                discounts.add("Select Sales Agent");
+                String query = "SELECT username [result] FROM tblusers WHERE status=1";
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(query);
+                while (rs.next()){
+                    discounts.add(rs.getString("result"));
+                }
+                con.close();
+            }
+        }catch (Exception ex){
+            Toast.makeText(activity, "returnBranchSupplier() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return discounts;
     }
 }

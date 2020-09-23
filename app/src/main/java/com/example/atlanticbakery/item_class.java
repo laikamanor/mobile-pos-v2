@@ -7,6 +7,7 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
+import java.security.PublicKey;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -38,8 +39,9 @@ public class item_class {
         return  result;
     }
 
+
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public Boolean checkItemNameStock(Activity activity, String itemname){
+    public Boolean checkItemNameStock(Activity activity, String itemname,Double quantity){
         boolean result = false;
         try {
             con = cc.connectionClass(activity);
@@ -51,7 +53,7 @@ public class item_class {
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 if(rs.next()){
-                    if(rs.getDouble("endbal") > 0){
+                    if(rs.getDouble("endbal") >= quantity){
                         result = true;
                     }
                 }

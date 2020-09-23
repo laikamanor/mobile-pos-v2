@@ -32,6 +32,8 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,11 +64,15 @@ public class ShoppingCart extends AppCompatActivity {
 
     private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle toggle;
+    NavigationView navigationView;
+
     shoppingCart_class sc = new shoppingCart_class();
     ui_class uic = new ui_class();
     prefs_class pc = new prefs_class();
+    actualendbal_class ac = new actualendbal_class();
     user_class uc = new user_class();
     connection_class cc = new connection_class();
+    receivedsap_class recsap = new receivedsap_class();
     DecimalFormat df = new DecimalFormat("#,###.00");
     @SuppressLint("RestrictedApi")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -77,7 +83,7 @@ public class ShoppingCart extends AppCompatActivity {
         myDb = new DatabaseHelper(this);
 
 
-        final NavigationView navigationView = findViewById(R.id.nav);
+        navigationView = findViewById(R.id.nav);
         drawerLayout = findViewById(R.id.navDrawer);
         toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
 
@@ -85,118 +91,184 @@ public class ShoppingCart extends AppCompatActivity {
         toggle.syncState();
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
 
-        loadShoppingCartCount();
 
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @SuppressLint("WrongConstant")
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                boolean isStoreExist = ac.isTypeExist(ShoppingCart.this, "Store Count");
+                boolean isAuditorExist = ac.isTypeExist(ShoppingCart.this, "Auditor Count");
+                boolean isFinalExist = ac.isTypeExist(ShoppingCart.this, "Final Count");
+
+                boolean isStorePullOutExist = ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out");
+                boolean isAuditorPullOutExist = ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out");
+                boolean isFinalPullOutExist = ac.isTypeExist(ShoppingCart.this, "Final Count Pull Out");
                 boolean result = false;
                 Intent intent;
-                switch (menuItem.getItemId()){
-                    case R.id.nav_logOut :
+                switch (menuItem.getItemId()) {
+                    case R.id.nav_logOut:
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
                         onBtnLogout();
                         break;
-                    case R.id.nav_scanItem :
+                    case R.id.nav_scanItem:
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
                         startActivity(uic.goTo(ShoppingCart.this, ScanQRCode.class));
                         finish();
                         break;
-                    case R.id.nav_exploreItems :
+                    case R.id.nav_exploreItems:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
                         intent.putExtra("title", "Menu Items");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_shoppingCart :
+                    case R.id.nav_shoppingCart:
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
                         startActivity(uic.goTo(ShoppingCart.this, ShoppingCart.class));
                         finish();
                         break;
-                    case R.id.nav_receivedProduction :
+                    case R.id.nav_receivedProduction:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Received from Production");
+                        intent.putExtra("title", "Manual Received from Production");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_receivedProduction2 :
-                        result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
-                        intent.putExtra("title", "Received from Production");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_receivedBranch :
+                    case R.id.nav_receivedBranch:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Received from Other Branch");
+                        intent.putExtra("title", "Manual Received from Other Branch");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_receivedBranch2 :
-                        result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
-                        intent.putExtra("title", "Received from Other Branch");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_receivedSupplier :
+                    case R.id.nav_receivedSupplier:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Received from Direct Supplier");
+                        intent.putExtra("title", "Manual Received from Direct Supplier");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_receivedSupplier2 :
+                    case R.id.nav_transferOut2:
                         result = true;
                         intent = new Intent(getBaseContext(), Received.class);
-                        intent.putExtra("title", "Received from Direct Supplier");
+                        intent.putExtra("title", "Manual Transfer Out");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_transferOut :
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Transfer Out");
-                        startActivity(intent);
-                        finish();
+                    case R.id.nav_storeCountListPullOut:
+                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (isStorePullOutExist) {
+                            Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
+                        }else{
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "PO Store Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
-                    case R.id.nav_transferOut2 :
-                        result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
-                        intent.putExtra("title", "Transfer Out");
-                        startActivity(intent);
-                        finish();
+                    case R.id.nav_auditorCountListPullOut:
+                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (isAuditorPullOutExist) {
+                            Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else{
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "PO Auditor Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
-//                    case R.id.nav_adjusmentIn :
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), Received.class);
-//                        intent.putExtra("type", "Received from Adjustment");
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-//                    case R.id.nav_adjustmentOut :
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), Received.class);
-//                        intent.putExtra("type", "Adjustment Out");
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-                    case R.id.nav_inventory :
+                    case R.id.nav_finalCountListPullOut:
+                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
+                            Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "PO Final Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
+                        break;
+                    case R.id.nav_storeCountList:
+                        if(isAuditorExist && isStoreExist && isFinalExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (isStoreExist) {
+                            Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
+                        }else{
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "AC Store Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
+                        break;
+                    case R.id.nav_auditorCountList:
+                        if(isAuditorExist && isStoreExist && isFinalExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (isAuditorExist) {
+                            Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else{
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "AC Auditor Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
+                        break;
+                    case R.id.nav_finalCountList:
+                        if(isAuditorExist && isStoreExist && isFinalExist){
+                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+                        }else if (!isAuditorExist & !isStoreExist) {
+                            Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "AC Final Count List Items");
+                            startActivity(intent);
+                            finish();
+                        }
+                        break;
+                    case R.id.nav_inventory:
                         result = true;
                         intent = new Intent(getBaseContext(), Inventory.class);
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_cancelRecTrans :
+                    case R.id.nav_cancelRecTrans:
                         result = true;
                         intent = new Intent(getBaseContext(), CancelRecTrans.class);
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_receivedSap:
+                        result = true;
+                        intent = new Intent(getBaseContext(), ReceivedSap.class);
+                        intent.putExtra("title", "Received from SAP");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_updateActualEndingBalance:
+                        result = true;
+                        intent = new Intent(getBaseContext(), UpdateActualEndingBalance.class);
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_addsalesinventory:
+                        result = true;
+                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
+                        intent.putExtra("title", "Add Sales Inventory");
                         startActivity(intent);
                         finish();
                         break;
@@ -233,17 +305,19 @@ public class ShoppingCart extends AppCompatActivity {
         alertDialog.show();
     }
 
-    public void loadShoppingCartCount(){
-        NavigationView navigationView = findViewById(R.id.nav);
+    public void loadCount(){
         Menu menu = navigationView.getMenu();
         MenuItem nav_shoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        int totalItems = myDb.countItems();
-        nav_shoppingCart.setTitle("Shopping Cart (" + totalItems + ")");
+        MenuItem nav_ReceivedSAP = menu.findItem(R.id.nav_receivedSap);
+        int totalCart = myDb.countItems();
+        int totalPendingSAP = recsap.returnPendingSAPNotif(ShoppingCart.this, "");
+        nav_shoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
+        nav_ReceivedSAP.setTitle("List Items (" + totalPendingSAP + ")");
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        loadShoppingCartCount();
+        loadCount();
         if(toggle.onOptionsItemSelected(item)){
             return true;
         }
@@ -258,6 +332,7 @@ public class ShoppingCart extends AppCompatActivity {
         final LinearLayout.LayoutParams layoutParamsNoItems = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
         layoutParamsNoItems.setMargins(50, 20, 50, 0);
         final LinearLayout.LayoutParams layoutParamsLblError = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        layoutParamsLblError.setMargins(30,0,20,20);
         int totalItems = myDb.countItems();
         if (totalItems <= 0) {
             ImageView imageView = new ImageView(this);
@@ -300,7 +375,7 @@ public class ShoppingCart extends AppCompatActivity {
             LinearLayout.LayoutParams layoutParamsBtnPay = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
             LinearLayout.LayoutParams layoutParamsView = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
             LinearLayout.LayoutParams layoutParamsQuantity = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-
+            LinearLayout.LayoutParams layoutParamsTableLayout = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             LinearLayout.LayoutParams layoutParamsDiscount = new LinearLayout.LayoutParams(200, LinearLayout.LayoutParams.WRAP_CONTENT);
             LinearLayout.LayoutParams lpDiscountType = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
             layoutParamsBtnRemoveItem.gravity = Gravity.RIGHT;
@@ -308,77 +383,135 @@ public class ShoppingCart extends AppCompatActivity {
             layoutParamsQuantity.setMargins(20, 0, 20, 20);
             lpDiscountType.setMargins(20, 20, 20, 20);
             layoutParamsDiscount.setMargins(20, 0, 20, 20);
+            layoutParamsTableLayout.setMargins(0,20,0,20);
+            layoutParamsBtnPay.setMargins(30,0,30,0);
             layout.setOrientation(LinearLayout.VERTICAL);
 
 
             layout.setOrientation(LinearLayout.VERTICAL);
             layout.setPadding(20, 20, 20, 20);
 
-            final LinearLayout layout1 = new LinearLayout(this);
-            layoutParamsItems.setMargins(10, 10, 10, 10);
-            layout1.setLayoutParams(layoutParamsItems);
-            layout1.setOrientation(LinearLayout.VERTICAL);
-            layout.addView(layout1);
 
-            TextView lblheader = new TextView(this);
-            lblheader.setText("Item   Quantity   Price   %   Total Price" );
-            lblheader.setPadding(20, 20, 20, 20);
-            lblheader.setLayoutParams(layoutParamsItems);
-            lblheader.setTextColor(Color.BLACK);
-            lblheader.setTextSize(17);
-            layout1.addView(lblheader);
+            final TableLayout tableLayout = new TableLayout(this);
+            tableLayout.setLayoutParams(layoutParamsTableLayout);
+            tableLayout.setBackgroundColor(Color.rgb(244,244,244));
+
+            String[] columns = {"Free","Item","Price,","Qty.","Disc.", "Total","Action"};
+
+            TableRow tableColumn = new TableRow(this);
+            for (String s : columns) {
+                TextView lblColumn1 = new TextView(this);
+                lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                lblColumn1.setText(s);
+                lblColumn1.setPadding(10, 0, 10, 0);
+                lblColumn1.setTextSize(10);
+                tableColumn.addView(lblColumn1);
+            }
+            tableLayout.addView(tableColumn);
+
+
 
             final Cursor result = myDb.getAllData();
-                while (result.moveToNext()) {
+               if(!result.equals(null)){
+                   while (result.moveToNext()) {
+                       final TableRow tableRow = new TableRow(this);
+                       final String item = result.getString(1);
+                       double price = result.getDouble(3);
+                       double quantity = result.getDouble(2);
+                       double discount = result.getDouble(4);
+                       int free = result.getInt(6);
+                       String isFree = (free == 0) ? "Not":"Free";
+                       double discountAmount = (price * quantity) * (discount / 100);
+                       double total = (price * quantity) - discountAmount;
+                       int id = result.getInt(0);
+
+                       TextView lblColumn1 = new TextView(this);
+                       lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                       lblColumn1.setText(isFree);
+                       lblColumn1.setPadding(10, 10, 10, 10);
+                       lblColumn1.setTextSize(10);
+                       lblColumn1.setBackgroundColor(Color.WHITE);
+                       tableRow.addView(lblColumn1);
+
+                       TextView lblColumn2 = new TextView(this);
+                       lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                       String v = cutWord(item);
+                       lblColumn2.setText(v);
+                       lblColumn2.setPadding(10, 10, 10, 10);
+                       lblColumn2.setTextSize(10);
+                       lblColumn2.setBackgroundColor(Color.WHITE);
+
+                       lblColumn2.setOnClickListener(new View.OnClickListener() {
+                           @Override
+                           public void onClick(View view) { 
+                               Toast.makeText( ShoppingCart.this, item, Toast.LENGTH_SHORT).show();
+                           }
+                       });
+
+                       tableRow.addView(lblColumn2);
+
+                       TextView lblColumn3 = new TextView(this);
+                       lblColumn3.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                       lblColumn3.setText(df.format(price));
+                       lblColumn3.setPadding(10, 10, 10, 10);
+                       lblColumn3.setBackgroundColor(Color.WHITE);
+                       lblColumn3.setTextSize(10);
+                       tableRow.addView(lblColumn3);
+
+                       TextView lblColumn4 = new TextView(this);
+                       lblColumn4.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                       lblColumn4.setText(df.format(quantity));
+                       lblColumn4.setPadding(10, 10, 10, 10);
+                       lblColumn4.setBackgroundColor(Color.WHITE);
+                       lblColumn4.setTextSize(10);
+                       tableRow.addView(lblColumn4);
+
+                       TextView lblColumn5 = new TextView(this);
+                       lblColumn5.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                       lblColumn5.setText(df.format(discount) + "%");
+                       lblColumn5.setPadding(10, 10, 10, 10);
+                       lblColumn5.setBackgroundColor(Color.WHITE);
+                       lblColumn5.setTextSize(10);
+                       tableRow.addView(lblColumn5);
+
+                       TextView lblColumn6 = new TextView(this);
+                       lblColumn6.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                       lblColumn6.setText(df.format(total));
+                       lblColumn6.setPadding(10, 10, 10, 10);
+                       lblColumn6.setBackgroundColor(Color.WHITE);
+                       lblColumn6.setTextSize(10);
+                       tableRow.addView(lblColumn6);
+
+                       final TextView lblColumn7 = new TextView(this);
+                       lblColumn7.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                       lblColumn7.setText("Remove");
+                       lblColumn7.setPadding(10, 10, 10, 10);
+                       lblColumn7.setTextColor(Color.RED);
+                       lblColumn7.setTextSize(10);
+                       lblColumn7.setBackgroundColor(Color.WHITE);
+                       lblColumn7.setTag(id);
+
+                       lblColumn7.setOnClickListener(new View.OnClickListener() {
+                           @Override
+                           public void onClick(View view) {
+                               if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+                                   return;
+                               }
+                               mLastClickTime = SystemClock.elapsedRealtime();
+                               deleteData(lblColumn7.getTag().toString());
+                               computeTotal();
+                               loadData();
+                               toastMsg("Item Removed", 0);
+                           }
+                       });
+                       tableRow.addView(lblColumn7);
+
+                       tableLayout.addView(tableRow);
+                   }
+               }
+            layout.addView(tableLayout);
 
 
-                final Button btnRemoveItem = new Button(this);
-                btnRemoveItem.setLayoutParams(layoutParamsBtnRemoveItem);
-                btnRemoveItem.setText("X");
-                btnRemoveItem.setTextSize(13);
-                btnRemoveItem.setBackgroundColor(Color.RED);
-                btnRemoveItem.setTextColor(Color.WHITE);
-                btnRemoveItem.setTag(result.getString(0));
-                final int generatedBtnRemoveID = View.generateViewId();
-                btnRemoveItem.setId(generatedBtnRemoveID);
-
-                btnRemoveItem.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
-                            return;
-                        }
-                        mLastClickTime = SystemClock.elapsedRealtime();
-                        deleteData(btnRemoveItem.getTag().toString());
-                        computeTotal();
-                        layout.removeView(layout1);
-                        toastMsg("Item Removed", 0);
-                        if (layout.getChildCount() == 1) {
-                            loadData();
-                        }
-                    }
-                });
-                layout1.addView(btnRemoveItem);
-
-                final TextView itemname = new TextView(this);
-                Double price = result.getDouble(3);
-                String isFree = (result.getInt(6) > 0 ? "Free" : "");
-                double quantity = result.getDouble(2);
-                itemname.setText((isFree.equals("") ? "" : isFree + "  ") + result.getString(1) + "  " + df.format(quantity) + " pcs." + "  "  +  "₱" + df.format(price) + "  " + result.getDouble(4) + "%" + "  " + "₱" + result.getDouble(5));
-                itemname.setPadding(20, 20, 20, 20);
-                itemname.setTag(result.getString(0));
-
-                itemname.setLayoutParams(layoutParamsItems);
-                itemname.setTextColor(Color.BLACK);
-
-                itemname.setTextSize(17);
-                layout1.addView(itemname);
-
-                View view = new View(this);
-                view.setLayoutParams(layoutParamsView);
-                view.setBackgroundColor(Color.BLACK);
-                layout1.addView(view);
-            }
             LinearLayout layoutPay = new LinearLayout(this);
             layoutPay.setBackgroundColor(Color.WHITE);
             layoutPay.setLayoutParams(layoutParamsPay);
@@ -537,7 +670,7 @@ public class ShoppingCart extends AppCompatActivity {
             lblSubTotal.setLayoutParams(layoutParamsLblError);
             lblSubTotal.setTextColor(Color.RED);
             lblSubTotal.setTag("lblSubTotal");
-            lblSubTotal.setTextSize(40);
+            lblSubTotal.setTextSize(20);
 
             layoutPay.addView(cmbDiscountType);
             layoutPay.addView(lblSubTotal);
@@ -547,6 +680,14 @@ public class ShoppingCart extends AppCompatActivity {
             layout.addView(layoutPay);
             computeTotal();
         }
+    }
+
+    public String cutWord(String value){
+        String result;
+        int limit = 15;
+        int limitTo = limit - 3;
+        result = (value.length() > limit ? value.substring(0, limitTo) + "..." : value);
+        return result;
     }
 
     @SuppressLint("SetTextI18n")
@@ -785,15 +926,6 @@ public class ShoppingCart extends AppCompatActivity {
     public ArrayAdapter<String> fillName(List<String> names){
         return new ArrayAdapter<>(this, android.R.layout.simple_expandable_list_item_1, names);
     }
-
-//    @SuppressLint({"WrongConstant", "ShowToast"})
-//    public void updateData(String id, Double quantity, Double discountpercent, Double totalprice, Integer free){
-//
-//        boolean isUpdate = myDb.updateData(id,quantity,discountpercent,totalprice,free);
-//        if(!isUpdate){
-//            Toast.makeText(this,"Data not Updated", 0).show();
-//        }
-//    }
 
     @SuppressLint({"WrongConstant", "ShowToast"})
     public void deleteData(String id){

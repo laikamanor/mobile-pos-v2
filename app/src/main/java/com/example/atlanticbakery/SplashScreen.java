@@ -13,6 +13,9 @@ import java.util.Objects;
 public class SplashScreen extends AppCompatActivity {
     DatabaseHelper myDb = new DatabaseHelper(this);
     DatabaseHelper2 myDb2;
+    DatabaseHelper3 myDb3;
+    DatabaseHelper4 myDb4;
+    DatabaseHelper5 myDb5;
     prefs_class pc = new prefs_class();
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -20,6 +23,9 @@ public class SplashScreen extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash_screen);
         myDb2 = new DatabaseHelper2(this);
+        myDb3 = new DatabaseHelper3(this);
+        myDb4 = new DatabaseHelper4(this);
+        myDb5 = new DatabaseHelper5(this);
         Objects.requireNonNull(getSupportActionBar()).hide();
 
         Handler handler = new Handler();
@@ -35,6 +41,9 @@ public class SplashScreen extends AppCompatActivity {
     public void goTO(){
         myDb.truncateTable();
         myDb2.truncateTable();
+        myDb3.truncateTable();
+        myDb4.truncateTable();
+        myDb5.truncateTable();
         pc.loggedOut(SplashScreen.this);
         Intent intent = new Intent(this, IPAddress.class);
         startActivity(intent);
