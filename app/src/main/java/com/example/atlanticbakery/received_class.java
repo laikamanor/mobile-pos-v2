@@ -28,8 +28,24 @@ public class received_class {
             } else {
                 discounts.add("Select " + type);
                 String supplierQuery = "SELECT name [result] FROM tblcustomers WHERE type='Supplier' AND status=1";
+                String mainBranchQuery = "SELECT branchcode [result] FROM tblbranch WHERE main = 1 AND status=1 AND main=1 ORDER BY branchcode";
                 String branchQuery = "SELECT branchcode [result] FROM tblbranch WHERE main = 0 AND status=1 ORDER BY branchcode";
-                String resultQuery = (type.equals("Branch") ? branchQuery : supplierQuery);
+                String userQuery = "SELECT username [result] FROM tblusers WHERE status=1 AND workgroup='Sales' ORDER BY username ASC;";
+                String resultQuery = "";
+                switch (type) {
+                    case "Branch":
+                        resultQuery = branchQuery;
+                        break;
+                    case "Supplier":
+                        resultQuery = supplierQuery;
+                        break;
+                    case "Sales Agent":
+                        resultQuery = userQuery;
+                        break;
+                    case "Main Branch":
+                        resultQuery = mainBranchQuery;
+                        break;
+                }
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(resultQuery);
                 while (rs.next()){
@@ -58,6 +74,7 @@ public class received_class {
                 type = "Adjustment Item";
                 break;
             case "Transfer Out":
+            case "Transfer to Sales":
                 type = "Transfer Item";
                 break;
             case ("Adjustment Out"):
@@ -98,6 +115,12 @@ public class received_class {
                 break;
             case "pullout2":
                 template = "PO - ";
+                break;
+            case "salesout":
+                template = "TRASLS - ";
+                break;
+            case "salesin":
+                template = "RECSLS - ";
                 break;
         }
         String queryProd = "Select ISNULL(MAX(transaction_id),0) +1 [counter] from tblproduction WHERE area='Sales' AND type='" + type + "' AND type2='" + type2 + "';";
@@ -153,6 +176,47 @@ public class received_class {
             }
         }catch (Exception ex){
             Toast.makeText(activity, "checkStock() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return  result;
+    }
+
+    public int checkOwnInventory(Activity activity, String type2,int userID){
+        int result = 0;
+        try{
+            con = cc.connectionClass(activity);
+            if (con == null) {
+                Toast.makeText(activity, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
+            } else {
+                String query = "SELECT COUNT(*) [result] FROM tblproduction WHERE inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND type2='" + type2 + "' AND transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ")";
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(query);
+                if(rs.next()){
+                    result = rs.getInt("result");
+                }
+            }
+        }catch (Exception ex){
+            Toast.makeText(activity, "checkOwnInventory() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return  result;
+    }
+
+    public double checkOwnInventoryStock(Activity activity, String type2,int userID, String itemName,boolean hasHaving){
+        double result = 0.0;
+        try{
+            con = cc.connectionClass(activity);
+            if (con == null) {
+                Toast.makeText(activity, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
+            } else {
+                String query = "SELECT SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='" + type2 + "' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.item_name LIKE '%" + itemName + "%' GROUP BY x.qty,xx.transferFromSales " + (hasHaving ? "HAVING SUM(a.quantity) - x.qty > 0" : "") + ";";
+                System.out.println(query);
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(query);
+                if(rs.next()){
+                    result = rs.getDouble("quantity");
+                }
+            }
+        }catch (Exception ex){
+            Toast.makeText(activity, "checkOwnInventoryStock() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
         }
         return  result;
     }

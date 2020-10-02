@@ -138,7 +138,7 @@ public class StoreAuditorSelected extends AppCompatActivity {
                         break;
                     case R.id.nav_transferOut2:
                         result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
                         intent.putExtra("title", "Manual Transfer Out");
                         startActivity(intent);
                         finish();
@@ -252,8 +252,8 @@ public class StoreAuditorSelected extends AppCompatActivity {
                         break;
                     case R.id.nav_addsalesinventory:
                         result = true;
-                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
-                        intent.putExtra("title", "Add Sales Inventory");
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Transfer to Sales");
                         startActivity(intent);
                         finish();
                         break;

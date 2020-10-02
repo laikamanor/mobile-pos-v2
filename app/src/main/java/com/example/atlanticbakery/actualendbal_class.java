@@ -327,11 +327,10 @@ public class actualendbal_class {
                         double as = endBal - pullOut;
                         System.out.println("AS: " + as);
                         charge = quantity - as;
-                        System.out.println("charge: " + charge);
                         String query = "Update tblinvitems set endbal-=" + Math.abs(charge) + ", actualendbal=" + quantity + ", variance-=" + charge + ",archarge+=" + Math.abs(charge) + " where itemcode=(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "') and invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC)";
                         Statement stmt = con.createStatement();
                         stmt.executeUpdate(query);
-                        String query2 = "INSERT INTO tblproduction (transaction_number,inv_id,item_code,item_name,category,quantity,charge,date,processed_by,type,area,status,remarks) VALUES ('" + transNum + "',(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC),(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "',(SELECT category FROM tblitems WHERE itemname='" + itemName + "')," + quantity + "," + charge + ",(SELECT GETDATE()),(SELECT TOP 1 username FROM tblusers WHERE systemid=" + userid + "),'Actual Ending Balance', 'Sales', 'Completed','');";
+                        String query2 = "INSERT INTO tblproduction (transaction_number,inv_id,item_code,item_name,category,quantity,charge,date,processed_by,type,area,status,remarks) VALUES ('" + transNum + "',(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC),(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "',(SELECT category FROM tblitems WHERE itemname='" + itemName + "')," + quantity + "," + Math.abs(charge) + ",(SELECT GETDATE()),(SELECT TOP 1 username FROM tblusers WHERE systemid=" + userid + "),'Actual Ending Balance', 'Sales', 'Completed','');";
                         Statement stmt2 = con.createStatement();
                         stmt2.executeUpdate(query2);
                         charge = Math.abs(charge);

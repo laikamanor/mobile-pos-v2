@@ -48,6 +48,7 @@ public class ItemInfo extends AppCompatActivity {
     prefs_class pc = new prefs_class();
     item_class itemc = new item_class();
     user_class uc = new user_class();
+    received_class rc = new received_class();
     actualendbal_class ac = new actualendbal_class();
     receivedsap_class recsap = new receivedsap_class();
 
@@ -58,6 +59,7 @@ public class ItemInfo extends AppCompatActivity {
     DatabaseHelper5 myDb5;
 
     DecimalFormat df = new DecimalFormat("#,###.##");
+    String inv_type,trans_type;
     @SuppressLint({"CutPasteId", "SetTextI18n"})
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -88,8 +90,9 @@ public class ItemInfo extends AppCompatActivity {
         final String title = getIntent().getStringExtra("title");
         itemName = getIntent().getStringExtra("itemname");
         received_quantity = getIntent().getStringExtra("quantity");
-
-
+        inv_type = getIntent().getStringExtra("inventory_type");
+        trans_type = getIntent().getStringExtra("transfer_type");
+        System.out.println("Inventory Type: " + inv_type);
         Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
 
         navigationView = findViewById(R.id.nav);
@@ -161,7 +164,7 @@ public class ItemInfo extends AppCompatActivity {
                         break;
                     case R.id.nav_transferOut2:
                         result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
                         intent.putExtra("title", "Manual Transfer Out");
                         startActivity(intent);
                         finish();
@@ -275,8 +278,8 @@ public class ItemInfo extends AppCompatActivity {
                         break;
                     case R.id.nav_addsalesinventory:
                         result = true;
-                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
-                        intent.putExtra("title", "Add Sales Inventory");
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Transfer to Sales");
                         startActivity(intent);
                         finish();
                         break;
@@ -559,14 +562,26 @@ public class ItemInfo extends AppCompatActivity {
                 }else{
                     quantity = Integer.parseInt(txtQuantity.getText().toString());
                 }
+                SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+                int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
                 boolean hasStock = itemc.checkItemNameStock(ItemInfo.this, itemName, Double.parseDouble(String.valueOf(quantity)));
+                boolean hasHaving = (trans_type != null && trans_type.equals("Transfer from Sales"));
+                double OwnStockQuantity = rc.checkOwnInventoryStock(ItemInfo.this, "Transfer to Sales",userID, itemName,hasHaving);
                 if (!isItemNameExist) {
                     Toast.makeText(ItemInfo.this, "item not found", Toast.LENGTH_SHORT).show();
                 }else if(quantity <=0 && !title.equals("AC Store Count List Items") && !title.equals("AC Auditor Count List Items") && !title.equals("PO Store Count List Items") && !title.equals("PO Auditor Count List Items")){
                     Toast.makeText(ItemInfo.this, "Add Quantity atleast 1", Toast.LENGTH_SHORT).show();
-                }else if(!hasStock && title.equals("Menu Items")) {
+                }else if(!hasStock && title.equals("Menu Items") && inv_type != null && inv_type.equals("Main Inventory")) {
                     Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                }else if(!hasStock && title.equals("Manual Transfer Out")) {
+                }else if(OwnStockQuantity <= 0 && title.equals("Menu Items") && inv_type != null && inv_type.equals("Own Inventory")) {
+                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                }else if(OwnStockQuantity < quantity && title.equals("Menu Items") && inv_type != null && inv_type.equals("Own Inventory")) {
+                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                }else if(!hasStock && title.equals("Manual Transfer Out") && trans_type.equals("Transfer to Other Branch")) {
+                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                }else if(OwnStockQuantity <= 0 && trans_type != null && trans_type.equals("Transfer from Sales")) {
+                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                }else if(OwnStockQuantity < quantity && trans_type != null && trans_type.equals("Transfer from Sales")) {
                     Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
                 }else{
                     saveData();
@@ -584,13 +599,14 @@ public class ItemInfo extends AppCompatActivity {
         String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
         if(title.equals("Received from SAP")){
             intent = new Intent(getBaseContext(), ReceivedSap.class);
-        }else if(title.equals("Add Sales Inventory")){
-            intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
         }else{
             intent = new Intent(getBaseContext(), AvailableItems.class);
+            intent.putExtra("transfer_type", trans_type);
+            intent.putExtra("inventory_type", inv_type);
         }
         intent.putExtra("title", title);
         startActivity(intent);
+        finish();
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -625,25 +641,22 @@ public class ItemInfo extends AppCompatActivity {
             String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
             boolean isInserted;
             if(title.equals("Menu Items")) {
-                isInserted = myDb.insertData(quantity2, discountPercent, price, free, totalPrice, itemName);
+                isInserted = myDb.insertData(quantity2, discountPercent, price, free, totalPrice, itemName,inv_type);
             }else if(title.equals("Received from SAP")){
                 int id = getIntent().getIntExtra("id",0);
                 isInserted = myDb3.updateSelected(Integer.toString(id),1, quantity2);
-            }else if(title.equals("AC Auditor Count List Items") || title.equals("AC Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Store Count List Items")){
+            }else if(title.equals("AC Auditor Count List Items") || title.equals("AC Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Store Count List Items")) {
                 String type = "";
-                if(title.equals("AC Auditor Count List Items")){
+                if (title.equals("AC Auditor Count List Items")) {
                     type = "Auditor Count";
-                }else if(title.equals("AC Store Count List Items")){
+                } else if (title.equals("AC Store Count List Items")) {
                     type = "Store Count";
-                }else if(title.equals("PO Auditor Count List Items")){
+                } else if (title.equals("PO Auditor Count List Items")) {
                     type = "PO Auditor Count";
-                }else if(title.equals("PO Store Count List Items")){
+                } else if (title.equals("PO Store Count List Items")) {
                     type = "PO Store Count";
                 }
-                System.out.println("TYPE: " + type);
-                isInserted = myDb4.insertData(itemName, Double.parseDouble(String.valueOf(quantity)), type,1);
-            }else if(title.equals("Add Sales Inventory")){
-                isInserted = myDb5.insertData(itemName,quantity2);
+                isInserted = myDb4.insertData(itemName, Double.parseDouble(String.valueOf(quantity)), type, 1);
             }else {
                 isInserted = myDb2.insertData(itemName, quantity, title);
             }

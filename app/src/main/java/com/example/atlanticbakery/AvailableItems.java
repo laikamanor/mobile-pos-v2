@@ -17,8 +17,11 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -33,6 +36,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import com.google.android.material.internal.DescendantOffsetUtils;
 import com.google.android.material.navigation.NavigationView;
 
 import java.sql.Connection;
@@ -67,6 +71,11 @@ public class AvailableItems extends AppCompatActivity {
     private ActionBarDrawerToggle toggle;
     NavigationView navigationView;
 
+    String transfer_type;
+    String inventory_type;
+    String title;
+    int userID;
+    @SuppressLint("SetTextI18n")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,9 +88,14 @@ public class AvailableItems extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
 
-        final String title = getIntent().getStringExtra("title");
-        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
+        title = getIntent().getStringExtra("title");
+        System.out.println("TITLE: " + title);
+        inventory_type = getIntent().getStringExtra("inventory_type");
+        transfer_type = getIntent().getStringExtra("transfer_type");
+        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+        userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
 
+        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
         navigationView = findViewById(R.id.nav);
         drawerLayout = findViewById(R.id.navDrawer);
         toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
@@ -151,17 +165,17 @@ public class AvailableItems extends AppCompatActivity {
                         break;
                     case R.id.nav_transferOut2:
                         result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
-                        intent.putExtra("title", "Manual Transfer Out ");
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Manual Transfer Out");
                         startActivity(intent);
                         finish();
                         break;
                     case R.id.nav_storeCountListPullOut:
-                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        if (isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStorePullOutExist) {
+                        } else if (isStorePullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
-                        }else{
+                        } else {
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
                             intent.putExtra("title", "PO Store Count List Items");
@@ -170,11 +184,11 @@ public class AvailableItems extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_auditorCountListPullOut:
-                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        if (isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorPullOutExist) {
+                        } else if (isAuditorPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
-                        }else{
+                        } else {
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
                             intent.putExtra("title", "PO Auditor Count List Items");
@@ -183,13 +197,13 @@ public class AvailableItems extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_finalCountListPullOut:
-                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        if (isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
+                        } else if (!isAuditorPullOutExist & !isStorePullOutExist) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
-                        }else if(!uc.returnWorkgroup(AvailableItems.this).equals("Manager")){
+                        } else if (!uc.returnWorkgroup(AvailableItems.this).equals("Manager")) {
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                        }else {
+                        } else {
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
                             intent.putExtra("title", "PO Final Count List Items");
@@ -198,11 +212,11 @@ public class AvailableItems extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_storeCountList:
-                        if(isAuditorExist && isStoreExist && isFinalExist){
+                        if (isAuditorExist && isStoreExist && isFinalExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStoreExist) {
+                        } else if (isStoreExist) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
-                        }else{
+                        } else {
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
                             intent.putExtra("title", "AC Store Count List Items");
@@ -211,11 +225,11 @@ public class AvailableItems extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_auditorCountList:
-                        if(isAuditorExist && isStoreExist && isFinalExist){
+                        if (isAuditorExist && isStoreExist && isFinalExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorExist) {
+                        } else if (isAuditorExist) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
-                        }else{
+                        } else {
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
                             intent.putExtra("title", "AC Auditor Count List Items");
@@ -224,13 +238,13 @@ public class AvailableItems extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_finalCountList:
-                        if(isAuditorExist && isStoreExist && isFinalExist){
+                        if (isAuditorExist && isStoreExist && isFinalExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorExist & !isStoreExist) {
+                        } else if (!isAuditorExist & !isStoreExist) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
-                        }else if(!uc.returnWorkgroup(AvailableItems.this).equals("Manager")){
+                        } else if (!uc.returnWorkgroup(AvailableItems.this).equals("Manager")) {
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                        }else {
+                        } else {
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
                             intent.putExtra("title", "AC Final Count List Items");
@@ -265,8 +279,8 @@ public class AvailableItems extends AppCompatActivity {
                         break;
                     case R.id.nav_addsalesinventory:
                         result = true;
-                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
-                        intent.putExtra("title", "Add Sales Inventory");
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Transfer to Sales");
                         startActivity(intent);
                         finish();
                         break;
@@ -283,20 +297,212 @@ public class AvailableItems extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String search = txtSearch.getText().toString();
-                if(title.equals("AC Store Count List Items") || title.equals("AC Auditor Count List Items") || title.equals("AC Final Count List Items") || title.equals("PO Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Final Count List Items")){
+                if (title.equals("AC Store Count List Items") || title.equals("AC Auditor Count List Items") || title.equals("AC Final Count List Items") || title.equals("PO Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Final Count List Items")) {
                     loadActualEndingBalance(search);
-                }else{
+                } else {
                     loadData(search);
                 }
             }
         });
 
-        if(title.equals("AC Store Count List Items") || title.equals("AC Auditor Count List Items") || title.equals("AC Final Count List Items")|| title.equals("PO Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Final Count List Items")){
+        if (title.equals("AC Store Count List Items") || title.equals("AC Auditor Count List Items") || title.equals("AC Final Count List Items") || title.equals("PO Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Final Count List Items")) {
             loadActualEndingBalance("");
-        }else{
-            loadData("");
+        } else {
+            if(title.equals("Manual Transfer Out") && inventory_type == null){
+                final LinearLayout layout = new LinearLayout(getBaseContext());
+                layout.setPadding(40, 40, 40, 40);
+                layout.setOrientation(LinearLayout.VERTICAL);
+                RadioGroup rbGroup = new RadioGroup(getBaseContext());
+                final RadioButton rbMainInventory = new RadioButton(getBaseContext());
+                rbMainInventory.setText("Main Inventory");
+
+                final RadioButton rbOwnInventory = new RadioButton(getBaseContext());
+                rbOwnInventory.setText("Own Inventory");
+
+                final LinearLayout layout1 = new LinearLayout(getBaseContext());
+                layout1.setBackgroundColor(Color.WHITE);
+                layout1.setOrientation(LinearLayout.VERTICAL);
+                rbMainInventory.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                        if(b){
+                            inventory_type = "Main Inventory";
+                            layout1.setBackgroundColor(Color.parseColor("#c3c3c3"));
+                            layout1.setPadding(40, 40, 40, 40);
+                            layout1.removeAllViews();
+                            RadioGroup rbGroup = new RadioGroup(getBaseContext());
+
+                            final RadioButton rbTransferToSales = new RadioButton(getBaseContext());
+
+                            rbTransferToSales.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                                @Override
+                                public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                                    if(b){
+                                        transfer_type = "Transfer to Sales";
+                                    }
+                                }
+                            });
+
+                            final RadioButton rbTransferBranch = new RadioButton(getBaseContext());
+                            rbTransferBranch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                                @Override
+                                public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                                    if(b){
+                                        transfer_type = "Transfer to Other Branch";
+                                    }
+                                }
+                            });
+
+                            rbTransferToSales.setText("Transfer to Sales");
+                            rbGroup.addView(rbTransferToSales);
+
+                            rbTransferBranch.setText("Transfer to Other Branch");
+                            rbGroup.addView(rbTransferBranch);
+                            layout1.addView(rbGroup);
+                        }
+                    }
+                });
+
+                rbGroup.addView(rbMainInventory);
+
+                rbOwnInventory.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                        if(b){
+                            inventory_type = "Own Inventory";
+                            layout1.setBackgroundColor(Color.parseColor("#c3c3c3"));
+                            layout1.setPadding(40, 40, 40, 40);
+                            layout1.removeAllViews();
+                            RadioGroup rbGroup = new RadioGroup(getBaseContext());
+
+                            RadioButton rbTransferFromSales = new RadioButton(getBaseContext());
+
+                            rbTransferFromSales.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                                @Override
+                                public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                                    transfer_type = "Transfer from Sales";
+                                }
+                            });
+
+                            rbTransferFromSales.setText("Transfer to Main");
+                            rbGroup.addView(rbTransferFromSales);
+
+                            layout1.addView(rbGroup);
+                        }
+                    }
+                });
+
+                rbGroup.addView(rbOwnInventory);
+                layout.addView(rbGroup);
+                layout.addView(layout1);
+
+                final AlertDialog myDialog = new AlertDialog.Builder(this)
+                        .setTitle("Option")
+                        .setCancelable(false)
+                        .setPositiveButton("Submit",null)
+                        .setView(layout)
+                        .show();
+                Button btnPositive = myDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                btnPositive.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if(inventory_type == null || inventory_type.isEmpty()){
+                            Toast.makeText(getBaseContext(), "Please choose to option", Toast.LENGTH_SHORT).show();
+                        }else if(transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer from Sales")){
+                            Toast.makeText(getBaseContext(), "Please choose to option in Main Inventory", Toast.LENGTH_SHORT).show();
+                        }else{
+                            myDialog.dismiss();
+                            loadData("");
+                        }
+                    }
+                });
+
+            }else{
+                if(title.equals("Menu Items") && rc.checkOwnInventory(AvailableItems.this,"Transfer to Sales", userID) > 0 && inventory_type == null){
+                    final LinearLayout layout = new LinearLayout(getBaseContext());
+                    layout.setPadding(40, 40, 40, 40);
+                    layout.setOrientation(LinearLayout.VERTICAL);
+                    RadioGroup rbGroup = new RadioGroup(getBaseContext());
+                    final RadioButton rbMainInventory = new RadioButton(getBaseContext());
+                    rbMainInventory.setText("Main Inventory");
+
+                    rbMainInventory.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                        @Override
+                        public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                            if(b){
+                                inventory_type = "Main Inventory";
+                            }
+                        }
+                    });
+
+                    final RadioButton rbOwnInventory = new RadioButton(getBaseContext());
+                    rbOwnInventory.setText("Own Inventory");
+
+                    rbOwnInventory.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                        @Override
+                        public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                            if(b){
+                                inventory_type = "Own Inventory";
+                            }
+
+                        }
+                    });
+
+                    rbGroup.addView(rbMainInventory);
+                    rbGroup.addView(rbOwnInventory);
+                    layout.addView(rbGroup);
+
+                    final AlertDialog myDialog = new AlertDialog.Builder(this)
+                            .setTitle("Option")
+                            .setCancelable(false)
+                            .setPositiveButton("Submit",null)
+                            .setView(layout)
+                            .show();
+                    Button btnPositive = myDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                    btnPositive.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            if(inventory_type == null || inventory_type.equals("")){
+                                Toast.makeText(getBaseContext(), "Please choose to option", Toast.LENGTH_SHORT).show();
+                            }else if(inventory_type !=  null && !isMainInventoryAllowed() && inventory_type.equals("Main Inventory")){
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }
+                            else{
+                                myDialog.dismiss();
+                                loadData("");
+                            }
+                        }
+                    });
+                }else{
+                    if(inventory_type == null){
+                        inventory_type = "Main Inventory";
+                    }
+                    loadData("");
+                }
+            }
         }
     }
+
+    public boolean isMainInventoryAllowed(){
+        boolean result = false;
+        try {
+            con = cc.connectionClass(AvailableItems.this);
+            if (con == null) {
+                Toast.makeText(this, "loadData() Check Your Internet Access", Toast.LENGTH_SHORT).show();
+            } else {
+                SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+                userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+                String query = "SELECT id FROM tblaccess WHERE userid=" + userID + " AND moduleid=(SELECT id FROM tblmodules WHERE name='Main Inventory')";
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(query);
+                result = (rs.next());
+            }
+        }catch (Exception ex){
+            Toast.makeText(this, "isMainInventoryAllowed() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return result;
+    }
+
     public  void onBtnLogout(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Are you sure want to logout?")
@@ -342,12 +548,10 @@ public class AvailableItems extends AppCompatActivity {
     @SuppressLint("SetTextI18n")
     public void loadData(final String value) {
         String query = "";
-        final String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
         String latestInventoryDate = ic.returnLatestInventoryDate(AvailableItems.this);
-        int userid = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
         switch (title) {
             case "Received from SAP":
-                query = "SELECT DISTINCT ISNULL(a.Dscription,0) [item],SUM(a.Quantity) [quantity] FROM [192.168.30.6].[AKPOS].[dbo].[vSAP_IT] a OUTER APPLY(SELECT DISTINCT ISNULL(b.sap_number,0) [sap_number] FROM tblproduction b WHERE b.sap_number != a.DocNum AND b.sap_number !='To Follow' AND b.status='Completed' AND CAST(b.date AS date)=a.DocDate) x WHERE CAST(a.DocDate AS date)=(select cast(getdate() as date)) AND x.sap_number IS NOT NULL AND a.DocNum=" + Integer.parseInt(value) + " GROUP BY a.Dscription";
+                query = "SELECT DISTINCT ISNULL(a.Dscription,0) [item],SUM(a.Quantity) [quantity] FROM vSAP_IT a OUTER APPLY(SELECT DISTINCT ISNULL(b.sap_number,0) [sap_number] FROM tblproduction b WHERE b.sap_number != a.DocNum AND b.sap_number !='To Follow' AND b.status='Completed' AND CAST(b.date AS date)=a.DocDate) x WHERE CAST(a.DocDate AS date)=(select cast(getdate() as date)) AND x.sap_number IS NOT NULL AND a.DocNum=" + Integer.parseInt(value) + " GROUP BY a.Dscription";
 //                query = "SELECT DISTINCT ISNULL(a.DocNum,0) [item],SUM(a.Quantity) [quantity] FROM [192.168.30.6].[AKPOS].[dbo].[vSAP_IT] a OUTER APPLY(SELECT DISTINCT ISNULL(b.sap_number,0) [sap_number] FROM tblproduction b WHERE b.sap_number != a.DocNum AND b.sap_number !='To Follow' AND b.status='Completed' AND CAST(b.date AS date)=a.DocDate) x WHERE CAST(a.DocDate AS date)=(select cast(getdate() as date)) AND x.sap_number IS NOT NULL " + (value.matches("") ? "" : " AND a.DocNum=" + Integer.parseInt(value)) + " GROUP BY a.DocNum";
                 break;
             case "Manual Received from Production":
@@ -356,13 +560,13 @@ public class AvailableItems extends AppCompatActivity {
                 query = "SELECT a.itemname [item],c.endbal [quantity] FROM funcLoadInventoryItems('" + latestInventoryDate + "','" + value + "','All') a INNER JOIN tblitems b  ON a.itemname = b.itemname INNER JOIN tblinvitems c ON c.itemname = a.itemname WHERE c.invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) ORDER BY c.endbal DESC,a.itemname ASC";
                 break;
             case "Manual Transfer Out":
+            case "Transfer to Sales":
                 query = "SELECT a.itemname [item],c.endbal [quantity] FROM funcLoadStockItems('" + latestInventoryDate + "','" + value + "','All') a INNER JOIN tblitems b ON a.itemname = b.itemname INNER JOIN tblinvitems c ON c.itemname = a.itemname WHERE c.invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC);";
                 break;
             case "Menu Items":
                 query = "SELECT a.itemname [item],a.endbal [quantity] FROM tblinvitems a INNER JOIN tblitems b ON a.itemname = b.itemname WHERE invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND b.status = 1 AND a.status = 1 AND a.itemname LIKE '%" + value + "%' ORDER BY 2 DESC, 1 ASC";
                 break;
         }
-
         GridLayout gridLayout = findViewById(R.id.grid);
         gridLayout.removeAllViews();
         try {
@@ -370,6 +574,13 @@ public class AvailableItems extends AppCompatActivity {
             if (con == null) {
                 Toast.makeText(this, "loadData() Check Your Internet Access", Toast.LENGTH_SHORT).show();
             } else {
+                if(inventory_type != null && inventory_type.equals("Own Inventory") && title.equals("Menu Items")){
+                    query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
+                            "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
+                }else if(transfer_type != null & inventory_type != null && transfer_type.equals("Transfer from Sales") && inventory_type.equals("Own Inventory")){
+                        query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
+                                "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
+                }
                 List<String> items = new ArrayList<>();
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
@@ -396,12 +607,18 @@ public class AvailableItems extends AppCompatActivity {
                         public void onClick(View view) {
                             int endBal = rc.checkStock(AvailableItems.this, item);
                             boolean checkStock = itemc.checkItemNameStock(AvailableItems.this, item,quantity);
+                            boolean hasHaving = (transfer_type != null && transfer_type.equals("Transfer from Sales"));
+                            double OwnStockQuantity = rc.checkOwnInventoryStock(AvailableItems.this, "Transfer to Sales", userID, item, hasHaving);
                             String type = (title.equals("Auditor Count List Items")) ? "Auditor Count" : "Store Count";
-                            if (!checkStock && title.equals("Menu Items")) {
+                            if (endBal <= 0 && title.equals("Menu Items") && inventory_type.equals("Main Inventory")) {
                                 Toast.makeText(AvailableItems.this, "'" + item + "' is not available", Toast.LENGTH_SHORT).show();
-                            } else if (endBal <= 0 && title.equals("Menu Items")) {
+                            } else if (OwnStockQuantity <= 0 && title.equals("Menu Items") && inventory_type.equals("Own Inventory")) {
                                 Toast.makeText(AvailableItems.this, "'" + item + "' is not available", Toast.LENGTH_SHORT).show();
-                            } else if (endBal <= 0 && title.equals("Manual Transfer Out")) {
+                            } else if (OwnStockQuantity < quantity && title.equals("Menu Items") && inventory_type.equals("Own Inventory")) {
+                                Toast.makeText(AvailableItems.this, "'" + item + "' is not available", Toast.LENGTH_SHORT).show();
+                            } else if (OwnStockQuantity <= 0 && transfer_type != null && transfer_type.equals("Transfer from Sales")) {
+                                Toast.makeText(AvailableItems.this, "'" + item + "' is not available", Toast.LENGTH_SHORT).show();
+                            }else if (endBal <= 0 && title.equals("Manual Transfer Out") && transfer_type == "Transfer to Other Branch") {
                                 Toast.makeText(AvailableItems.this, "'" + item + "' is not available", Toast.LENGTH_SHORT).show();
                             } else if (title.equals("Auditor Count List Items") && myDb4.checkItem(item, type)) {
                                 Toast.makeText(AvailableItems.this, "'" + item + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
@@ -417,6 +634,8 @@ public class AvailableItems extends AppCompatActivity {
                                 intent.putExtra("sapNumber", value);
                                 intent.putExtra("quantity", Double.toString(quantity));
                                 intent.putExtra("fromBranch", "");
+                                intent.putExtra("inventory_type", inventory_type);
+                                intent.putExtra("transfer_type", transfer_type);
                                 startActivity(intent);
                             }
                         }
@@ -499,6 +718,10 @@ public class AvailableItems extends AppCompatActivity {
                         }
                     }
                 });
+
+                if(gridLayout.getChildCount() <= 0){
+                    Toast.makeText(getBaseContext(), "No Item Found", Toast.LENGTH_SHORT).show();
+                }
 
             }
         } catch (Exception ex) {
@@ -626,22 +849,19 @@ public class AvailableItems extends AppCompatActivity {
                 }
 
                 Cursor cursor = myDb4.getAllWhereItem(type, item_name);
-                if (cursor.moveToNext() && quantity > 0) {
+                if (cursor.moveToNext()) {
                     linearLayout.setBackgroundColor(Color.RED);
                     txtItemName.setTextColor(Color.WHITE);
                     txtItemLeft.setTextColor(Color.WHITE);
-                }else if(!cursor.moveToNext() && quantity > 0){
+                }else if(!cursor.moveToNext()){
                     linearLayout.setBackgroundResource(R.color.colorPrimary);
                     txtItemName.setTextColor(Color.WHITE);
                     txtItemLeft.setTextColor(Color.WHITE);
-                }else {
-                    linearLayout.setBackgroundColor(Color.WHITE);
-                    txtItemName.setTextColor(Color.BLACK);
-                    txtItemLeft.setTextColor(Color.BLACK);
                 }
 
                 if(quantity == 0){
                     linearLayout.setBackgroundColor(Color.parseColor("#545454"));
+//                    linearLayout.setBackgroundColor(Color.BLACK);
                     txtItemName.setTextColor(Color.WHITE);
                     txtItemLeft.setTextColor(Color.WHITE);
                 }
@@ -703,6 +923,7 @@ public class AvailableItems extends AppCompatActivity {
         }else {
             Intent intent;
             intent = new Intent(getBaseContext(), Received.class);
+            intent.putExtra("transfer_type", transfer_type);
             intent.putExtra("title", title);
             startActivity(intent);
         }

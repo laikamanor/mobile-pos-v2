@@ -10,22 +10,22 @@ import android.database.sqlite.SQLiteOpenHelper;
 import androidx.annotation.Nullable;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
-    public  static  final String DATABASE_NAME = "QWE.db";
-    public  static  final String TABLE_NAME = "qwe";
+    public  static  final String DATABASE_NAME = "ghj.db";
+    public  static  final String TABLE_NAME = "ghj";
     public  static  final String COL_2 = "itemname";
     public  static  final String COL_3 = "price";
     public  static  final String COL_4 = "quantity";
     public  static  final String COL_5 = "discountpercent";
     public  static  final String COL_6 = "totalprice";
     public  static  final String COL_7 = "free";
-
+    public  static  final String COL_8 = "inventory_type";
     public DatabaseHelper(@Nullable Context context) {
         super(context, DATABASE_NAME, null, 1);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table " + TABLE_NAME + "(id INTEGER PRIMARY KEY AUTOINCREMENT,itemname TEXT, quantity FLOAT,price FLOAT, discountpercent FLOAT, totalprice FLOAT, free INTEGER)");
+        db.execSQL("create table " + TABLE_NAME + "(id INTEGER PRIMARY KEY AUTOINCREMENT,itemname TEXT, quantity FLOAT,price FLOAT, discountpercent FLOAT, totalprice FLOAT, free INTEGER,inventory_type TEXT)");
     }
 
     @Override
@@ -34,7 +34,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public boolean insertData(Double quantity, Double discountpercent, Double price, Integer free,Double totalprice, String item_name){
+    public boolean insertData(Double quantity, Double discountpercent, Double price, Integer free,Double totalprice, String item_name,String inv_type){
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COL_2, item_name);
@@ -43,6 +43,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         contentValues.put(COL_5, discountpercent);
         contentValues.put(COL_6, totalprice);
         contentValues.put(COL_7, free);
+        contentValues.put(COL_8, inv_type);
         long resultQuery = db.insert(TABLE_NAME,null, contentValues);
         boolean result;
         result = resultQuery != -1;

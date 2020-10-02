@@ -13,5 +13,4 @@
         app:menu="@menu/drawmenu"
         android:layout_gravity="start">
     </com.google.android.material.navigation.NavigationView>
-
 </androidx.drawerlayout.widget.DrawerLayout>

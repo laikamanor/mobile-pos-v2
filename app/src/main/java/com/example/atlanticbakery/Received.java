@@ -16,12 +16,12 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -54,6 +54,7 @@ public class Received extends AppCompatActivity {
     received_class rc = new received_class();
     receivedsap_class recsap = new receivedsap_class();
     user_class uc = new user_class();
+    String transfer_type;
 
     DecimalFormat df = new DecimalFormat("#,###");
     long mLastClickTime = 0;
@@ -77,6 +78,8 @@ public class Received extends AppCompatActivity {
         myDb5 = new DatabaseHelper5(this);
 
         title = getIntent().getStringExtra("title");
+        transfer_type = getIntent().getStringExtra("transfer_type");
+        System.out.println(transfer_type);
         Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
 
         navigationView = findViewById(R.id.nav);
@@ -147,7 +150,7 @@ public class Received extends AppCompatActivity {
                         break;
                     case R.id.nav_transferOut2:
                         result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
                         intent.putExtra("title", "Manual Transfer Out");
                         startActivity(intent);
                         finish();
@@ -261,8 +264,8 @@ public class Received extends AppCompatActivity {
                         break;
                     case R.id.nav_addsalesinventory:
                         result = true;
-                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
-                        intent.putExtra("title", "Add Sales Inventory");
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Transfer to Sales");
                         startActivity(intent);
                         finish();
                         break;
@@ -279,85 +282,13 @@ public class Received extends AppCompatActivity {
         btnProceed.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (title.equals("Add Sales Inventory")) {
-                    final AlertDialog.Builder myDialog = new AlertDialog.Builder(Received.this);
-                    myDialog.setCancelable(false);
-                    myDialog.setTitle("Confirmation");
-                    LinearLayout layout = new LinearLayout(Received.this);
-                    layout.setPadding(40, 15, 40, 0);
-                    layout.setOrientation(LinearLayout.VERTICAL);
-
-                    TextView lblBranch = new TextView(getBaseContext());
-                    lblBranch.setText("Sales Agent:");
-                    lblBranch.setTextSize(15);
-                    lblBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    layout.addView(lblBranch);
-
-                    final Spinner cmbUsernames = new Spinner(getBaseContext());
-                    List<String> usernames = uc.returnUsernames(Received.this);
-
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, usernames);
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    cmbUsernames.setAdapter(adapter);
-                    layout.addView(cmbUsernames);
-
-                    myDialog.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            int isSuccess_int = 0;
-                            try {
-                                con = cc.connectionClass(Received.this);
-                                if (con == null) {
-                                    Toast.makeText(getBaseContext(), "Check Your Internet Access", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    if(cmbUsernames.getSelectedItemPosition() == 0){
-                                        Toast.makeText(getBaseContext(), "Select Sales Agent first", Toast.LENGTH_SHORT).show();
-                                    }else{
-                                        Cursor cursor = myDb5.getAllData();
-                                        if (cursor != null) {
-                                            String username = cmbUsernames.getSelectedItem().toString();
-                                            SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
-                                            int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
-                                            while (cursor.moveToNext()) {
-                                                String itemname = cursor.getString(1);
-                                                double quantity = cursor.getDouble(2);
-                                                String query2 = "INSERT INTO tblsalesinventory (invnum,itemname,received_qty,ctrout,archarge,arsales,endbal,actualendbal,salesname,createdby,datecreated,status) VALUES((SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC),'" + itemname + "'," + quantity + ",0,0,0," + quantity + ",0,'" + username + "', (SELECT username FROM tblusers WHERE systemid=" + userID + "),(SELECT GETDATE()), 1)";
-                                                Statement stmt2 = con.createStatement();
-                                                stmt2.executeUpdate(query2);
-                                                isSuccess_int += 1;
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch (Exception ex) {
-                                isSuccess_int = 0;
-                                Toast.makeText(getBaseContext(), "salesInventory() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                            if (isSuccess_int > 0) {
-                                myDb5.truncateTable();
-                                Toast.makeText(getBaseContext(), "Transaction Completed", Toast.LENGTH_SHORT).show();
-                                startActivity(getIntent());
-                                finish();
-                            }
-                        }
-                    });
-
-                    myDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            dialogInterface.dismiss();
-                        }
-                    });
-                    myDialog.setView(layout);
-                    myDialog.show();
-                } else {
-                    wholeInventory();
-                }
+                wholeInventory();
             }
         });
     }
 
     public void wholeInventory(){
+        final String[] selectedSpinner = new String[1];
         final AlertDialog.Builder myDialog = new AlertDialog.Builder(Received.this);
         myDialog.setCancelable(false);
         LinearLayout layout = new LinearLayout(Received.this);
@@ -368,31 +299,55 @@ public class Received extends AppCompatActivity {
         assert title != null;
         if(title.equals("Manual Received from Direct Supplier")){
             lblBranchText = "Supplier";
-        }else if(title.equals("Manual Transfer Out") ||title.equals("Manual Received from Other Branch")){
+        }else if(transfer_type != null && transfer_type.equals("Manual Transfer Out") ||title.equals("Manual Received from Other Branch")){
             lblBranchText = "Branch";
+        }else if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
+            lblBranchText = "Sales Agent";
+        }else if(transfer_type != null && transfer_type.equals("Transfer from Sales")){
+            lblBranchText = "Main Branch";
         }
+
 
         TextView lblBranch = new TextView(Received.this);
         final Spinner cmbDiscountType = new Spinner(Received.this);
-        if(title.equals("Transfer Out") || title.equals("Manual Received from Direct Supplier")|| title.equals("Manual Received from Other Branch")){
-            lblBranch.setText(lblBranchText + ":");
-            lblBranch.setTextSize(15);
-            lblBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
-            layout.addView(lblBranch);
-            layout.addView(cmbDiscountType);
+        if(transfer_type != null){
+            if(transfer_type.equals("Transfer Out") || title.equals("Manual Received from Direct Supplier")|| title.equals("Manual Received from Other Branch") || transfer_type.equals("Transfer to Sales") || transfer_type.equals("Transfer from Sales")){
+                lblBranch.setText(lblBranchText + ":");
+                lblBranch.setTextSize(15);
+                lblBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                layout.addView(lblBranch);
+                layout.addView(cmbDiscountType);
+
+                List<String> discounts = rc.returnBranchSupplier(Received.this, lblBranchText);
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(Received.this, android.R.layout.simple_spinner_item, discounts);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                cmbDiscountType.setAdapter(adapter);
+            }
         }
 
-        List<String> discounts = rc.returnBranchSupplier(Received.this, lblBranchText);
+        cmbDiscountType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+               selectedSpinner[0] = cmbDiscountType.getSelectedItem().toString();
+            }
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(Received.this, android.R.layout.simple_spinner_item, discounts);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        cmbDiscountType.setAdapter(adapter);
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
 
         TextView lblSAPNumber1 = new TextView(Received.this);
         lblSAPNumber1.setText("SAP #:");
         lblSAPNumber1.setTextSize(15);
         lblSAPNumber1.setGravity(View.TEXT_ALIGNMENT_CENTER);
-        layout.addView(lblSAPNumber1);
+
+        if(transfer_type != null && !transfer_type.equals("Transfer to Sales")){
+            if(transfer_type != null && !transfer_type.equals("Transfer from Sales")){
+                layout.addView(lblSAPNumber1);
+            }
+        }
+
         final EditText txtSAPNumber = new EditText(Received.this);
         final CheckBox toFollow = new CheckBox(Received.this);
         final CheckBox chckAddSAP = new CheckBox(Received.this);
@@ -429,7 +384,11 @@ public class Received extends AppCompatActivity {
                 txtSAPNumber.setText("");
             }
         });
-        layout.addView(toFollow);
+        if(transfer_type != null && !transfer_type.equals("Transfer to Sales")){
+            if(transfer_type != null && !transfer_type.equals("Transfer from Sales")) {
+                layout.addView(toFollow);
+            }
+        }
 
         txtSAPNumber.setTextSize(15);
         txtSAPNumber.setGravity(View.TEXT_ALIGNMENT_CENTER);
@@ -437,7 +396,11 @@ public class Received extends AppCompatActivity {
         InputFilter[] fArray = new InputFilter[1];
         fArray[0] = new InputFilter.LengthFilter(6);
         txtSAPNumber.setFilters(fArray);
-        layout.addView(txtSAPNumber);
+        if(transfer_type != null && !transfer_type.equals("Transfer to Sales")) {
+            if (transfer_type != null && !transfer_type.equals("Transfer from Sales")) {
+                layout.addView(txtSAPNumber);
+            }
+        }
 
         TextView lblRemarks = new TextView(Received.this);
         lblRemarks.setText("Remarks:");
@@ -449,8 +412,6 @@ public class Received extends AppCompatActivity {
         txtRemarks.setTextSize(15);
         txtRemarks.setGravity(View.TEXT_ALIGNMENT_CENTER);
         layout.addView(txtRemarks);
-
-        final String finalLblBranchText = lblBranchText;
         myDialog.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
@@ -459,8 +420,8 @@ public class Received extends AppCompatActivity {
                     Toast.makeText(Received.this, "SAP # field is empty", Toast.LENGTH_SHORT).show();
                 }else if(!toFollow.isChecked() && txtSAPNumber.getText().toString().length() < 6 && chckAddSAP.isChecked()){
                     Toast.makeText(Received.this, "SAP # should 6 numbers", Toast.LENGTH_SHORT).show();
-                }else if(cmbDiscountType.getSelectedItemPosition() == 0 && !finalLblBranchText.equals("")){
-                    Toast.makeText(Received.this,  finalLblBranchText + " field is empty", Toast.LENGTH_SHORT).show();
+                }else if(cmbDiscountType.getSelectedItemPosition() == 0 && !selectedSpinner[0].equals("")){
+                    Toast.makeText(Received.this,  selectedSpinner[0] + " field is empty", Toast.LENGTH_SHORT).show();
                 }else if(txtRemarks.getText().toString().equals("")){
                     Toast.makeText(Received.this, "Remarks field is empty", Toast.LENGTH_SHORT).show();
                 }else {
@@ -493,17 +454,25 @@ public class Received extends AppCompatActivity {
                             columnName = "transfer";
                             operator = "-";
                             break;
+                        case "Transfer to Sales":
+                            columnName = "salesout";
+                            operator = "-";
+                            break;
+                    }
+                    if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
+                        columnName = "salesout";
+                        operator = "-";
+                    }else if(transfer_type != null &&  transfer_type.equals("Transfer from Sales")){
+                        columnName = "salesin";
+                        operator = "+";
                     }
                     String sapNumber;
                     if(toFollow.isChecked()){
                         sapNumber = "To Follow";
-                        System.out.println("psok");
                     }else{
                         sapNumber = txtSAPNumber.getText().toString();
-                        System.out.println("wag pasok");
                     }
-                    System.out.println("SAP: " + sapNumber);
-                    saveDataRec(operator, columnName,sapNumber, remarks,finalLblBranchText);
+                    saveDataRec(operator, columnName,sapNumber, remarks,selectedSpinner[0]);
                 }
             }
         });
@@ -564,7 +533,15 @@ public class Received extends AppCompatActivity {
     public void saveDataRec(String operator, String columnName, String sapNumber, String remarks,String selectedBranch) {
         try {
             String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
-            String transactionNumber = rc.returnTransactionNumber(Received.this,title,columnName);
+            String transnumTitle;
+            if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
+                transnumTitle = "Transfer to Sales";
+            }else if(transfer_type != null && transfer_type.equals("Transfer from Sales")){
+                transnumTitle = "Transfer from Sales";
+            }else{
+                transnumTitle = title;
+            }
+            String transactionNumber = rc.returnTransactionNumber(Received.this,transnumTitle,columnName);
             con = cc.connectionClass(this);
             if (con == null) {
                 Toast.makeText(this, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
@@ -578,8 +555,8 @@ public class Received extends AppCompatActivity {
                         quantity = cursor.getDouble(2);
                         itemName = cursor.getString(1);
 
-
                         String query1 = "UPDATE tblinvitems SET " + columnName + "+=" + quantity + (operator.equals("+") ? ",totalav+=" + quantity : "") + ",endbal" + operator + "=" + quantity + ",variance" + (operator.equals("+") ? "-" : "+") + "=" + quantity + " WHERE itemname='" + itemName + "' AND invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND area='Sales';";
+                        System.out.println("query1: \n" + query1);
                         Statement stmt = con.createStatement();
                         stmt.executeUpdate(query1);
 
@@ -592,6 +569,7 @@ public class Received extends AppCompatActivity {
                                 type = "Adjustment Item";
                                 break;
                             case "Manual Transfer Out":
+                            case "Transfer to Sales":
                                 type = "Transfer Item";
                                 break;
                             case ("Manual Adjustment Out"):
@@ -601,10 +579,31 @@ public class Received extends AppCompatActivity {
                                 type = "Received Item";
                                 break;
                         }
-                        String fromBranch = (!selectedBranch.equals("") ? "'" + selectedBranch + "'" : "");
+                        if(transfer_type != null &&  transfer_type.equals("Transfer to Sales")){
+                            type = "Transfer Item";
+                        }else if(transfer_type != null &&  transfer_type.equals("Transfer from Sales")){
+                            type = "Received Item";
+                        }
+                        String fromBranch = (selectedBranch != null && !selectedBranch.equals("") ? "'" + selectedBranch + "'" : "");
                         String sapdoc = (title.equals("Manual Received from Direct Supplier") ? "GRPO" : "IT");
-
-                        String query2 = "INSERT INTO tblproduction (transaction_number,inv_id,item_code,item_name,category,quantity,reject,charge,sap_number,remarks,date,processed_by,type,area,status,transfer_from,transfer_to,typenum,type2) VALUES ('" + transactionNumber + "',(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC),(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "',(SELECT category FROM tblitems WHERE itemname='" + itemName + "')," + quantity + ",0,0,'" + sapNumber + "','" + remarks + "',(SELECT GETDATE()),'" + procby + "','" + type + "','Sales','Completed'," + (fromBranch.equals("") ? "(SELECT branchcode + ' (SLS)' FROM tblbranch WHERE main='1')" : fromBranch ) + ",(SELECT branchcode + '" + (columnName.equals("pullout") ? " (PRD)" : " (SLS)") + "' FROM tblbranch WHERE main='1'),'" + sapdoc + "','" + title.replace("Manual ", "") + "');";
+                        String type2;
+                        if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
+                            type2 = "Transfer to Sales";
+                        }else if(transfer_type != null && transfer_type.equals("Transfer from Sales")){
+                            type2 = "Transfer from Sales";
+                        }else{
+                           type2 = title.replace("Manual ", "");
+                        }
+                        if(transfer_type != null &&  transfer_type.equals("Transfer from Sales")){
+                            int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+                            fromBranch = "(SELECT username FROM tblusers WHERE systemid=" + userID + ")";
+                        }
+                        if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
+                            sapdoc = "";
+                        }else if(transfer_type != null && transfer_type.equals("Transfer from Sales")){
+                            sapdoc = "";
+                        }
+                        String query2 = "INSERT INTO tblproduction (transaction_number,inv_id,item_code,item_name,category,quantity,reject,charge,sap_number,remarks,date,processed_by,type,area,status,transfer_from,transfer_to,typenum,type2) VALUES ('" + transactionNumber + "',(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC),(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "',(SELECT category FROM tblitems WHERE itemname='" + itemName + "')," + quantity + ",0,0,'" + sapNumber + "','" + remarks + "',(SELECT GETDATE()),'" + procby + "','" + type + "','Sales','Completed'," + (fromBranch.equals("") ? "(SELECT branchcode + ' (SLS)' FROM tblbranch WHERE main='1')" : fromBranch ) + ",(SELECT branchcode + '" + (columnName.equals("pullout") ? " (PRD)" : " (SLS)") + "' FROM tblbranch WHERE main='1'),'" + sapdoc + "','" + type2  + "');";
                         Statement stmt2 = con.createStatement();
                         stmt2.executeUpdate(query2);
                     }
@@ -614,7 +613,8 @@ public class Received extends AppCompatActivity {
                 }
             }
         } catch (Exception ex) {
-            Toast.makeText(this, "saveData() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "saveData() " + ex, Toast.LENGTH_SHORT).show();
+            ex.printStackTrace();
         }
     }
 
@@ -644,11 +644,7 @@ public class Received extends AppCompatActivity {
         final String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
 
         int count = 0;
-        if(title.equals("Add Sales Inventory")){
-            count = myDb5.countItems();
-        }else{
             count = myDb2.countItems(title);
-        }
         LinearLayout layout = findViewById(R.id.layoutNoItems);
         if(count == 0) {
             layout.setVisibility(View.VISIBLE);
@@ -661,11 +657,7 @@ public class Received extends AppCompatActivity {
                     }
                     mLastClickTime = SystemClock.elapsedRealtime();
                     Intent intent;
-                    if(title.equals("Add Sales Inventory")){
-                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
-                    }else{
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                    }
+                    intent = new Intent(getBaseContext(), AvailableItems.class);
                     intent.putExtra("title", title);
                     startActivity(intent);
                 }
@@ -689,11 +681,7 @@ public class Received extends AppCompatActivity {
                 tableColumn.addView(lblColumn1);
             }
             tableLayout.addView(tableColumn);
-            if(title.equals("Add Sales Inventory")){
-                cursor = myDb5.getAllData();
-            }else{
-                cursor = myDb2.getAllData(title);
-            }
+            cursor = myDb2.getAllData(title);
 
             if(cursor != null){
                 while (cursor.moveToNext()) {
@@ -727,11 +715,7 @@ public class Received extends AppCompatActivity {
                         @Override
                         public void onClick(View view) {
                             int deletedItem;
-                            if(title.equals("Add Sales Inventory")){
-                                deletedItem = myDb5.deleteData(Integer.toString(id));
-                            }else{
-                                deletedItem = myDb2.deleteData(Integer.toString(id));
-                            }
+                            deletedItem = myDb2.deleteData(Integer.toString(id));
                             if (deletedItem < 0) {
                                 Toast.makeText(Received.this, "Item not remove", Toast.LENGTH_SHORT).show();
                             } else {

@@ -133,7 +133,7 @@ public class UpdateActualEndingBalance extends AppCompatActivity {
                         break;
                     case R.id.nav_transferOut2:
                         result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
                         intent.putExtra("title", "Manual Transfer Out");
                         startActivity(intent);
                         finish();
@@ -247,8 +247,8 @@ public class UpdateActualEndingBalance extends AppCompatActivity {
                         break;
                     case R.id.nav_addsalesinventory:
                         result = true;
-                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
-                        intent.putExtra("title", "Add Sales Inventory");
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Transfer to Sales");
                         startActivity(intent);
                         finish();
                         break;
@@ -485,11 +485,11 @@ public class UpdateActualEndingBalance extends AppCompatActivity {
             lblColumn5.setPadding(10, 10, 10, 10);
             lblColumn5.setTextSize(11);
             int colorVariance = 0;
-            if(variance == 0){
+            if(varianceFinal == 0){
                 colorVariance = Color.BLACK;
-            }else if(variance > 0){
+            }else if(varianceFinal > 0){
                 colorVariance = Color.BLACK;
-            }else if(variance < 0){
+            }else if(varianceFinal < 0){
                 colorVariance = Color.RED;
             }
             lblColumn5.setTextColor(colorVariance);

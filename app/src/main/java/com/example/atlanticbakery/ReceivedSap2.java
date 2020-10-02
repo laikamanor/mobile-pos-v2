@@ -139,7 +139,7 @@ public class ReceivedSap2 extends AppCompatActivity {
                         break;
                     case R.id.nav_transferOut2:
                         result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
                         intent.putExtra("title", "Manual Transfer Out");
                         startActivity(intent);
                         finish();
@@ -253,8 +253,8 @@ public class ReceivedSap2 extends AppCompatActivity {
                         break;
                     case R.id.nav_addsalesinventory:
                         result = true;
-                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
-                        intent.putExtra("title", "Add Sales Inventory");
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Transfer to Sales");
                         startActivity(intent);
                         finish();
                         break;
@@ -472,25 +472,25 @@ public class ReceivedSap2 extends AppCompatActivity {
 
     public void loadData() {
         LinearLayout linearLayout = findViewById(R.id.layoutNoItems);
-        linearLayout.setVisibility(View.GONE);
-        btnProeed.setVisibility(View.VISIBLE);
 
         TableLayout tableLayout = findViewById(R.id.table_main);
         tableLayout.removeAllViews();
         Cursor cursor = myDb3.getAllData();
         if (cursor != null) {
-            btnProeed.setVisibility(View.VISIBLE);
-            TableRow tableColumn = new TableRow(ReceivedSap2.this);
-            String[] columns = {"Item", "Del. Qty.", "Act. Qty.", "Var.", "Action"};
+            if(myDb3.countItems() > 0){
+                btnProeed.setVisibility(View.VISIBLE);
+                TableRow tableColumn = new TableRow(ReceivedSap2.this);
+                String[] columns = {"Item", "Del. Qty.", "Act. Qty.", "Var.", "Action"};
 
-            for (String s : columns) {
-                TextView lblColumn1 = new TextView(ReceivedSap2.this);
-                lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                lblColumn1.setText(s);
-                lblColumn1.setPadding(10, 0, 10, 0);
-                tableColumn.addView(lblColumn1);
+                for (String s : columns) {
+                    TextView lblColumn1 = new TextView(ReceivedSap2.this);
+                    lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    lblColumn1.setText(s);
+                    lblColumn1.setPadding(10, 0, 10, 0);
+                    tableColumn.addView(lblColumn1);
+                }
+                tableLayout.addView(tableColumn);
             }
-            tableLayout.addView(tableColumn);
 
             cursor = myDb3.getAllData();
             while (cursor.moveToNext()) {
@@ -551,6 +551,14 @@ public class ReceivedSap2 extends AppCompatActivity {
                     tableLayout.addView(tableRow);
                 }
             }
+        }
+        if(myDb3.countItems() <= 0){
+            linearLayout.setVisibility(View.VISIBLE);
+            btnProeed.setVisibility(View.GONE);
+            gotoFunction();
+        }else{
+            linearLayout.setVisibility(View.GONE);
+            btnProeed.setVisibility(View.VISIBLE);
         }
     }
 

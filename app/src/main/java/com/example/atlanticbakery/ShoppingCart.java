@@ -74,6 +74,7 @@ public class ShoppingCart extends AppCompatActivity {
     connection_class cc = new connection_class();
     receivedsap_class recsap = new receivedsap_class();
     DecimalFormat df = new DecimalFormat("#,###.00");
+    String inventory_type;
     @SuppressLint("RestrictedApi")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -153,7 +154,7 @@ public class ShoppingCart extends AppCompatActivity {
                         break;
                     case R.id.nav_transferOut2:
                         result = true;
-                        intent = new Intent(getBaseContext(), Received.class);
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
                         intent.putExtra("title", "Manual Transfer Out");
                         startActivity(intent);
                         finish();
@@ -267,8 +268,8 @@ public class ShoppingCart extends AppCompatActivity {
                         break;
                     case R.id.nav_addsalesinventory:
                         result = true;
-                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
-                        intent.putExtra("title", "Add Sales Inventory");
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Transfer to Sales");
                         startActivity(intent);
                         finish();
                         break;
@@ -362,6 +363,7 @@ public class ShoppingCart extends AppCompatActivity {
                     mLastClickTime = SystemClock.elapsedRealtime();
                     Intent intent;
                     intent = new Intent(getBaseContext(), AvailableItems.class);
+                    intent.putExtra("inventory_type", inventory_type);
                     intent.putExtra("title", "Menu Items");
                     startActivity(intent);
                 }
@@ -593,7 +595,6 @@ public class ShoppingCart extends AppCompatActivity {
             btnPay.setTextColor(Color.WHITE);
 
             btnPay.setOnClickListener(new View.OnClickListener() {
-                String noStock = sc.checkEndingBalance(ShoppingCart.this);
 
                 @RequiresApi(api = Build.VERSION_CODES.KITKAT)
                 @Override
@@ -605,60 +606,7 @@ public class ShoppingCart extends AppCompatActivity {
                     layout.clearFocus();
                     if (myDb.countItems() <= 0) {
                         showMessage("Atlantic Bakery", "No Item found");
-                    } else if (!noStock.equals("")) {
-                        AlertDialog.Builder endbalDialog = new AlertDialog.Builder(ShoppingCart.this);
-                        endbalDialog.setCancelable(false);
-                        endbalDialog.setTitle("Confirmation");
-                        endbalDialog.setMessage("Below Item is out of stock. Are you sure you want to proceed? \n\n" + noStock);
-                        endbalDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                final AlertDialog.Builder getPasswordDialog = new AlertDialog.Builder(ShoppingCart.this);
-                                getPasswordDialog.setTitle("Enter Your Password");
-                                LinearLayout layout = new LinearLayout(ShoppingCart.this);
-                                layout.setPadding(40, 40, 40, 40);
-                                layout.setOrientation(LinearLayout.VERTICAL);
-
-                                final EditText txtPassword = new EditText(ShoppingCart.this);
-                                txtPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
-                                txtPassword.setHint("Enter Your Password");
-                                layout.addView(txtPassword);
-                                getPasswordDialog.setView(layout);
-
-                                getPasswordDialog.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
-                                    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
-                                        int isPasswordCorrect = uc.checkManagerPassword(ShoppingCart.this, txtPassword.getText().toString());
-                                        if (isPasswordCorrect < 0) {
-                                            toastMsg("Wrong Password", 0);
-                                        } else {
-                                            confirmationDialog();
-                                        }
-                                    }
-                                });
-
-                                getPasswordDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                    }
-                                });
-
-                                getPasswordDialog.show();
-                            }
-                        });
-
-                        endbalDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        });
-
-                        endbalDialog.show();
-                    } else {
+                    }else{
                         confirmationDialog();
                     }
                 }
@@ -1003,16 +951,21 @@ public class ShoppingCart extends AppCompatActivity {
                 }
                 double discamt = myDb.getSubTotal() * (less / 100);
                 double subtotalBefore = myDb.getSubTotalBefore();
+                Cursor result2 = myDb.getAllData();
+                if(result2.moveToNext()){
+                    inventory_type = result2.getString(7);
+                }
+
                 String query = "INSERT INTO tbltransaction2 (ornum, ordernum, transdate, cashier," +
                         " tendertype, servicetype, delcharge, subtotal, disctype, less, vatsales, vat," +
                         " amtdue, tenderamt, change, refund, comment, remarks, customer, tinnum, tablenum," +
                         " pax, createdby, datecreated, datemodified, status, status2, area, gctotal, typez," +
-                        " discamt) VALUES ('000'," + ordernum + ",(select cast(getdate() as date)),(SELECT username FROM tblusers WHERE" +
+                        " discamt,inventory_type) VALUES ('000'," + ordernum + ",(SELECT FORMAT (GETDATE(), 'MM/dd/yyyy')),(SELECT username FROM tblusers WHERE" +
                         " systemid=" + userid + "),'" + tendertype + "','Take Out'," +
                         "0," + subtotalBefore + ",'" + disctype + "'," + less + ",0,0," + getSubTotal + "," + tenderamt + "," + change + "," +
                         "0,'','','" + customer + "',0,0,0,(SELECT username FROM tblusers WHERE systemid=" + userid + ")," +
                         "(SELECT GETDATE()),(SELECT GETDATE()),1,'Unpaid','Sales',0,(SELECT postype FROM tblusers WHERE systemid=" +
-                        "" + userid + ")," + discamt + ");";
+                        "" + userid + ")," + discamt + ",'" + inventory_type + "');";
                 Statement stmt = con.createStatement();
                 stmt.executeUpdate(query);
 
@@ -1023,8 +976,7 @@ public class ShoppingCart extends AppCompatActivity {
                             "(SELECT GETDATE()),3)";
                     stmtSenior.executeUpdate(querySenior);
                 }
-
-                final Cursor result = myDb.getAllData();
+                Cursor result = myDb.getAllData();
                 while (result.moveToNext()) {
                     String itemname = result.getString(1);
                     double quantity = Double.parseDouble(result.getString(2));
