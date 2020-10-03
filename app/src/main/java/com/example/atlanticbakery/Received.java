@@ -548,6 +548,8 @@ public class Received extends AppCompatActivity {
             } else {
                 Cursor cursor = myDb2.getAllData(title);
                 if(cursor != null){
+                    double totalAmount = 0.00;
+                    String ar_num = ac.getArNum(Received.this, "AR Charge", "CH");
                     while (cursor.moveToNext()) {
                         double quantity;
                         String itemName;
@@ -556,7 +558,6 @@ public class Received extends AppCompatActivity {
                         itemName = cursor.getString(1);
 
                         String query1 = "UPDATE tblinvitems SET " + columnName + "+=" + quantity + (operator.equals("+") ? ",totalav+=" + quantity : "") + ",endbal" + operator + "=" + quantity + ",variance" + (operator.equals("+") ? "-" : "+") + "=" + quantity + " WHERE itemname='" + itemName + "' AND invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND area='Sales';";
-                        System.out.println("query1: \n" + query1);
                         Statement stmt = con.createStatement();
                         stmt.executeUpdate(query1);
 
@@ -606,8 +607,21 @@ public class Received extends AppCompatActivity {
                         String query2 = "INSERT INTO tblproduction (transaction_number,inv_id,item_code,item_name,category,quantity,reject,charge,sap_number,remarks,date,processed_by,type,area,status,transfer_from,transfer_to,typenum,type2) VALUES ('" + transactionNumber + "',(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC),(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "',(SELECT category FROM tblitems WHERE itemname='" + itemName + "')," + quantity + ",0,0,'" + sapNumber + "','" + remarks + "',(SELECT GETDATE()),'" + procby + "','" + type + "','Sales','Completed'," + (fromBranch.equals("") ? "(SELECT branchcode + ' (SLS)' FROM tblbranch WHERE main='1')" : fromBranch ) + ",(SELECT branchcode + '" + (columnName.equals("pullout") ? " (PRD)" : " (SLS)") + "' FROM tblbranch WHERE main='1'),'" + sapdoc + "','" + type2  + "');";
                         Statement stmt2 = con.createStatement();
                         stmt2.executeUpdate(query2);
+                        if(transfer_type != null && transfer_type.equals("Transfer from Sales")){
+                            int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+                            double salesCharge = rc.getSalesCharge(Received.this,itemName,quantity,userID);
+                            salesCharge = salesCharge - quantity;
+                            if(Math.abs(salesCharge) > 0){
+                                totalAmount += ac.chargeFunctionItems(Received.this,ar_num,itemName,Math.abs(salesCharge));
+                            }
+                        }
                     }
                     con.close();
+                    if(transfer_type != null && transfer_type.equals("Transfer from Sales") && totalAmount > 0){
+                        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+                        int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+                        ac.chargeFunctionTransaction(Received.this,totalAmount, ar_num,userID,"Own Inventory");
+                    }
 
                     showMessage("Atlantic Bakery", "REFERENCE #: " + "\n" + transactionNumber);
                 }

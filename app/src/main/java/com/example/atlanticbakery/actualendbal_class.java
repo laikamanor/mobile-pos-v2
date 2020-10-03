@@ -325,9 +325,8 @@ public class actualendbal_class {
                             }
                         }
                         double as = endBal - pullOut;
-                        System.out.println("AS: " + as);
                         charge = quantity - as;
-                        String query = "Update tblinvitems set endbal-=" + Math.abs(charge) + ", actualendbal=" + quantity + ", variance-=" + charge + ",archarge+=" + Math.abs(charge) + " where itemcode=(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "') and invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC)";
+                        String query = "Update tblinvitems set endbal-=" + Math.abs(charge) + ", actualendbal=" + quantity + ", variance-=" + charge + " where itemcode=(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "') and invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC)";
                         Statement stmt = con.createStatement();
                         stmt.executeUpdate(query);
                         String query2 = "INSERT INTO tblproduction (transaction_number,inv_id,item_code,item_name,category,quantity,charge,date,processed_by,type,area,status,remarks) VALUES ('" + transNum + "',(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC),(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "',(SELECT category FROM tblitems WHERE itemname='" + itemName + "')," + quantity + "," + Math.abs(charge) + ",(SELECT GETDATE()),(SELECT TOP 1 username FROM tblusers WHERE systemid=" + userid + "),'Actual Ending Balance', 'Sales', 'Completed','');";
@@ -335,33 +334,16 @@ public class actualendbal_class {
                         stmt2.executeUpdate(query2);
                         charge = Math.abs(charge);
                         if(charge != 0) {
-                            String query3 = "Insert into tblorder (transnum, category, itemname, qty, price, totalprice, dscnt, free, request, status, discprice, disctrans,area,invnum,type)values('" + ar_num + "', (SELECT category FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "'," + charge + ",(SELECT TOP 1 price FROM tblitems WHERE itemname='" + itemName + "'),(SELECT SUM(price * " + charge + ") FROM tblitems WHERE itemname='" + itemName + "'),0,0,0,1,0,0,'Sales',(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC),'AR Charge')";
-                            Statement stmt3 = con.createStatement();
-                            stmt3.executeUpdate(query3);
-
-                            String query4 = "Insert into tblorder2 (ordernum, category, itemname, qty, price, totalprice, dscnt, free, request, status, discprice, disctrans,area,datecreated)values((Select ISNULL(MAX(ordernum),0) from tbltransaction2 WHERE area='Sales' AND CAST(datecreated AS date)=(SELECT CAST(GETDATE() AS date))),(SELECT category FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "'," + charge + ",(SELECT TOP 1 price FROM tblitems WHERE itemname='" + itemName + "'),(SELECT SUM(price * " + charge + ") from tblitems WHERE itemname='" + itemName + "'),'0','0','0','1','0','0','Sales',(SELECT GETDATE()))";
-                            Statement stmt4 = con.createStatement();
-                            stmt4.executeUpdate(query4);
-
-                            String query5 = "INSERT INTO tblars2 (transnum,description,quantity,price,amount,area,name) VALUES ('" + ar_num + "', '" + itemName + "'," + charge + ",(SELECT TOP 1 price FROM tblitems WHERE itemname='" + itemName + "'),(SELECT SUM(price * " + charge + ") from tblitems WHERE itemname='" + itemName + "'),'Sales','Short')";
-                            Statement stmt5 = con.createStatement();
-                            stmt5.executeUpdate(query5);
-                              double v = charge * loadPrice(activity, itemName);
-                              totalAmount += v;
+                            totalAmount += chargeFunctionItems(activity,ar_num,itemName,charge);
+                        }
+                        if(totalAmount > 0){
+                            boolean isSuccess = chargeFunctionTransaction(activity,totalAmount, ar_num,userid,"Main Inventory");
+                            if(isSuccess){
+                                answer_int -= 1;
+                            }
                         }
                     }
                 }
-                String query6 = "Insert into tbltransaction (ornum, transnum, transdate, cashier, tendertype, servicetype, delcharge, subtotal, disctype, less, vatsales, vat, amtdue, gctotal, tenderamt, change, refund, comment, remarks, customer, tinnum, tablenum, pax, datecreated, datemodified, status, area, invnum, partialamt,typenum,sap_number,sap_remarks,typez,discamt,salesname) values ('0', '" + ar_num + "', (SELECT CAST(GETDATE() AS date)),(SELECT username FROM tblusers WHERE systemid=" + userid + "),'A.R Charge','N/A','0'," + totalAmount + ", 'N/A', '0', '0', '0', " + totalAmount + ", '0', '0', '0', '0', '', '','Short' , 'N/A', '0','1', (SELECT GETDATE()), (SELECT GETDATE()), '1','Sales',(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC),'0','AR','To Follow','','Retail',0,(SELECT username FROM tblusers WHERE systemid=" + userid + "))";
-                Statement stmt6 = con.createStatement();
-                stmt6.executeUpdate(query6);
-
-                String query7 = "Insert into tbltransaction2 (ornum, ordernum, transdate, cashier, tendertype, servicetype, delcharge, subtotal, disctype, less, vatsales, vat, amtdue, gctotal, tenderamt, change, refund, comment, remarks, customer, tinnum, tablenum, pax, datecreated, datemodified, status, area,transnum) values ('0',(Select ISNULL(MAX(ordernum),0) from tbltransaction2 WHERE area='Sales' AND CAST(datecreated AS date)=(SELECT CAST(GETDATE() AS date))) , (SELECT CAST(GETDATE() AS date)),(SELECT username FROM tblusers WHERE systemid=" + userid + "),'A.R Charge','N/A','0', " + totalAmount + ", 'N/A', '0', '0', '0', " + totalAmount + ", '0', '0', '0', '0', '', '','Short', 'N/A', '0','1', (SELECT GETDATE()), (SELECT GETDATE()), '1','Sales','" + ar_num + "')";
-                Statement stmt7 = con.createStatement();
-                stmt7.executeUpdate(query7);
-
-                String query8 = "INSERT INTO tblars1 (arnum,transnum,amountdue,name,status,date_created,created_by,area,invnum,type,typenum,sap_no,remarks,_from) VALUES ('" + ar_num + "','" + ar_num + "', " + totalAmount + ", 'Short', 'Unpaid',(SELECT GETDATE()),(SELECT username FROM tblusers WHERE systemid=" + userid + "),'Sales',(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC),'AR Charge','AR','To Follow','','Actual Ending Balance')";
-                Statement stmt8 = con.createStatement();
-                stmt8.executeUpdate(query8);
             }
         }catch (Exception ex){
             answer_int += 1;
@@ -369,6 +351,66 @@ public class actualendbal_class {
         }
         answer = answer_int <= 0;
         return answer;
+    }
+
+    public boolean chargeFunctionTransaction(Activity activity,double totalAmount, String ar_num, int userID, String inventoryType) {
+        boolean result = false;
+        try {
+            con = cc.connectionClass(activity);
+            if (con == null) {
+                Toast.makeText(activity, "insertActualEnding() Check Your Internet Access", Toast.LENGTH_SHORT).show();
+            } else {
+                if (totalAmount > 0) {
+                    String query6 = "Insert into tbltransaction (ornum, transnum, transdate, cashier, tendertype, servicetype, delcharge, subtotal, disctype, less, vatsales, vat, amtdue, gctotal, tenderamt, change, refund, comment, remarks, customer, tinnum, tablenum, pax, datecreated, datemodified, status, area, invnum, partialamt,typenum,sap_number,sap_remarks,typez,discamt,salesname,auth_systemid,inventory_type) values ('0', '" + ar_num + "', (SELECT CAST(GETDATE() AS date)),(SELECT username FROM tblusers WHERE systemid=" + userID + "),'A.R Charge','N/A','0'," + totalAmount + ", 'N/A', '0', '0', '0', " + totalAmount + ", '0', '0', '0', '0', '', '','Short' , 'N/A', '0','1', (SELECT GETDATE()), (SELECT GETDATE()), '1','Sales',(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC),'0','AR','To Follow','','Retail',0,(SELECT username FROM tblusers WHERE systemid=" + userID + ")," + userID + ",'" + inventoryType + "')";
+                    Statement stmt6 = con.createStatement();
+                    stmt6.executeUpdate(query6);
+
+                    String query7 = "Insert into tbltransaction2 (ornum, ordernum, transdate, cashier, tendertype, servicetype, delcharge, subtotal, disctype, less, vatsales, vat, amtdue, gctotal, tenderamt, change, refund, comment, remarks, customer, tinnum, tablenum, pax, datecreated, datemodified, status, area,transnum,status2,createdby,typez,inventory_type) values ('0',(Select ISNULL(MAX(ordernum),0) + 1 from tbltransaction2 WHERE area='Sales' AND CAST(datecreated AS date)=(SELECT CAST(GETDATE() AS date))) , (SELECT CAST(GETDATE() AS date)),(SELECT username FROM tblusers WHERE systemid=" + userID + "),'A.R Charge','N/A','0', " + totalAmount + ", 'N/A', '0', '0', '0', " + totalAmount + ", '0', '0', '0', '0', '', '','Short', 'N/A', '0','1', (SELECT GETDATE()), (SELECT GETDATE()), '1','Sales','" + ar_num + "','Paid',(SELECT username FROM tblusers WHERE systemid=" + userID + "),'Retail','" + inventoryType + "')";
+                    Statement stmt7 = con.createStatement();
+                    stmt7.executeUpdate(query7);
+
+                    String query8 = "INSERT INTO tblars1 (arnum,transnum,amountdue,name,status,date_created,created_by,area,invnum,type,typenum,sap_no,remarks,_from) VALUES ('" + ar_num + "','" + ar_num + "', " + totalAmount + ", 'Short', 'Paid',(SELECT GETDATE()),(SELECT username FROM tblusers WHERE systemid=" + userID + "),'Sales',(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC),'AR Charge','AR','To Follow','','Transfer to Main')";
+                    Statement stmt8 = con.createStatement();
+                    stmt8.executeUpdate(query8);
+                    result = true;
+                }
+            }
+        } catch (Exception ex) {
+            Toast.makeText(activity, "chargeFunctionTransaction() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return result;
+    }
+
+    public double chargeFunctionItems(Activity activity, String ar_num, String itemName, Double charge){
+        double totalAmount = 0.00;
+        try {
+            con = cc.connectionClass(activity);
+            if (con == null) {
+                Toast.makeText(activity, "chargeFunctionItems() Check Your Internet Access", Toast.LENGTH_SHORT).show();
+            } else {
+                String query = "Update tblinvitems set endbal-=" + Math.abs(charge) + ", archarge-=" + Math.abs(charge) + " where itemcode=(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "') and invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC)";
+                Statement stmt = con.createStatement();
+                stmt.executeUpdate(query);
+
+
+                String query3 = "Insert into tblorder (transnum, category, itemname, qty, price, totalprice, dscnt, free, request, status, discprice, disctrans,area,invnum,type)values('" + ar_num + "', (SELECT category FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "'," + charge + ",(SELECT TOP 1 price FROM tblitems WHERE itemname='" + itemName + "'),(SELECT SUM(price * " + charge + ") FROM tblitems WHERE itemname='" + itemName + "'),0,0,0,1,0,0,'Sales',(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC),'AR Charge')";
+                Statement stmt3 = con.createStatement();
+                stmt3.executeUpdate(query3);
+
+                String query4 = "Insert into tblorder2 (ordernum, category, itemname, qty, price, totalprice, dscnt, free, request, status, discprice, disctrans,area,datecreated)values((Select ISNULL(MAX(ordernum),0) + 1 from tbltransaction2 WHERE area='Sales' AND CAST(datecreated AS date)=(SELECT CAST(GETDATE() AS date))),(SELECT category FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "'," + charge + ",(SELECT TOP 1 price FROM tblitems WHERE itemname='" + itemName + "'),(SELECT SUM(price * " + charge + ") from tblitems WHERE itemname='" + itemName + "'),'0','0','0','1','0','0','Sales',(SELECT GETDATE()))";
+                Statement stmt4 = con.createStatement();
+                stmt4.executeUpdate(query4);
+
+                String query5 = "INSERT INTO tblars2 (transnum,description,quantity,price,amount,area,name) VALUES ('" + ar_num + "', '" + itemName + "'," + charge + ",(SELECT TOP 1 price FROM tblitems WHERE itemname='" + itemName + "'),(SELECT SUM(price * " + charge + ") from tblitems WHERE itemname='" + itemName + "'),'Sales','Short')";
+                Statement stmt5 = con.createStatement();
+                stmt5.executeUpdate(query5);
+                double v = charge * loadPrice(activity, itemName);
+                totalAmount += v;
+            }
+        }catch (Exception ex) {
+            Toast.makeText(activity, "chargeFunctionItems() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return totalAmount;
     }
 
     public String returnSAQuantity(Activity activity, String isPullOut, String itemName){

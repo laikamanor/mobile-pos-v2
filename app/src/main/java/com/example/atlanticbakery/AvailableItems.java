@@ -483,6 +483,7 @@ public class AvailableItems extends AppCompatActivity {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public boolean isMainInventoryAllowed(){
         boolean result = false;
         try {
@@ -492,10 +493,14 @@ public class AvailableItems extends AppCompatActivity {
             } else {
                 SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
                 userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
-                String query = "SELECT id FROM tblaccess WHERE userid=" + userID + " AND moduleid=(SELECT id FROM tblmodules WHERE name='Main Inventory')";
+                String query = "SELECT COUNT(id) [count] FROM tblaccess WHERE userid=" + userID + " AND moduleid=(SELECT id FROM tblmodules WHERE name='Main Inventory') AND status=1;";
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
-                result = (rs.next());
+                if(rs.next()){
+                    if(rs.getInt("count") > 0){
+                        result = true;
+                    }
+                }
             }
         }catch (Exception ex){
             Toast.makeText(this, "isMainInventoryAllowed() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
@@ -542,7 +547,6 @@ public class AvailableItems extends AppCompatActivity {
         nav_shoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
         nav_ReceivedSAP.setTitle("List Items (" + totalPendingSAP + ")");
     }
-
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @SuppressLint("SetTextI18n")
