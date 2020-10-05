@@ -581,6 +581,8 @@ public class ItemInfo extends AppCompatActivity {
                     Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
                 }else if(OwnStockQuantity <= 0 && trans_type != null && trans_type.equals("Transfer from Sales")) {
                     Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                }else if(!hasStock && trans_type != null && trans_type.equals("Transfer to Sales")) {
+                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
                 }else if(OwnStockQuantity < quantity && trans_type != null && trans_type.equals("Transfer from Sales")) {
                     Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
                 }else{
@@ -599,10 +601,12 @@ public class ItemInfo extends AppCompatActivity {
         String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
         if(title.equals("Received from SAP")){
             intent = new Intent(getBaseContext(), ReceivedSap.class);
+            finish();
         }else{
             intent = new Intent(getBaseContext(), AvailableItems.class);
             intent.putExtra("transfer_type", trans_type);
             intent.putExtra("inventory_type", inv_type);
+            finish();
         }
         intent.putExtra("title", title);
         startActivity(intent);

@@ -557,9 +557,13 @@ public class Received extends AppCompatActivity {
                         quantity = cursor.getDouble(2);
                         itemName = cursor.getString(1);
 
-                        String query1 = "UPDATE tblinvitems SET " + columnName + "+=" + quantity + (operator.equals("+") ? ",totalav+=" + quantity : "") + ",endbal" + operator + "=" + quantity + ",variance" + (operator.equals("+") ? "-" : "+") + "=" + quantity + " WHERE itemname='" + itemName + "' AND invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND area='Sales';";
-                        Statement stmt = con.createStatement();
-                        stmt.executeUpdate(query1);
+                       if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
+                       }else if(transfer_type != null && transfer_type.equals("Transfer from Sales")){
+                       }else{
+                           String query1 = "UPDATE tblinvitems SET " + columnName + "+=" + quantity + (operator.equals("+") ? ",totalav+=" + quantity : "") + ",endbal" + operator + "=" + quantity + ",variance" + (operator.equals("+") ? "-" : "+") + "=" + quantity + " WHERE itemname='" + itemName + "' AND invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND area='Sales';";
+                           Statement stmt = con.createStatement();
+                           stmt.executeUpdate(query1);
+                       }
 
                         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
                         String procby = Objects.requireNonNull(sharedPreferences.getString("username", ""));
@@ -599,12 +603,15 @@ public class Received extends AppCompatActivity {
                             int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
                             fromBranch = "(SELECT username FROM tblusers WHERE systemid=" + userID + ")";
                         }
+                        String status2 = "Completed";
                         if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
                             sapdoc = "";
+                            status2 = "Pending";
                         }else if(transfer_type != null && transfer_type.equals("Transfer from Sales")){
                             sapdoc = "";
+                            status2 = "Pending";
                         }
-                        String query2 = "INSERT INTO tblproduction (transaction_number,inv_id,item_code,item_name,category,quantity,reject,charge,sap_number,remarks,date,processed_by,type,area,status,transfer_from,transfer_to,typenum,type2) VALUES ('" + transactionNumber + "',(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC),(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "',(SELECT category FROM tblitems WHERE itemname='" + itemName + "')," + quantity + ",0,0,'" + sapNumber + "','" + remarks + "',(SELECT GETDATE()),'" + procby + "','" + type + "','Sales','Completed'," + (fromBranch.equals("") ? "(SELECT branchcode + ' (SLS)' FROM tblbranch WHERE main='1')" : fromBranch ) + ",(SELECT branchcode + '" + (columnName.equals("pullout") ? " (PRD)" : " (SLS)") + "' FROM tblbranch WHERE main='1'),'" + sapdoc + "','" + type2  + "');";
+                        String query2 = "INSERT INTO tblproduction (transaction_number,inv_id,item_code,item_name,category,quantity,reject,charge,sap_number,remarks,date,processed_by,type,area,status,transfer_from,transfer_to,typenum,type2) VALUES ('" + transactionNumber + "',(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC),(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "',(SELECT category FROM tblitems WHERE itemname='" + itemName + "')," + quantity + ",0,0,'" + sapNumber + "','" + remarks + "',(SELECT GETDATE()),'" + procby + "','" + type + "','Sales','" + status2 + "'," + (fromBranch.equals("") ? "(SELECT branchcode + ' (SLS)' FROM tblbranch WHERE main='1')" : fromBranch ) + ",(SELECT branchcode + '" + (columnName.equals("pullout") ? " (PRD)" : " (SLS)") + "' FROM tblbranch WHERE main='1'),'" + sapdoc + "','" + type2  + "');";
                         Statement stmt2 = con.createStatement();
                         stmt2.executeUpdate(query2);
                         if(transfer_type != null && transfer_type.equals("Transfer from Sales")){
@@ -622,7 +629,7 @@ public class Received extends AppCompatActivity {
                         int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
                         ac.chargeFunctionTransaction(Received.this,totalAmount, ar_num,userID,"Own Inventory");
                     }
-
+                    myDb2.truncateTable();
                     showMessage("Atlantic Bakery", "REFERENCE #: " + "\n" + transactionNumber);
                 }
             }
@@ -635,14 +642,13 @@ public class Received extends AppCompatActivity {
 
     public void showMessage(String title, String message){
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setCancelable(true);
+        builder.setCancelable(false);
         builder.setTitle(title);
         builder.setMessage(message);
 
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                myDb2.truncateTable();
                 startActivity(getIntent());
                 finish();
             }
@@ -657,7 +663,7 @@ public class Received extends AppCompatActivity {
         Cursor cursor;
         final String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
 
-        int count = 0;
+        int count;
             count = myDb2.countItems(title);
         LinearLayout layout = findViewById(R.id.layoutNoItems);
         if(count == 0) {

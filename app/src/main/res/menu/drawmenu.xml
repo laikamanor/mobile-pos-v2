@@ -44,6 +44,16 @@
         </group>
     </item>
 
+    <item android:title="Item Receivable">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_itemReceivable"
+                    android:title="Item Receivable" />
+            </menu>
+        </group>
+    </item>
+
     <item android:title="Received from SAP">
         <group android:checkableBehavior="single">
             <menu>

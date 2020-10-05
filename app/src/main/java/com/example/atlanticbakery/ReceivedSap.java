@@ -533,8 +533,8 @@ public class ReceivedSap extends AppCompatActivity {
                 final String fromBranch = cursor.getString(2);
                 final String itemName = cursor.getString(3);
                 final Double quantity = cursor.getDouble(4);
-                final boolean isSelected = (cursor.getInt(6) != 0);
-
+                final boolean isSelected = (cursor.getInt(6) > 0);
+                System.out.println("isSelected: " + isSelected);
                 lblSapNumber.setText("IT#: " + sapNumber);
                 lblFromBranch.setText("Branch: " + fromBranch);
 
@@ -567,6 +567,7 @@ public class ReceivedSap extends AppCompatActivity {
                             intent.putExtra("fromBranch", fromBranch);
                             intent.putExtra("id", id);
                             startActivity(intent);
+                            loadItems();
                         }
                     }
                 });

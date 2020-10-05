@@ -117,6 +117,13 @@ public class Nav extends AppCompatActivity  {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_itemReceivable:
+                        result = true;
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Item Receivable");
+                        startActivity(intent);
+                        finish();
+                        break;
                     case R.id.nav_storeCountListPullOut:
                         if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();

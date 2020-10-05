@@ -288,6 +288,12 @@ public class AvailableItems extends AppCompatActivity {
                 return result;
             }
         });
+        final Button btnDone = findViewById(R.id.btnDone);
+        if(title.equals("Item Receivable")){
+            btnDone.setVisibility(View.GONE);
+        }else {
+            btnDone.setVisibility(View.VISIBLE);
+        }
 
         Button btnSearch = findViewById(R.id.btnSearch);
         txtSearch = findViewById(R.id.txtSearch);
@@ -464,7 +470,7 @@ public class AvailableItems extends AppCompatActivity {
                         public void onClick(View view) {
                             if(inventory_type == null || inventory_type.equals("")){
                                 Toast.makeText(getBaseContext(), "Please choose to option", Toast.LENGTH_SHORT).show();
-                            }else if(inventory_type !=  null && !isMainInventoryAllowed() && inventory_type.equals("Main Inventory")){
+                            }else if(transfer_type !=  null && !isMainInventoryAllowed() && inventory_type.equals("Main Inventory")){
                                 Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                             }
                             else{
@@ -569,6 +575,8 @@ public class AvailableItems extends AppCompatActivity {
                 break;
             case "Menu Items":
                 query = "SELECT a.itemname [item],a.endbal [quantity] FROM tblinvitems a INNER JOIN tblitems b ON a.itemname = b.itemname WHERE invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND b.status = 1 AND a.status = 1 AND a.itemname LIKE '%" + value + "%' ORDER BY 2 DESC, 1 ASC";
+            case "Item Receivable":
+                query = "SELECT a.transaction_number, CASE WHEN a.type2 = 'Transfer to Sales' THEN (SELECT CAST(REPLACE (a.transaction_number,'TRASLS - A1 S-FG - ','') as INT)) WHEN a.type2='Transfer From Sales' THEN (SELECT CAST(REPLACE (a.transaction_number,'RECSLS - A1 S-FG - ','') as INT)) END [item], type2, COUNT(a.quantity)[quantity] FROM tblproduction a WHERE inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.status='Pending' AND a.type2 IN ('Transfer to Sales','Transfer from Sales') AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY a.transaction_number,a.type2,a.transaction_number";
                 break;
         }
         GridLayout gridLayout = findViewById(R.id.grid);
@@ -581,15 +589,22 @@ public class AvailableItems extends AppCompatActivity {
                 if(inventory_type != null && inventory_type.equals("Own Inventory") && title.equals("Menu Items")){
                     query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
                             "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
-                }else if(transfer_type != null & inventory_type != null && transfer_type.equals("Transfer from Sales") && inventory_type.equals("Own Inventory")){
-                        query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
-                                "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
+                }else if(transfer_type != null & inventory_type != null && transfer_type.equals("Transfer from Sales") && inventory_type.equals("Own Inventory")) {
+                    query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
+                            "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
                 }
                 List<String> items = new ArrayList<>();
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 while (rs.next()) {
-                    final String item = rs.getString("item");
+                    String item = "";
+                    String transactionNumber = "";
+                    if(title.equals("Item Receivable")){
+                        item = "#" + rs.getString("item") + "\n" + rs.getString("type2");
+                        transactionNumber = rs.getString("transaction_number");
+                    }else{
+                        item = rs.getString("item");
+                    }
                     final Double quantity = rs.getDouble("quantity");
 
                     CardView cardView = new CardView(AvailableItems.this);
@@ -606,40 +621,48 @@ public class AvailableItems extends AppCompatActivity {
                     linearLayout.setLayoutParams(layoutParamsLinear);
                     linearLayout.setTag(item);
 
+                    final String finalItem = item;
+                    final String finalTransactionNumber = transactionNumber;
                     linearLayout.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            int endBal = rc.checkStock(AvailableItems.this, item);
-                            boolean checkStock = itemc.checkItemNameStock(AvailableItems.this, item,quantity);
+                            int endBal = rc.checkStock(AvailableItems.this, finalItem);
+                            boolean checkStock = itemc.checkItemNameStock(AvailableItems.this, finalItem,quantity);
                             boolean hasHaving = (transfer_type != null && transfer_type.equals("Transfer from Sales"));
-                            double OwnStockQuantity = rc.checkOwnInventoryStock(AvailableItems.this, "Transfer to Sales", userID, item, hasHaving);
+                            double OwnStockQuantity = rc.checkOwnInventoryStock(AvailableItems.this, "Transfer to Sales", userID, finalItem, hasHaving);
                             String type = (title.equals("Auditor Count List Items")) ? "Auditor Count" : "Store Count";
                             if (endBal <= 0 && title.equals("Menu Items") && inventory_type.equals("Main Inventory")) {
-                                Toast.makeText(AvailableItems.this, "'" + item + "' is not available", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
                             } else if (OwnStockQuantity <= 0 && title.equals("Menu Items") && inventory_type.equals("Own Inventory")) {
-                                Toast.makeText(AvailableItems.this, "'" + item + "' is not available", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
                             } else if (OwnStockQuantity < quantity && title.equals("Menu Items") && inventory_type.equals("Own Inventory")) {
-                                Toast.makeText(AvailableItems.this, "'" + item + "' is not available", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
                             } else if (OwnStockQuantity <= 0 && transfer_type != null && transfer_type.equals("Transfer from Sales")) {
-                                Toast.makeText(AvailableItems.this, "'" + item + "' is not available", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
                             }else if (endBal <= 0 && title.equals("Manual Transfer Out") && transfer_type == "Transfer to Other Branch") {
-                                Toast.makeText(AvailableItems.this, "'" + item + "' is not available", Toast.LENGTH_SHORT).show();
-                            } else if (title.equals("Auditor Count List Items") && myDb4.checkItem(item, type)) {
-                                Toast.makeText(AvailableItems.this, "'" + item + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
-                            } else if (title.equals("Store Count List Items") && myDb4.checkItem(item, type)) {
-                                Toast.makeText(AvailableItems.this, "'" + item + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
-                            } else if (!title.equals("Menu Items") && myDb2.checkItem(item, title)) {
-                                Toast.makeText(AvailableItems.this, "'" + item + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
-                            } else {
+                                Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
+                            } else if (title.equals("Auditor Count List Items") && myDb4.checkItem(finalItem, type)) {
+                                Toast.makeText(AvailableItems.this, "'" + finalItem + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
+                            } else if (title.equals("Store Count List Items") && myDb4.checkItem(finalItem, type)) {
+                                Toast.makeText(AvailableItems.this, "'" + finalItem + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
+                            } else if (!title.equals("Menu Items") && myDb2.checkItem(finalItem, title)) {
+                                Toast.makeText(AvailableItems.this, "'" + finalItem + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
+                            } else if(!title.equals("Item Receivable")) {
                                 Intent intent;
                                 intent = new Intent(getBaseContext(), ItemInfo.class);
                                 intent.putExtra("title", title);
-                                intent.putExtra("itemname", item);
+                                intent.putExtra("itemname", finalItem);
                                 intent.putExtra("sapNumber", value);
                                 intent.putExtra("quantity", Double.toString(quantity));
                                 intent.putExtra("fromBranch", "");
                                 intent.putExtra("inventory_type", inventory_type);
                                 intent.putExtra("transfer_type", transfer_type);
+                                startActivity(intent);
+                            }else{
+                                Intent intent;
+                                intent = new Intent(getBaseContext(), ItemReceivable.class);
+                                intent.putExtra("transaction_number", finalTransactionNumber);
+                                intent.putExtra("title", title);
                                 startActivity(intent);
                             }
                         }
@@ -663,18 +686,19 @@ public class AvailableItems extends AppCompatActivity {
                     txtItemName.setVisibility(View.VISIBLE);
                     linearLayout.addView(txtItemName);
 
-                    if (title.matches("Menu Items")) {
+                    if (title.matches("Menu Items") || title.equals("Item Receivable")) {
                         TextView txtItemLeft = new TextView(AvailableItems.this);
                         txtItemLeft.setLayoutParams(layoutParamsItemLeft);
                         txtItemLeft.setTextSize(10);
-                        if (quantity == 0.0) {
-                            txtItemLeft.setText(df.format(quantity) + " available");
+                        String txtFormat = (title.equals("Menu Items")) ? " available" : " items";
+                        if (quantity == 0.0 && title.matches("Menu Items")) {
+                            txtItemLeft.setText(df.format(quantity) + txtFormat);
                             txtItemLeft.setTextColor(Color.RED);
-                        } else if (quantity <= 10) {
-                            txtItemLeft.setText(df.format(quantity) + " available!");
+                        } else if (quantity <= 10 && title.matches("Menu Items")) {
+                            txtItemLeft.setText(df.format(quantity) + txtFormat);
                             txtItemLeft.setTextColor(Color.rgb(247, 154, 22));
                         } else {
-                            txtItemLeft.setText(df.format(quantity) + " available");
+                            txtItemLeft.setText(df.format(quantity) + txtFormat);
                             txtItemLeft.setTextColor(Color.rgb(30, 203, 6));
                         }
                         txtItemLeft.setVisibility(View.VISIBLE);
@@ -687,11 +711,29 @@ public class AvailableItems extends AppCompatActivity {
                             linearLayout.setBackgroundColor(Color.WHITE);
                             txtItemName.setTextColor(Color.BLACK);
                         }
-
-                    } else if (!title.equals("Menu Items") && myDb2.checkItem(item, title)) {
+                    }
+                    else if (!title.equals("Menu Items") && myDb2.checkItem(item, title)) {
                         linearLayout.setBackgroundColor(Color.RED);
                         txtItemName.setTextColor(Color.WHITE);
-                    } else {
+                    }else if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
+                        TextView txtItemLeft = new TextView(AvailableItems.this);
+                        txtItemLeft.setLayoutParams(layoutParamsItemLeft);
+                        txtItemLeft.setTextSize(10);
+                        txtItemLeft.setText(df.format(quantity) + " available");
+                        txtItemLeft.setTextColor(Color.rgb(247, 154, 22));
+                        txtItemLeft.setVisibility(View.VISIBLE);
+                        txtItemLeft.setTextColor(Color.BLACK);
+                        linearLayout.addView(txtItemLeft);
+                    }else if(transfer_type != null && transfer_type.equals("Transfer from Sales")) {
+                        TextView txtItemLeft = new TextView(AvailableItems.this);
+                        txtItemLeft.setLayoutParams(layoutParamsItemLeft);
+                        txtItemLeft.setTextSize(10);
+                        txtItemLeft.setTextColor(Color.BLACK);
+                        txtItemLeft.setText(df.format(quantity) + " available");
+                        txtItemLeft.setTextColor(Color.rgb(247, 154, 22));
+                        txtItemLeft.setVisibility(View.VISIBLE);
+                        linearLayout.addView(txtItemLeft);
+                    }else{
                         linearLayout.setBackgroundColor(Color.WHITE);
                         txtItemName.setTextColor(Color.BLACK);
                     }

@@ -443,7 +443,7 @@ public class ReceivedSap2 extends AppCompatActivity {
                             stmt2.executeUpdate(query2);
                         }
                     }
-
+                    myDb3.truncateTable();
                     showMessage("Atlantic Bakery", "REFERENCE #: " + "\n" + transactionNumber);
                 }
             }
@@ -461,7 +461,6 @@ public class ReceivedSap2 extends AppCompatActivity {
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                myDb3.truncateTable();
                 startActivity(getIntent());
                 finish();
             }
