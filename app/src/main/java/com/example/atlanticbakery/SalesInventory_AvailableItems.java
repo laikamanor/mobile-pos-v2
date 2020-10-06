@@ -226,13 +226,6 @@ public class SalesInventory_AvailableItems extends AppCompatActivity {
                             finish();
                         }
                         break;
-                    case R.id.nav_addsalesinventory:
-                        result = true;
-                        intent = new Intent(getBaseContext(), SalesInventory_AvailableItems.class);
-                        intent.putExtra("title", "Add Sales Inventory");
-                        startActivity(intent);
-                        finish();
-                        break;
                     case R.id.nav_inventory:
                         result = true;
                         intent = new Intent(getBaseContext(), Inventory.class);
@@ -261,6 +254,13 @@ public class SalesInventory_AvailableItems extends AppCompatActivity {
                     case R.id.nav_createUser:
                         result = true;
                         intent = new Intent(getBaseContext(), CreateUsers.class);
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_itemReceivable:
+                        result = true;
+                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent.putExtra("title", "Item Receivable");
                         startActivity(intent);
                         finish();
                         break;

@@ -206,13 +206,6 @@ public class Nav extends AppCompatActivity  {
                              finish();
                          }
                         break;
-                    case R.id.nav_addsalesinventory:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Transfer to Sales");
-                        startActivity(intent);
-                        finish();
-                        break;
                     case R.id.nav_inventory:
                         result = true;
                         intent = new Intent(getBaseContext(), Inventory.class);

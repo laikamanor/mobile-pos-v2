@@ -277,10 +277,10 @@ public class AvailableItems extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_addsalesinventory:
+                    case R.id.nav_itemReceivable:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Transfer to Sales");
+                        intent.putExtra("title", "Item Receivable");
                         startActivity(intent);
                         finish();
                         break;
@@ -416,7 +416,10 @@ public class AvailableItems extends AppCompatActivity {
                             Toast.makeText(getBaseContext(), "Please choose to option", Toast.LENGTH_SHORT).show();
                         }else if(transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer from Sales")){
                             Toast.makeText(getBaseContext(), "Please choose to option in Main Inventory", Toast.LENGTH_SHORT).show();
-                        }else{
+                        }else if(inventory_type != null && transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer to Sales") && !isMainInventoryAllowed("Transfer to Sales")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                        }
+                        else{
                             myDialog.dismiss();
                             loadData("");
                         }
@@ -470,7 +473,7 @@ public class AvailableItems extends AppCompatActivity {
                         public void onClick(View view) {
                             if(inventory_type == null || inventory_type.equals("")){
                                 Toast.makeText(getBaseContext(), "Please choose to option", Toast.LENGTH_SHORT).show();
-                            }else if(transfer_type !=  null && !isMainInventoryAllowed() && inventory_type.equals("Main Inventory")){
+                            }else if(inventory_type !=  null && !isMainInventoryAllowed("Main Inventory") && inventory_type.equals("Main Inventory")){
                                 Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                             }
                             else{
@@ -490,7 +493,7 @@ public class AvailableItems extends AppCompatActivity {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public boolean isMainInventoryAllowed(){
+    public boolean isMainInventoryAllowed(String type){
         boolean result = false;
         try {
             con = cc.connectionClass(AvailableItems.this);
@@ -499,7 +502,7 @@ public class AvailableItems extends AppCompatActivity {
             } else {
                 SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
                 userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
-                String query = "SELECT COUNT(id) [count] FROM tblaccess WHERE userid=" + userID + " AND moduleid=(SELECT id FROM tblmodules WHERE name='Main Inventory') AND status=1;";
+                String query = "SELECT COUNT(id) [count] FROM tblaccess WHERE userid=" + userID + " AND moduleid=(SELECT id FROM tblmodules WHERE name='" + type + "') AND status=1;";
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 if(rs.next()){
@@ -575,8 +578,9 @@ public class AvailableItems extends AppCompatActivity {
                 break;
             case "Menu Items":
                 query = "SELECT a.itemname [item],a.endbal [quantity] FROM tblinvitems a INNER JOIN tblitems b ON a.itemname = b.itemname WHERE invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND b.status = 1 AND a.status = 1 AND a.itemname LIKE '%" + value + "%' ORDER BY 2 DESC, 1 ASC";
+                break;
             case "Item Receivable":
-                query = "SELECT a.transaction_number, CASE WHEN a.type2 = 'Transfer to Sales' THEN (SELECT CAST(REPLACE (a.transaction_number,'TRASLS - A1 S-FG - ','') as INT)) WHEN a.type2='Transfer From Sales' THEN (SELECT CAST(REPLACE (a.transaction_number,'RECSLS - A1 S-FG - ','') as INT)) END [item], type2, COUNT(a.quantity)[quantity] FROM tblproduction a WHERE inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.status='Pending' AND a.type2 IN ('Transfer to Sales','Transfer from Sales') AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY a.transaction_number,a.type2,a.transaction_number";
+                query = "SELECT a.transaction_number [item],COUNT(a.quantity) [quantity] FROM tblproduction a  WHERE a.transfer_from= CASE WHEN a.type2 ='Transfer from Sales' THEN a.transfer_from ELSE (SELECT username FROM tblusers WHERE systemid=" + userID + ") END AND a.status='Pending' AND a.type2 IN ('Transfer to Sales','Transfer from Sales') GROUP BY a.transaction_number,a.type2,a.transaction_number;";
                 break;
         }
         GridLayout gridLayout = findViewById(R.id.grid);
@@ -593,18 +597,12 @@ public class AvailableItems extends AppCompatActivity {
                     query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
                             "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
                 }
+                System.out.println(query);
                 List<String> items = new ArrayList<>();
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 while (rs.next()) {
-                    String item = "";
-                    String transactionNumber = "";
-                    if(title.equals("Item Receivable")){
-                        item = "#" + rs.getString("item") + "\n" + rs.getString("type2");
-                        transactionNumber = rs.getString("transaction_number");
-                    }else{
-                        item = rs.getString("item");
-                    }
+                    String item = rs.getString("item");
                     final Double quantity = rs.getDouble("quantity");
 
                     CardView cardView = new CardView(AvailableItems.this);
@@ -622,7 +620,7 @@ public class AvailableItems extends AppCompatActivity {
                     linearLayout.setTag(item);
 
                     final String finalItem = item;
-                    final String finalTransactionNumber = transactionNumber;
+                    final String finalTransactionNumber = item;
                     linearLayout.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
@@ -679,7 +677,7 @@ public class AvailableItems extends AppCompatActivity {
                     layoutParamsItemLeft.setMargins(20, -50, 0, 10);
 
                     TextView txtItemName = new TextView(AvailableItems.this);
-                    String cutWord = cutWord(item);
+                    String cutWord = (title.equals("Item Receivable")) ?  item : cutWord(item);
                     txtItemName.setText(cutWord);
                     txtItemName.setLayoutParams(layoutParams);
                     txtItemName.setTextSize(13);

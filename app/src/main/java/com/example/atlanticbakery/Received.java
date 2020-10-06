@@ -262,10 +262,10 @@ public class Received extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_addsalesinventory:
+                    case R.id.nav_itemReceivable:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Transfer to Sales");
+                        intent.putExtra("title", "Item Receivable");
                         startActivity(intent);
                         finish();
                         break;
@@ -558,8 +558,11 @@ public class Received extends AppCompatActivity {
                         itemName = cursor.getString(1);
 
                        if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
+                           System.out.println("1");
                        }else if(transfer_type != null && transfer_type.equals("Transfer from Sales")){
+                           System.out.println("2");
                        }else{
+                           System.out.println("3");
                            String query1 = "UPDATE tblinvitems SET " + columnName + "+=" + quantity + (operator.equals("+") ? ",totalav+=" + quantity : "") + ",endbal" + operator + "=" + quantity + ",variance" + (operator.equals("+") ? "-" : "+") + "=" + quantity + " WHERE itemname='" + itemName + "' AND invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND area='Sales';";
                            Statement stmt = con.createStatement();
                            stmt.executeUpdate(query1);

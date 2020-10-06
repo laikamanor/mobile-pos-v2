@@ -251,10 +251,10 @@ public class ReceivedSap2 extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_addsalesinventory:
+                    case R.id.nav_itemReceivable:
                         result = true;
                         intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Transfer to Sales");
+                        intent.putExtra("title", "Item Receivable");
                         startActivity(intent);
                         finish();
                         break;

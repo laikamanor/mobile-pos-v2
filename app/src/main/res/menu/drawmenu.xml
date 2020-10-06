@@ -35,9 +35,6 @@
         <group android:checkableBehavior="single">
             <menu>
                 <item
-                    android:id="@+id/nav_addsalesinventory"
-                    android:title="Add Sales Inventory" />
-                <item
                     android:id="@+id/nav_inventory"
                     android:title="Inventory" />
             </menu>
