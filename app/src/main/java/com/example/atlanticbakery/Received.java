@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Html;
 import android.text.InputFilter;
@@ -287,31 +288,33 @@ public class Received extends AppCompatActivity {
         });
     }
 
-    public void wholeInventory(){
+    public void wholeInventory() {
+        LoadingDialog loadingDialog = new LoadingDialog(Received.this);
+        loadingDialog.startLoadingDialog();
         final String[] selectedSpinner = new String[1];
         final AlertDialog.Builder myDialog = new AlertDialog.Builder(Received.this);
         myDialog.setCancelable(false);
         LinearLayout layout = new LinearLayout(Received.this);
-        layout.setPadding(40,40,40,40);
+        layout.setPadding(40, 40, 40, 40);
         layout.setOrientation(LinearLayout.VERTICAL);
 
         String lblBranchText = "";
         assert title != null;
-        if(title.equals("Manual Received from Direct Supplier")){
+        if (title.equals("Manual Received from Direct Supplier")) {
             lblBranchText = "Supplier";
-        }else if(transfer_type != null && transfer_type.equals("Manual Transfer Out") ||title.equals("Manual Received from Other Branch")){
+        } else if (transfer_type != null && transfer_type.equals("Manual Transfer Out") || title.equals("Manual Received from Other Branch")) {
             lblBranchText = "Branch";
-        }else if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
+        } else if (transfer_type != null && transfer_type.equals("Transfer to Sales")) {
             lblBranchText = "Sales Agent";
-        }else if(transfer_type != null && transfer_type.equals("Transfer from Sales")){
+        } else if (transfer_type != null && transfer_type.equals("Transfer from Sales")) {
             lblBranchText = "Main Branch";
         }
 
 
         TextView lblBranch = new TextView(Received.this);
         final Spinner cmbDiscountType = new Spinner(Received.this);
-        if(transfer_type != null){
-            if(transfer_type.equals("Transfer Out") || title.equals("Manual Received from Direct Supplier")|| title.equals("Manual Received from Other Branch") || transfer_type.equals("Transfer to Sales") || transfer_type.equals("Transfer from Sales")){
+        if (transfer_type != null) {
+            if (transfer_type.equals("Transfer Out") || title.equals("Manual Received from Direct Supplier") || title.equals("Manual Received from Other Branch") || transfer_type.equals("Transfer to Sales") || transfer_type.equals("Transfer from Sales")) {
                 lblBranch.setText(lblBranchText + ":");
                 lblBranch.setTextSize(15);
                 lblBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
@@ -328,7 +331,7 @@ public class Received extends AppCompatActivity {
         cmbDiscountType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-               selectedSpinner[0] = cmbDiscountType.getSelectedItem().toString();
+                selectedSpinner[0] = cmbDiscountType.getSelectedItem().toString();
             }
 
             @Override
@@ -342,8 +345,8 @@ public class Received extends AppCompatActivity {
         lblSAPNumber1.setTextSize(15);
         lblSAPNumber1.setGravity(View.TEXT_ALIGNMENT_CENTER);
 
-        if(transfer_type != null && !transfer_type.equals("Transfer to Sales")){
-            if(transfer_type != null && !transfer_type.equals("Transfer from Sales")){
+        if (transfer_type != null && !transfer_type.equals("Transfer to Sales")) {
+            if (transfer_type != null && !transfer_type.equals("Transfer from Sales")) {
                 layout.addView(lblSAPNumber1);
             }
         }
@@ -353,15 +356,15 @@ public class Received extends AppCompatActivity {
         final CheckBox chckAddSAP = new CheckBox(Received.this);
         toFollow.setText("To Follow");
 
-        if(title.equals("Manual Received from Adjustment") || title.equals("Manual Adjustment Out")){
+        if (title.equals("Manual Received from Adjustment") || title.equals("Manual Adjustment Out")) {
             chckAddSAP.setText("Add SAP");
             chckAddSAP.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    if(isChecked){
+                    if (isChecked) {
                         toFollow.setEnabled(true);
                         txtSAPNumber.setEnabled(true);
-                    }else{
+                    } else {
                         toFollow.setEnabled(false);
                         txtSAPNumber.setEnabled(false);
                     }
@@ -372,7 +375,7 @@ public class Received extends AppCompatActivity {
             layout.addView(chckAddSAP);
             toFollow.setEnabled(false);
             txtSAPNumber.setEnabled(false);
-        }else{
+        } else {
             toFollow.setEnabled(true);
             txtSAPNumber.setEnabled(true);
         }
@@ -384,8 +387,8 @@ public class Received extends AppCompatActivity {
                 txtSAPNumber.setText("");
             }
         });
-        if(transfer_type != null && !transfer_type.equals("Transfer to Sales")){
-            if(transfer_type != null && !transfer_type.equals("Transfer from Sales")) {
+        if (transfer_type != null && !transfer_type.equals("Transfer to Sales")) {
+            if (transfer_type != null && !transfer_type.equals("Transfer from Sales")) {
                 layout.addView(toFollow);
             }
         }
@@ -396,7 +399,7 @@ public class Received extends AppCompatActivity {
         InputFilter[] fArray = new InputFilter[1];
         fArray[0] = new InputFilter.LengthFilter(6);
         txtSAPNumber.setFilters(fArray);
-        if(transfer_type != null && !transfer_type.equals("Transfer to Sales")) {
+        if (transfer_type != null && !transfer_type.equals("Transfer to Sales")) {
             if (transfer_type != null && !transfer_type.equals("Transfer from Sales")) {
                 layout.addView(txtSAPNumber);
             }
@@ -416,64 +419,72 @@ public class Received extends AppCompatActivity {
             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                if(!toFollow.isChecked() && txtSAPNumber.getText().toString().equals("") && chckAddSAP.isChecked()){
-                    Toast.makeText(Received.this, "SAP # field is empty", Toast.LENGTH_SHORT).show();
-                }else if(!toFollow.isChecked() && txtSAPNumber.getText().toString().length() < 6 && chckAddSAP.isChecked()){
-                    Toast.makeText(Received.this, "SAP # should 6 numbers", Toast.LENGTH_SHORT).show();
-                }else if(cmbDiscountType.getSelectedItemPosition() == 0 && !selectedSpinner[0].equals("")){
-                    Toast.makeText(Received.this,  selectedSpinner[0] + " field is empty", Toast.LENGTH_SHORT).show();
-                }else if(txtRemarks.getText().toString().equals("")){
-                    Toast.makeText(Received.this, "Remarks field is empty", Toast.LENGTH_SHORT).show();
-                }else {
-                    String remarks = txtRemarks.getText().toString();
-                    String columnName = "";
-                    String operator = "";
-                    String title = Objects. requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
-                    switch (title) {
-                        case "Manual Received from Production":
-                            columnName = "productionin";
-                            operator = "+";
-                            break;
-                        case "Manual Received from Other Branch":
-                            columnName = "itemin";
-                            operator = "+";
-                            break;
-                        case "Manual Received from Direct Supplier":
-                            columnName = "supin";
-                            operator = "+";
-                            break;
-                        case "Manual Received from Adjustment":
-                            columnName = "adjustmentin";
-                            operator = "+";
-                            break;
-                        case "Manual Adjustment Out":
-                            columnName = "pullout";
-                            operator = "-";
-                            break;
-                        case "Manual Transfer Out":
-                            columnName = "transfer";
-                            operator = "-";
-                            break;
-                        case "Transfer to Sales":
-                            columnName = "salesout";
-                            operator = "-";
-                            break;
+                loadingDialog.startLoadingDialog();
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!toFollow.isChecked() && txtSAPNumber.getText().toString().equals("") && chckAddSAP.isChecked()) {
+                            Toast.makeText(Received.this, "SAP # field is empty", Toast.LENGTH_SHORT).show();
+                        } else if (!toFollow.isChecked() && txtSAPNumber.getText().toString().length() < 6 && chckAddSAP.isChecked()) {
+                            Toast.makeText(Received.this, "SAP # should 6 numbers", Toast.LENGTH_SHORT).show();
+                        } else if (cmbDiscountType.getSelectedItemPosition() == 0 && !selectedSpinner[0].equals("")) {
+                            Toast.makeText(Received.this, selectedSpinner[0] + " field is empty", Toast.LENGTH_SHORT).show();
+                        } else if (txtRemarks.getText().toString().equals("")) {
+                            Toast.makeText(Received.this, "Remarks field is empty", Toast.LENGTH_SHORT).show();
+                        } else {
+                            String remarks = txtRemarks.getText().toString();
+                            String columnName = "";
+                            String operator = "";
+                            String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
+                            switch (title) {
+                                case "Manual Received from Production":
+                                    columnName = "productionin";
+                                    operator = "+";
+                                    break;
+                                case "Manual Received from Other Branch":
+                                    columnName = "itemin";
+                                    operator = "+";
+                                    break;
+                                case "Manual Received from Direct Supplier":
+                                    columnName = "supin";
+                                    operator = "+";
+                                    break;
+                                case "Manual Received from Adjustment":
+                                    columnName = "adjustmentin";
+                                    operator = "+";
+                                    break;
+                                case "Manual Adjustment Out":
+                                    columnName = "pullout";
+                                    operator = "-";
+                                    break;
+                                case "Manual Transfer Out":
+                                    columnName = "transfer";
+                                    operator = "-";
+                                    break;
+                                case "Transfer to Sales":
+                                    columnName = "salesout";
+                                    operator = "-";
+                                    break;
+                            }
+                            if (transfer_type != null && transfer_type.equals("Transfer to Sales")) {
+                                columnName = "salesout";
+                                operator = "-";
+                            } else if (transfer_type != null && transfer_type.equals("Transfer from Sales")) {
+                                columnName = "salesin";
+                                operator = "+";
+                            }
+                            String sapNumber;
+                            if (toFollow.isChecked()) {
+                                sapNumber = "To Follow";
+                            } else {
+                                sapNumber = txtSAPNumber.getText().toString();
+                            }
+                            saveDataRec(operator, columnName, sapNumber, remarks, selectedSpinner[0]);
+                        }
+                        loadingDialog.dismissDialog();
                     }
-                    if(transfer_type != null && transfer_type.equals("Transfer to Sales")){
-                        columnName = "salesout";
-                        operator = "-";
-                    }else if(transfer_type != null &&  transfer_type.equals("Transfer from Sales")){
-                        columnName = "salesin";
-                        operator = "+";
-                    }
-                    String sapNumber;
-                    if(toFollow.isChecked()){
-                        sapNumber = "To Follow";
-                    }else{
-                        sapNumber = txtSAPNumber.getText().toString();
-                    }
-                    saveDataRec(operator, columnName,sapNumber, remarks,selectedSpinner[0]);
-                }
+                }, 500);
             }
         });
 
@@ -663,102 +674,111 @@ public class Received extends AppCompatActivity {
     @SuppressLint({"SetTextI18n", "RtlHardcoded"})
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public void loadItems() {
-        Cursor cursor;
-        final String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
+        LoadingDialog loadingDialog = new LoadingDialog(Received.this);
+        loadingDialog.startLoadingDialog();
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Cursor cursor;
+                final String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
 
-        int count;
-            count = myDb2.countItems(title);
-        LinearLayout layout = findViewById(R.id.layoutNoItems);
-        if(count == 0) {
-            layout.setVisibility(View.VISIBLE);
-            Button btnGoto = findViewById(R.id.btnGoto);
-            btnGoto.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
-                        return;
-                    }
-                    mLastClickTime = SystemClock.elapsedRealtime();
-                    Intent intent;
-                    intent = new Intent(getBaseContext(), AvailableItems.class);
-                    intent.putExtra("title", title);
-                    startActivity(intent);
-                }
-            });
-            btnProceed.setVisibility(View.GONE);
-        }else{
-            layout.setVisibility(View.GONE);
-
-            btnProceed.setVisibility(View.VISIBLE);
-
-            TableRow tableColumn = new TableRow(Received.this);
-            final TableLayout tableLayout = findViewById(R.id.table_main);
-            tableLayout.removeAllViews();
-            String[] columns = {"Item", "Qty.", "Action"};
-
-            for (String s : columns) {
-                TextView lblColumn1 = new TextView(Received.this);
-                lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                lblColumn1.setText(s);
-                lblColumn1.setPadding(10, 0, 10, 0);
-                tableColumn.addView(lblColumn1);
-            }
-            tableLayout.addView(tableColumn);
-            cursor = myDb2.getAllData(title);
-
-            if(cursor != null){
-                while (cursor.moveToNext()) {
-                    final TableRow tableRow = new TableRow(Received.this);
-                    String itemName = cursor.getString(1);
-                    String v = cutWord(itemName);
-                    System.out.println(v);
-                    double quantity = cursor.getDouble(2);
-                    final int id = cursor.getInt(0);
-
-                    TextView lblColumn1 = new TextView(Received.this);
-                    lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    lblColumn1.setText(v);
-                    lblColumn1.setPadding(10, 0, 10, 0);
-                    tableRow.addView(lblColumn1);
-
-                    TextView lblColumn2 = new TextView(Received.this);
-                    lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    lblColumn2.setText(df.format(quantity));
-                    lblColumn2.setPadding(10, 10, 10, 10);
-                    tableRow.addView(lblColumn2);
-
-                    TextView lblColumn3 = new TextView(Received.this);
-                    lblColumn3.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    lblColumn3.setTag(id);
-                    lblColumn3.setText("Remove");
-                    lblColumn3.setPadding(10, 10, 10, 10);
-                    lblColumn3.setTextColor(Color.RED);
-
-                    lblColumn3.setOnClickListener(new View.OnClickListener() {
+                int count;
+                count = myDb2.countItems(title);
+                LinearLayout layout = findViewById(R.id.layoutNoItems);
+                if (count == 0) {
+                    layout.setVisibility(View.VISIBLE);
+                    Button btnGoto = findViewById(R.id.btnGoto);
+                    btnGoto.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            int deletedItem;
-                            deletedItem = myDb2.deleteData(Integer.toString(id));
-                            if (deletedItem < 0) {
-                                Toast.makeText(Received.this, "Item not remove", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(Received.this, "Item removed", Toast.LENGTH_SHORT).show();
-                                loadItems();
+                            if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+                                return;
                             }
-
-                            if(myDb2.countItems(title).equals(0)){
-                                tableLayout.removeAllViews();
-                                btnProceed.setVisibility(View.GONE);
-                            }
+                            mLastClickTime = SystemClock.elapsedRealtime();
+                            Intent intent;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", title);
+                            startActivity(intent);
                         }
                     });
+                    btnProceed.setVisibility(View.GONE);
+                } else {
+                    layout.setVisibility(View.GONE);
 
-                    tableRow.addView(lblColumn3);
+                    btnProceed.setVisibility(View.VISIBLE);
 
-                    tableLayout.addView(tableRow);
+                    TableRow tableColumn = new TableRow(Received.this);
+                    final TableLayout tableLayout = findViewById(R.id.table_main);
+                    tableLayout.removeAllViews();
+                    String[] columns = {"Item", "Qty.", "Action"};
+
+                    for (String s : columns) {
+                        TextView lblColumn1 = new TextView(Received.this);
+                        lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                        lblColumn1.setText(s);
+                        lblColumn1.setPadding(10, 0, 10, 0);
+                        tableColumn.addView(lblColumn1);
+                    }
+                    tableLayout.addView(tableColumn);
+                    cursor = myDb2.getAllData(title);
+
+                    if (cursor != null) {
+                        while (cursor.moveToNext()) {
+                            final TableRow tableRow = new TableRow(Received.this);
+                            String itemName = cursor.getString(1);
+                            String v = cutWord(itemName);
+                            System.out.println(v);
+                            double quantity = cursor.getDouble(2);
+                            final int id = cursor.getInt(0);
+
+                            TextView lblColumn1 = new TextView(Received.this);
+                            lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                            lblColumn1.setText(v);
+                            lblColumn1.setPadding(10, 0, 10, 0);
+                            tableRow.addView(lblColumn1);
+
+                            TextView lblColumn2 = new TextView(Received.this);
+                            lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                            lblColumn2.setText(df.format(quantity));
+                            lblColumn2.setPadding(10, 10, 10, 10);
+                            tableRow.addView(lblColumn2);
+
+                            TextView lblColumn3 = new TextView(Received.this);
+                            lblColumn3.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                            lblColumn3.setTag(id);
+                            lblColumn3.setText("Remove");
+                            lblColumn3.setPadding(10, 10, 10, 10);
+                            lblColumn3.setTextColor(Color.RED);
+
+                            lblColumn3.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    int deletedItem;
+                                    deletedItem = myDb2.deleteData(Integer.toString(id));
+                                    if (deletedItem < 0) {
+                                        Toast.makeText(Received.this, "Item not remove", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        Toast.makeText(Received.this, "Item removed", Toast.LENGTH_SHORT).show();
+                                        loadItems();
+                                    }
+
+                                    if (myDb2.countItems(title).equals(0)) {
+                                        tableLayout.removeAllViews();
+                                        btnProceed.setVisibility(View.GONE);
+                                    }
+                                }
+                            });
+
+                            tableRow.addView(lblColumn3);
+
+                            tableLayout.addView(tableRow);
+                        }
+                    }
                 }
+                loadingDialog.dismissDialog();
             }
-        }
+        }, 500);
     }
 
     public String cutWord(String value){

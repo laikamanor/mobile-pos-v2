@@ -21,7 +21,7 @@ public class receivedsap_class {
                 Toast.makeText(activity, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
             } else {
                 String vName = (isSAPIT) ? "vSAP_IT" : "vSAP_PO";
-                String resultQuery = "SELECT docNum [result],Dscription,Quantity FROM " + vName + " WHERE CAST(DocDate AS date)=(select cast(getdate() as date)) AND docNum LIKE '%" + sapNumber + "%' ORDER BY docNum";
+                String resultQuery = "SELECT docNum [result],Dscription,Quantity FROM " + vName + " WHERE CAST(DocDate AS date)>='10/09/2020' AND docNum LIKE '%" + sapNumber + "%' ORDER BY docNum";
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(resultQuery);
                 while (rs.next()){

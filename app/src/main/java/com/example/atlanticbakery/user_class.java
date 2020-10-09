@@ -29,11 +29,11 @@ public class user_class {
             Toast.makeText(activity, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
         }else{
             try{
-                String EncodedPassword = sc.Encode(password);
+                String EncodedPassword = sc.Encode(password).trim();
 
-                String query = "select systemid from tblusers WHERE " + colName + "='" + username + "' AND password='" + EncodedPassword + "';";
+                String query = "select systemid from tblusers WHERE " + colName + "='" + username + "' AND password='" + EncodedPassword.trim() + "';";
                 Statement stmt = con.createStatement();
-
+                System.out.println(query);
                 ResultSet rs = stmt.executeQuery(query);
                 if (rs.next()) {
                     result = Integer.parseInt(rs.getString("systemid"));
@@ -52,9 +52,10 @@ public class user_class {
             Toast.makeText(activity, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
         }else{
             try{
-                String EncodedPassword = sc.Encode(password);
+                String EncodedPassword = sc.Encode(password).trim();
 
-                String query = "select systemid from tblusers WHERE workgroup='Manager' AND password='" + EncodedPassword + "';";
+                String query = "select systemid from tblusers WHERE workgroup='Manager' AND password='" + EncodedPassword.trim() + "';";
+                System.out.println(query);
                 Statement stmt = con.createStatement();
 
                 ResultSet rs = stmt.executeQuery(query);
@@ -105,6 +106,32 @@ public class user_class {
         }
         return  result;
     }
+
+//    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+//    public boolean isMainInventoryAllowed(Activity activity, String type){
+//        boolean result = false;
+//        try {
+//            con = cc.connectionClass(activity);
+//            if (con == null) {
+//                Toast.makeText(activity, "loadData() Check Your Internet Access", Toast.LENGTH_SHORT).show();
+//            } else {
+//                SharedPreferencessharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+//                SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+//                int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+//                String query = "SELECT COUNT(id) [count] FROM tblaccess WHERE userid=" + userID + " AND moduleid=(SELECT id FROM tblmodules WHERE name='" + type + "') AND status=1;";
+//                Statement stmt = con.createStatement();
+//                ResultSet rs = stmt.executeQuery(query);
+//                if(rs.next()){
+//                    if(rs.getInt("count") > 0){
+//                        result = true;
+//                    }
+//                }
+//            }
+//        }catch (Exception ex){
+//            Toast.makeText(activity, "isMainInventoryAllowed() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+//        }
+//        return result;
+//    }
 
     public void checkCutOff(Activity activity, String username){
         boolean hasLoggedIn = false;

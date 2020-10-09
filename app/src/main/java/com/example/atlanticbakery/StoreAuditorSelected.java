@@ -266,31 +266,61 @@ public class StoreAuditorSelected extends AppCompatActivity {
         btnProeed.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                AlertDialog.Builder dialogConfirmation = new AlertDialog.Builder(StoreAuditorSelected.this);
-                dialogConfirmation.setTitle("Confirmation");
-                dialogConfirmation.setMessage("Are you sure you want to proceed?");
-                dialogConfirmation.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                final AlertDialog.Builder myDialog = new AlertDialog.Builder(StoreAuditorSelected.this);
+                myDialog.setCancelable(false);
+                LinearLayout layout = new LinearLayout(StoreAuditorSelected.this);
+                layout.setPadding(40, 40, 40, 40);
+                layout.setOrientation(LinearLayout.VERTICAL);
+
+
+                TextView lblRemarks = new TextView(StoreAuditorSelected.this);
+                lblRemarks.setText("Remarks:");
+                lblRemarks.setTextSize(15);
+                lblRemarks.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                layout.addView(lblRemarks);
+
+                final EditText txtRemarks = new EditText(StoreAuditorSelected.this);
+                txtRemarks.setTextSize(15);
+                txtRemarks.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                layout.addView(txtRemarks);
+
+                myDialog.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
-                        int userid = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
-                        boolean isSuccess = ac.insertActualEnding(StoreAuditorSelected.this, type,userid);
-                        if(isSuccess) {
-                            Toast.makeText(StoreAuditorSelected.this, "Transaction Completed", Toast.LENGTH_SHORT).show();
-                            startActivity(getIntent());
-                            finish();
-                        }else {
-                            Toast.makeText(StoreAuditorSelected.this, "Error Occurred", Toast.LENGTH_SHORT).show();
+                        if(txtRemarks.getText().toString().isEmpty()){
+                            Toast.makeText(getBaseContext(), "Remarks field is empty", Toast.LENGTH_SHORT).show();
+                        }else{
+                            AlertDialog.Builder dialogConfirmation = new AlertDialog.Builder(StoreAuditorSelected.this);
+                            dialogConfirmation.setTitle("Confirmation");
+                            dialogConfirmation.setMessage("Are you sure you want to proceed?");
+                            dialogConfirmation.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+                                    int userid = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+                                    String remarks = txtRemarks.getText().toString();
+                                    boolean isSuccess = ac.insertActualEnding(StoreAuditorSelected.this, type,userid,remarks);
+                                    if(isSuccess) {
+                                        Toast.makeText(StoreAuditorSelected.this, "Transaction Completed", Toast.LENGTH_SHORT).show();
+                                        startActivity(getIntent());
+                                        finish();
+                                    }else {
+                                        Toast.makeText(StoreAuditorSelected.this, "Error Occurred", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                            dialogConfirmation.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    dialogInterface.dismiss();
+                                }
+                            });
+                            dialogConfirmation.show();
                         }
                     }
                 });
-                dialogConfirmation.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.dismiss();
-                    }
-                });
-                dialogConfirmation.show();
+                myDialog.setView(layout);
+                myDialog.show();
             }
         });
     }

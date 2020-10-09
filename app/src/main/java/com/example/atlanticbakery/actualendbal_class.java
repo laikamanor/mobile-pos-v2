@@ -197,7 +197,7 @@ public class actualendbal_class {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public boolean insertActualEnding(Activity activity, String type,int userid){
+    public boolean insertActualEnding(Activity activity, String type,int userid,String remarks){
         boolean result;
         int result_int = 0;
         try{
@@ -209,7 +209,7 @@ public class actualendbal_class {
                 Cursor cursor = myDb4.getAllData(type);
                 if(cursor != null){
                     while (cursor.moveToNext()){
-                        String query = "INSERT INTO tblactualendbal (itemname,quantity,type,createdby,datecreated,status) VALUES ('" + cursor.getString(1) + "'," + cursor.getDouble(2) + ",'" + type + "',(SELECT username FROM tblusers WHERE systemid=" + userid + "),(SELECT GETDATE()),1)";
+                        String query = "INSERT INTO tblactualendbal (itemname,quantity,type,createdby,datecreated,status,remarks) VALUES ('" + cursor.getString(1) + "'," + cursor.getDouble(2) + ",'" + type + "',(SELECT username FROM tblusers WHERE systemid=" + userid + "),(SELECT GETDATE()),1,'" + remarks + "')";
                         Statement stmt = con.createStatement();
                         stmt.executeUpdate(query);
                     }
@@ -326,15 +326,15 @@ public class actualendbal_class {
                         }
                         double as = endBal - pullOut;
                         charge = quantity - as;
-                        String query = "Update tblinvitems set endbal-=" + Math.abs(charge) + ", actualendbal=" + quantity + ", variance-=" + charge + " where itemcode=(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "') and invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC)";
+                        String query = "Update tblinvitems set endbal-=" + Math.abs(charge) + ", actualendbal=" + quantity + ", variance-=" + Math.abs(charge) + " where itemcode=(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "') and invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC)";
                         Statement stmt = con.createStatement();
                         stmt.executeUpdate(query);
                         String query2 = "INSERT INTO tblproduction (transaction_number,inv_id,item_code,item_name,category,quantity,charge,date,processed_by,type,area,status,remarks) VALUES ('" + transNum + "',(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC),(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "'),'" + itemName + "',(SELECT category FROM tblitems WHERE itemname='" + itemName + "')," + quantity + "," + Math.abs(charge) + ",(SELECT GETDATE()),(SELECT TOP 1 username FROM tblusers WHERE systemid=" + userid + "),'Actual Ending Balance', 'Sales', 'Completed','');";
                         Statement stmt2 = con.createStatement();
                         stmt2.executeUpdate(query2);
-                        charge = Math.abs(charge);
-                        if(charge != 0) {
-                            totalAmount += chargeFunctionItems(activity,ar_num,itemName,charge);
+                        if(charge < 0) {
+                            double c = Math.abs(charge);
+                            totalAmount += chargeFunctionItems(activity,ar_num,itemName,c);
                         }
                         if(totalAmount > 0){
                             boolean isSuccess = chargeFunctionTransaction(activity,totalAmount, ar_num,userid,"Main Inventory");
@@ -388,7 +388,7 @@ public class actualendbal_class {
             if (con == null) {
                 Toast.makeText(activity, "chargeFunctionItems() Check Your Internet Access", Toast.LENGTH_SHORT).show();
             } else {
-                String query = "Update tblinvitems set endbal-=" + Math.abs(charge) + ", archarge-=" + Math.abs(charge) + " where itemcode=(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "') and invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC)";
+                String query = "Update tblinvitems set archarge+=" + charge + " where itemcode=(SELECT itemcode FROM tblitems WHERE itemname='" + itemName + "') and invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC)";
                 Statement stmt = con.createStatement();
                 stmt.executeUpdate(query);
 

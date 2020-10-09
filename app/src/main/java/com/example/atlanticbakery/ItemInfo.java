@@ -554,136 +554,109 @@ public class ItemInfo extends AppCompatActivity {
         btnAddCart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean isItemNameExist = itemc.checkItemName(ItemInfo.this, itemName);
-                int quantity;
-                if(txtQuantity.getText().toString().isEmpty()){
-                    quantity = 0;
-                    txtQuantity.setText("0");
-                }else{
-                    quantity = Integer.parseInt(txtQuantity.getText().toString());
-                }
-                SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
-                int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
-                boolean hasStock = itemc.checkItemNameStock(ItemInfo.this, itemName, Double.parseDouble(String.valueOf(quantity)));
-                boolean hasHaving = (trans_type != null && trans_type.equals("Transfer from Sales"));
-                double OwnStockQuantity = rc.checkOwnInventoryStock(ItemInfo.this, "Transfer to Sales",userID, itemName,hasHaving);
-                if (!isItemNameExist) {
-                    Toast.makeText(ItemInfo.this, "item not found", Toast.LENGTH_SHORT).show();
-                }else if(quantity <=0 && !title.equals("AC Store Count List Items") && !title.equals("AC Auditor Count List Items") && !title.equals("PO Store Count List Items") && !title.equals("PO Auditor Count List Items")){
-                    Toast.makeText(ItemInfo.this, "Add Quantity atleast 1", Toast.LENGTH_SHORT).show();
-                }else if(!hasStock && title.equals("Menu Items") && inv_type != null && inv_type.equals("Main Inventory")) {
-                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                }else if(OwnStockQuantity <= 0 && title.equals("Menu Items") && inv_type != null && inv_type.equals("Own Inventory")) {
-                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                }else if(OwnStockQuantity < quantity && title.equals("Menu Items") && inv_type != null && inv_type.equals("Own Inventory")) {
-                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                }else if(!hasStock && title.equals("Manual Transfer Out") && trans_type.equals("Transfer to Other Branch")) {
-                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                }else if(OwnStockQuantity <= 0 && trans_type != null && trans_type.equals("Transfer from Sales")) {
-                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                }else if(!hasStock && trans_type != null && trans_type.equals("Transfer to Sales")) {
-                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                }else if(OwnStockQuantity < quantity && trans_type != null && trans_type.equals("Transfer from Sales")) {
-                    Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                }else{
-                    saveData();
-                }
+                LoadingDialog loadingDialog = new LoadingDialog(ItemInfo.this);
+                loadingDialog.startLoadingDialog();
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean isItemNameExist = itemc.checkItemName(ItemInfo.this, itemName);
+                        int quantity;
+                        if(txtQuantity.getText().toString().isEmpty()){
+                            quantity = 0;
+                            txtQuantity.setText("0");
+                        }else{
+                            quantity = Integer.parseInt(txtQuantity.getText().toString());
+                        }
+                        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+                        int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+                        boolean hasStock = itemc.checkItemNameStock(ItemInfo.this, itemName, Double.parseDouble(String.valueOf(quantity)));
+                        boolean hasHaving = (trans_type != null && trans_type.equals("Transfer from Sales"));
+                        double OwnStockQuantity = rc.checkOwnInventoryStock(ItemInfo.this, "Transfer to Sales",userID, itemName,hasHaving);
+                        if (!isItemNameExist) {
+                            Toast.makeText(ItemInfo.this, "item not found", Toast.LENGTH_SHORT).show();
+                        }else if(quantity <=0 && !title.equals("AC Store Count List Items") && !title.equals("AC Auditor Count List Items") && !title.equals("PO Store Count List Items") && !title.equals("PO Auditor Count List Items")){
+                            Toast.makeText(ItemInfo.this, "Add Quantity atleast 1", Toast.LENGTH_SHORT).show();
+                        }else if(!hasStock && title.equals("Menu Items") && inv_type != null && inv_type.equals("Main Inventory")) {
+                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                        }else if(OwnStockQuantity <= 0 && title.equals("Menu Items") && inv_type != null && inv_type.equals("Own Inventory")) {
+                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                        }else if(OwnStockQuantity < quantity && title.equals("Menu Items") && inv_type != null && inv_type.equals("Own Inventory")) {
+                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                        }else if(!hasStock && title.equals("Manual Transfer Out") && trans_type.equals("Transfer to Other Branch")) {
+                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                        }else if(OwnStockQuantity <= 0 && trans_type != null && trans_type.equals("Transfer from Sales")) {
+                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                        }else if(!hasStock && trans_type != null && trans_type.equals("Transfer to Sales")) {
+                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                        }else if(OwnStockQuantity < quantity && trans_type != null && trans_type.equals("Transfer from Sales")) {
+                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                        }else{
+                            double discountPercent = Double.parseDouble(txtDiscount.getText().toString());
+                            double price = itemc.returnItemNamePrice(ItemInfo.this, itemName);
+                            int free;
+                            if(checkFree.isChecked()){
+                                free = 1;
+                            }else{
+                                free = 0;
+                            }
+                            int quantity3;
+                            double quantityy;
+                            if(txtQuantity.getText().toString().isEmpty()){
+                                quantity3 = 0;
+                                quantityy = 0.00;
+                            }else{
+                                quantity3 = Integer.parseInt(txtQuantity.getText().toString());
+                                quantityy = Double.parseDouble(txtQuantity.getText().toString());
+                            }
+                            double discountAmount = (price * quantity3) * (discountPercent / 100);
+                            double totalPrice = (free == 1 ? 0 : (price * quantity3) - discountAmount);
+                            String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
+                            boolean isInserted;
+                            if(title.equals("Menu Items")) {
+                                isInserted = myDb.insertData(quantityy, discountPercent, price, free, totalPrice, itemName,inv_type);
+                            }else if(title.equals("Received from SAP")){
+                                int id = getIntent().getIntExtra("id",0);
+                                isInserted = myDb3.updateSelected(Integer.toString(id),1, quantityy);
+                            }else if(title.equals("AC Auditor Count List Items") || title.equals("AC Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Store Count List Items")) {
+                                String type = "";
+                                if (title.equals("AC Auditor Count List Items")) {
+                                    type = "Auditor Count";
+                                } else if (title.equals("AC Store Count List Items")) {
+                                    type = "Store Count";
+                                } else if (title.equals("PO Auditor Count List Items")) {
+                                    type = "PO Auditor Count";
+                                } else if (title.equals("PO Store Count List Items")) {
+                                    type = "PO Store Count";
+                                }
+                                isInserted = myDb4.insertData(itemName, Double.parseDouble(String.valueOf(quantity3)), type, 1);
+                            }else {
+                                isInserted = myDb2.insertData(itemName, quantity3, title);
+                            }
+
+                            if (isInserted) {
+                                Toast.makeText(getBaseContext(),"Item Added", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(getBaseContext(),"Item Not Added", Toast.LENGTH_SHORT).show();
+                            }
+                            Intent intent;
+                            if(title.equals("Received from SAP")){
+                                intent = new Intent(getBaseContext(), ReceivedSap.class);
+                            }else{
+                                intent = new Intent(getBaseContext(), AvailableItems.class);
+                                intent.putExtra("transfer_type", trans_type);
+                                intent.putExtra("inventory_type", inv_type);
+                            }
+                            finish();
+                            intent.putExtra("title", title);
+                            startActivity(intent);
+                            finish();
+                        }
+                        loadingDialog.dismissDialog();
+                    }
+                },500);
             }
         });
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    @SuppressLint("SetTextI18n")
-    public void saveData() {
-        checkItem checkItem = new checkItem();
-        checkItem.execute("");
-        Intent intent;
-        String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
-        if(title.equals("Received from SAP")){
-            intent = new Intent(getBaseContext(), ReceivedSap.class);
-            finish();
-        }else{
-            intent = new Intent(getBaseContext(), AvailableItems.class);
-            intent.putExtra("transfer_type", trans_type);
-            intent.putExtra("inventory_type", inv_type);
-            finish();
-        }
-        intent.putExtra("title", title);
-        startActivity(intent);
-        finish();
-    }
-
-    @SuppressLint("StaticFieldLeak")
-    public class checkItem extends AsyncTask<String, String, String> {
-        String z = "";
-        @Override
-        protected void onPreExecute() {
-        }
-
-        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-        @Override
-        protected String doInBackground(String... params) {
-            double discountPercent = Double.parseDouble(txtDiscount.getText().toString());
-            double price = itemc.returnItemNamePrice(ItemInfo.this, itemName);
-            int free;
-            if(checkFree.isChecked()){
-                free = 1;
-            }else{
-                free = 0;
-            }
-            int quantity;
-            double quantity2;
-            if(txtQuantity.getText().toString().isEmpty()){
-                quantity = 0;
-                quantity2 = 0.00;
-            }else{
-                quantity = Integer.parseInt(txtQuantity.getText().toString());
-                quantity2 = Double.parseDouble(txtQuantity.getText().toString());
-            }
-            double discountAmount = (price * quantity) * (discountPercent / 100);
-            double totalPrice = (free == 1 ? 0 : (price * quantity) - discountAmount);
-            String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
-            boolean isInserted;
-            if(title.equals("Menu Items")) {
-                isInserted = myDb.insertData(quantity2, discountPercent, price, free, totalPrice, itemName,inv_type);
-            }else if(title.equals("Received from SAP")){
-                int id = getIntent().getIntExtra("id",0);
-                isInserted = myDb3.updateSelected(Integer.toString(id),1, quantity2);
-            }else if(title.equals("AC Auditor Count List Items") || title.equals("AC Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Store Count List Items")) {
-                String type = "";
-                if (title.equals("AC Auditor Count List Items")) {
-                    type = "Auditor Count";
-                } else if (title.equals("AC Store Count List Items")) {
-                    type = "Store Count";
-                } else if (title.equals("PO Auditor Count List Items")) {
-                    type = "PO Auditor Count";
-                } else if (title.equals("PO Store Count List Items")) {
-                    type = "PO Store Count";
-                }
-                isInserted = myDb4.insertData(itemName, Double.parseDouble(String.valueOf(quantity)), type, 1);
-            }else {
-                isInserted = myDb2.insertData(itemName, quantity, title);
-            }
-
-            if (isInserted) {
-                z = "Item Added";
-            } else {
-                z = "Item Not Added";
-            }
-            return z;
-        }
-
-        @Override
-        protected void onPostExecute(final String s) {
-            Handler handler = new Handler();
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(ItemInfo.this, s, Toast.LENGTH_SHORT).show();
-                }
-            };
-            handler.postDelayed(r, 1000);
-        }
     }
 
 

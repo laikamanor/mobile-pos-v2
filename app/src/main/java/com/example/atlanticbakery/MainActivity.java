@@ -82,7 +82,6 @@ public class MainActivity extends AppCompatActivity {
                 z = "Invalid Credentials";
             }
             return z;
-
         }
 
         @Override
@@ -99,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                     loadingDialog.dismissDialog();
                 }
             };
-            handler.postDelayed(r, 1000);
+            handler.postDelayed(r, 500);
         }
     }
 

@@ -15,9 +15,13 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         tools:targetApi="n">
-        <activity android:name=".ItemReceivable"></activity>
-        <activity android:name=".SalesInventory_Received"></activity>
-        <activity android:name=".SalesInventory_AvailableItems" />
+        <activity android:name=".Users">
+        </activity>
+        <activity android:name=".ItemReceivable" />
+        <activity android:name=".SalesInventory_Received">
+
+        </activity>
+        <activity android:name=".SalesInventory_AvailableItems"></activity>
         <activity android:name=".UpdateActualEndingBalance" />
         <activity android:name=".ItemInfo2" />
         <activity android:name=".StoreAuditorSelected" />
