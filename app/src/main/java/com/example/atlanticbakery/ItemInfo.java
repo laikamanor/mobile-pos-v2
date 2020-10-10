@@ -51,6 +51,9 @@ public class ItemInfo extends AppCompatActivity {
     received_class rc = new received_class();
     actualendbal_class ac = new actualendbal_class();
     receivedsap_class recsap = new receivedsap_class();
+    access_class accessc = new access_class();
+
+    int userID = 0;
 
     DatabaseHelper myDb;
     DatabaseHelper2 myDb2;
@@ -72,6 +75,9 @@ public class ItemInfo extends AppCompatActivity {
         myDb3 = new DatabaseHelper3(this);
         myDb4 = new DatabaseHelper4(this);
         myDb5 = new DatabaseHelper5(this);
+
+        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+        userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
 
         checkFree = findViewById(R.id.checkFree);
         lblItem = findViewById(R.id.itemName);
@@ -142,25 +148,73 @@ public class ItemInfo extends AppCompatActivity {
                         finish();
                         break;
                     case R.id.nav_receivedProduction:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Manual Received from Production");
-                        startActivity(intent);
-                        finish();
+                        if(!uc.returnWorkgroup(ItemInfo.this).equals("Manager")){
+                            if(!accessc.isUserAllowed(ItemInfo.this,"Received from Production", userID)){
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }else if(accessc.checkCutOff(ItemInfo.this)) {
+                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                            }else{
+                                result = true;
+                                intent = new Intent(getBaseContext(), AvailableItems.class);
+                                intent.putExtra("title", "Manual Received from Production");
+                                startActivity(intent);
+                                finish();
+                            }
+                        }else if(accessc.checkCutOff(ItemInfo.this)){
+                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "Manual Received from Production");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
                     case R.id.nav_receivedBranch:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Manual Received from Other Branch");
-                        startActivity(intent);
-                        finish();
+                        if(!uc.returnWorkgroup(ItemInfo.this).equals("Manager")) {
+                            if (!accessc.isUserAllowed(ItemInfo.this, "Received from Production", userID)) {
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }else if(accessc.checkCutOff(ItemInfo.this)) {
+                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                            }else {
+                                result = true;
+                                intent = new Intent(getBaseContext(), AvailableItems.class);
+                                intent.putExtra("title", "Manual Received from Other Branch");
+                                startActivity(intent);
+                                finish();
+                            }
+                        }else if(accessc.checkCutOff(ItemInfo.this)){
+                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "Manual Received from Other Branch");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
                     case R.id.nav_receivedSupplier:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Manual Received from Direct Supplier");
-                        startActivity(intent);
-                        finish();
+                        if(!uc.returnWorkgroup(ItemInfo.this).equals("Manager")) {
+                            if (!accessc.isUserAllowed(ItemInfo.this, "Received from Production", userID)) {
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }else if(accessc.checkCutOff(ItemInfo.this)) {
+                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                            } else {
+                                result = true;
+                                intent = new Intent(getBaseContext(), AvailableItems.class);
+                                intent.putExtra("title", "Manual Received from Direct Supplier");
+                                startActivity(intent);
+                                finish();
+                            }
+                        }else if(accessc.checkCutOff(ItemInfo.this)){
+                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "Manual Received from Direct Supplier");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
                     case R.id.nav_transferOut2:
                         result = true;
@@ -170,7 +224,9 @@ public class ItemInfo extends AppCompatActivity {
                         finish();
                         break;
                     case R.id.nav_storeCountListPullOut:
-                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        if(!accessc.checkCutOff(ItemInfo.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (isStorePullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
@@ -183,10 +239,14 @@ public class ItemInfo extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_auditorCountListPullOut:
-                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        if(!accessc.checkCutOff(ItemInfo.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (isAuditorPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(ItemInfo.this).equals("Auditor")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
@@ -196,7 +256,9 @@ public class ItemInfo extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_finalCountListPullOut:
-                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        if(!accessc.checkCutOff(ItemInfo.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
@@ -211,7 +273,9 @@ public class ItemInfo extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_storeCountList:
-                        if(isAuditorExist && isStoreExist && isFinalExist){
+                        if(!accessc.checkCutOff(ItemInfo.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorExist && isStoreExist && isFinalExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (isStoreExist) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
@@ -224,10 +288,14 @@ public class ItemInfo extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_auditorCountList:
-                        if(isAuditorExist && isStoreExist && isFinalExist){
+                        if(!accessc.checkCutOff(ItemInfo.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorExist && isStoreExist && isFinalExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (isAuditorExist) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(ItemInfo.this).equals("Auditor")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
@@ -237,7 +305,9 @@ public class ItemInfo extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_finalCountList:
-                        if(isAuditorExist && isStoreExist && isFinalExist){
+                        if(!accessc.checkCutOff(ItemInfo.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorExist && isStoreExist && isFinalExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (!isAuditorExist & !isStoreExist) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();

@@ -58,9 +58,11 @@ public class AvailableItems extends AppCompatActivity {
     inventory_class ic = new inventory_class();
     connection_class cc = new connection_class();
     prefs_class pc = new prefs_class();
+    access_class acccesc = new access_class();
     received_class rc = new received_class();
     item_class itemc = new item_class();
     receivedsap_class recsap = new receivedsap_class();
+    access_class accessc = new access_class();
     actualendbal_class ac = new actualendbal_class();
     DecimalFormat df = new DecimalFormat("#,###");
     SharedPreferences sharedPreferences;
@@ -179,7 +181,9 @@ public class AvailableItems extends AppCompatActivity {
                         finish();
                         break;
                     case R.id.nav_storeCountListPullOut:
-                        if (isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist) {
+                        if(!accessc.checkCutOff(AvailableItems.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if (isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         } else if (isStorePullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
@@ -192,10 +196,14 @@ public class AvailableItems extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_auditorCountListPullOut:
-                        if (isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist) {
+                        if(!accessc.checkCutOff(AvailableItems.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if (isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         } else if (isAuditorPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(AvailableItems.this).equals("Auditor")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                         } else {
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
@@ -205,7 +213,9 @@ public class AvailableItems extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_finalCountListPullOut:
-                        if (isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist) {
+                        if(!accessc.checkCutOff(AvailableItems.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if (isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         } else if (!isAuditorPullOutExist & !isStorePullOutExist) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
@@ -220,7 +230,9 @@ public class AvailableItems extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_storeCountList:
-                        if (isAuditorExist && isStoreExist && isFinalExist) {
+                        if(!accessc.checkCutOff(AvailableItems.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if (isAuditorExist && isStoreExist && isFinalExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         } else if (isStoreExist) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
@@ -233,10 +245,14 @@ public class AvailableItems extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_auditorCountList:
-                        if (isAuditorExist && isStoreExist && isFinalExist) {
+                        if(!accessc.checkCutOff(AvailableItems.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if (isAuditorExist && isStoreExist && isFinalExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         } else if (isAuditorExist) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(AvailableItems.this).equals("Auditor")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                         } else {
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
@@ -246,7 +262,9 @@ public class AvailableItems extends AppCompatActivity {
                         }
                         break;
                     case R.id.nav_finalCountList:
-                        if (isAuditorExist && isStoreExist && isFinalExist) {
+                        if(!accessc.checkCutOff(AvailableItems.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if (isAuditorExist && isStoreExist && isFinalExist) {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         } else if (!isAuditorExist & !isStoreExist) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
@@ -420,12 +438,23 @@ public class AvailableItems extends AppCompatActivity {
                 btnPositive.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        if(inventory_type == null || inventory_type.isEmpty()){
+                        if(acccesc.checkCutOff(AvailableItems.this)){
+                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                        }else if(inventory_type == null || inventory_type.isEmpty()){
                             Toast.makeText(getBaseContext(), "Please choose to option", Toast.LENGTH_SHORT).show();
                         }else if(transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer from Sales")){
                             Toast.makeText(getBaseContext(), "Please choose to option in Main Inventory", Toast.LENGTH_SHORT).show();
-                        }else if(inventory_type != null && transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer to Sales") && !isMainInventoryAllowed("Transfer to Sales")){
+                        }else if(inventory_type != null && transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer to Sales") && !acccesc.isUserAllowed(AvailableItems.this,"Transfer to Sales", userID)){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                        }
+                        else if(!uc.returnWorkgroup(AvailableItems.this).equals("Manager")) {
+                            if (inventory_type != null && transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer to Other Branch") && !acccesc.isUserAllowed(AvailableItems.this, "Transfer to Other Branch", userID)) {
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }
+                            else {
+                                myDialog.dismiss();
+                                loadData("");
+                            }
                         }
                         else{
                             myDialog.dismiss();
@@ -481,7 +510,7 @@ public class AvailableItems extends AppCompatActivity {
                         public void onClick(View view) {
                             if(inventory_type == null || inventory_type.equals("")){
                                 Toast.makeText(getBaseContext(), "Please choose to option", Toast.LENGTH_SHORT).show();
-                            }else if(inventory_type !=  null && !isMainInventoryAllowed("Main Inventory") && inventory_type.equals("Main Inventory")){
+                            }else if(inventory_type !=  null && !acccesc.isUserAllowed(AvailableItems.this, "Main Inventory",userID) && inventory_type.equals("Main Inventory")){
                                 Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                             }
                             else{
@@ -498,31 +527,6 @@ public class AvailableItems extends AppCompatActivity {
                 }
             }
         }
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public boolean isMainInventoryAllowed(String type){
-        boolean result = false;
-        try {
-            con = cc.connectionClass(AvailableItems.this);
-            if (con == null) {
-                Toast.makeText(this, "loadData() Check Your Internet Access", Toast.LENGTH_SHORT).show();
-            } else {
-                SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
-                userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
-                String query = "SELECT COUNT(id) [count] FROM tblaccesss WHERE userid=" + userID + " AND moduleid=(SELECT id FROM tblmodules WHERE name='" + type + "') AND status=1;";
-                Statement stmt = con.createStatement();
-                ResultSet rs = stmt.executeQuery(query);
-                if(rs.next()){
-                    if(rs.getInt("count") > 0){
-                        result = true;
-                    }
-                }
-            }
-        }catch (Exception ex){
-            Toast.makeText(this, "isMainInventoryAllowed() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-        return result;
     }
 
     public  void onBtnLogout(){
@@ -606,10 +610,10 @@ public class AvailableItems extends AppCompatActivity {
                     } else {
                         if (inventory_type != null && inventory_type.equals("Own Inventory") && title.equals("Menu Items")) {
                             query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
-                                    "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
+                                    "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.status='Completed' AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
                         } else if (transfer_type != null & inventory_type != null && transfer_type.equals("Transfer from Sales") && inventory_type.equals("Own Inventory")) {
                             query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
-                                    "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from AND b.status='Pending')xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
+                                    "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from AND b.status='Completed')xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.status='Completed' AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
                         }
                         System.out.println("QUUERRRY: \n" + query);
                         List<String> items = new ArrayList<>();

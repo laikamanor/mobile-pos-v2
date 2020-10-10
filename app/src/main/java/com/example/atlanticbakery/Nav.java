@@ -11,6 +11,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Html;
@@ -27,6 +28,7 @@ public class Nav extends AppCompatActivity  {
     ui_class uic = new ui_class();
     prefs_class pc = new prefs_class();
     user_class uc = new user_class();
+    access_class accessc = new access_class();
     receivedsap_class recsap = new receivedsap_class();
     DatabaseHelper db = new DatabaseHelper(this);
     actualendbal_class ac = new actualendbal_class();
@@ -34,6 +36,8 @@ public class Nav extends AppCompatActivity  {
     private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle toggle;
     NavigationView navigationView;
+
+    int userID = 0;
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +52,8 @@ public class Nav extends AppCompatActivity  {
         toggle.syncState();
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+        userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
 
         Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>Main Menu</font>"));
 
@@ -90,25 +96,73 @@ public class Nav extends AppCompatActivity  {
                         finish();
                         break;
                     case R.id.nav_receivedProduction:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Manual Received from Production");
-                        startActivity(intent);
-                        finish();
+                        if(!uc.returnWorkgroup(Nav.this).equals("Manager")){
+                            if(!accessc.isUserAllowed(Nav.this,"Received from Production", userID)){
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }else if(accessc.checkCutOff(Nav.this)) {
+                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                            }else{
+                                result = true;
+                                intent = new Intent(getBaseContext(), AvailableItems.class);
+                                intent.putExtra("title", "Manual Received from Production");
+                                startActivity(intent);
+                                finish();
+                            }
+                        }else if(accessc.checkCutOff(Nav.this)){
+                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "Manual Received from Production");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
                     case R.id.nav_receivedBranch:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Manual Received from Other Branch");
-                        startActivity(intent);
-                        finish();
+                        if(!uc.returnWorkgroup(Nav.this).equals("Manager")) {
+                            if (!accessc.isUserAllowed(Nav.this, "Received from Production", userID)) {
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }else if(accessc.checkCutOff(Nav.this)) {
+                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                            }else {
+                                result = true;
+                                intent = new Intent(getBaseContext(), AvailableItems.class);
+                                intent.putExtra("title", "Manual Received from Other Branch");
+                                startActivity(intent);
+                                finish();
+                            }
+                        }else if(accessc.checkCutOff(Nav.this)){
+                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "Manual Received from Other Branch");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
                     case R.id.nav_receivedSupplier:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Manual Received from Direct Supplier");
-                        startActivity(intent);
-                        finish();
+                        if(!uc.returnWorkgroup(Nav.this).equals("Manager")) {
+                            if (!accessc.isUserAllowed(Nav.this, "Received from Production", userID)) {
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }else if(accessc.checkCutOff(Nav.this)) {
+                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                            } else {
+                                result = true;
+                                intent = new Intent(getBaseContext(), AvailableItems.class);
+                                intent.putExtra("title", "Manual Received from Direct Supplier");
+                                startActivity(intent);
+                                finish();
+                            }
+                        }else if(accessc.checkCutOff(Nav.this)){
+                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "Manual Received from Direct Supplier");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
                     case R.id.nav_transferOut2:
                         result = true;
@@ -125,7 +179,9 @@ public class Nav extends AppCompatActivity  {
                         finish();
                         break;
                     case R.id.nav_storeCountListPullOut:
-                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        if(!accessc.checkCutOff(Nav.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (isStorePullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
@@ -138,11 +194,15 @@ public class Nav extends AppCompatActivity  {
                         }
                         break;
                     case R.id.nav_auditorCountListPullOut:
-                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        if(!accessc.checkCutOff(Nav.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (isAuditorPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
-                        }else{
+                        }else if(!uc.returnWorkgroup(Nav.this).equals("Auditor")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                        }else {
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
                             intent.putExtra("title", "PO Auditor Count List Items");
@@ -151,7 +211,9 @@ public class Nav extends AppCompatActivity  {
                         }
                         break;
                     case R.id.nav_finalCountListPullOut:
-                        if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        if(!accessc.checkCutOff(Nav.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
@@ -166,7 +228,9 @@ public class Nav extends AppCompatActivity  {
                         }
                         break;
                     case R.id.nav_storeCountList:
-                        if(isAuditorExist && isStoreExist && isFinalExist){
+                        if(!accessc.checkCutOff(Nav.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorExist && isStoreExist && isFinalExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (isStoreExist) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
@@ -179,10 +243,14 @@ public class Nav extends AppCompatActivity  {
                         }
                         break;
                     case R.id.nav_auditorCountList:
-                        if(isAuditorExist && isStoreExist && isFinalExist){
+                        if(!accessc.checkCutOff(Nav.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorExist && isStoreExist && isFinalExist){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (isAuditorExist) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(Nav.this).equals("Auditor")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
@@ -192,7 +260,9 @@ public class Nav extends AppCompatActivity  {
                         }
                         break;
                     case R.id.nav_finalCountList:
-                         if(isAuditorExist && isStoreExist && isFinalExist){
+                        if(!accessc.checkCutOff(Nav.this)) {
+                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+                        }else if(isAuditorExist && isStoreExist && isFinalExist){
                             Toast.makeText(Nav.this, "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (!isAuditorExist & !isStoreExist) {
                             Toast.makeText(Nav.this, "Finish Store and Audit First", Toast.LENGTH_SHORT).show();

@@ -20,6 +20,39 @@ public class actualendbal_class {
     connection_class cc = new connection_class();
     received_class rec = new received_class();
 
+    public boolean hasFinalCount(Activity activity, String type) {
+        boolean result;
+        int result_int = 0;
+        try {
+            con = cc.connectionClass(activity);
+            if (con == null) {
+                Toast.makeText(activity, "loadActualEndBal() Check Your Internet Access", Toast.LENGTH_SHORT).show();
+            } else {
+                String s = (type.equals("PO Final Count")) ? "PO " : "";
+                String query = "SELECT itemname [sItemName],quantity [sQuantity] FROM tblactualendbal WHERE type='" + s + "Store Count' AND CAST(datecreated AS date)=(SELECT CAST(GETDATE() AS date)) AND status=1 ORDER BY itemname ASC;";
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(query);
+                while (rs.next()) {
+                    String query2 = "SELECT itemname [aItemName],quantity [aQuantity] FROM tblactualendbal WHERE type='" + s + "Auditor Count' AND itemname='" + rs.getString("sItemName") + "' AND status=1 AND CAST(datecreated AS date)=(SELECT CAST(GETDATE() AS date)) ORDER BY itemname ASC;";
+                    Statement stmt2 = con.createStatement();
+                    ResultSet rs2 = stmt2.executeQuery(query2);
+                    if (rs2.next()) {
+                        double sQuantity = rs.getDouble("sQuantity");
+                        double aQuantity = rs2.getDouble("aQuantity");
+                        double variance = sQuantity - aQuantity;
+                        if (sQuantity != aQuantity) {
+                            result_int+= 1;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            Toast.makeText(activity, "hasFinalCount() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        result = result_int > 0;
+        return result;
+    }
+
     public List<String> loadActualEndBal(Activity activity, String itemname,String type) {
         List<String> results = new ArrayList<>();
         try {

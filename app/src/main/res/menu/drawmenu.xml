@@ -107,7 +107,7 @@
                 android:title="AEB Store Count" />
                 <item
                     android:id="@+id/nav_auditorCountList"
-                    android:title="AEB Auditor" />
+                    android:title="AEB Auditor Count" />
                 <item
                     android:id="@+id/nav_finalCountList"
                     android:title="AEB Final Count" />

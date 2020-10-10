@@ -2,6 +2,7 @@ package com.example.atlanticbakery;
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -34,11 +35,14 @@ public class ItemInfo2 extends AppCompatActivity {
     prefs_class pc = new prefs_class();
     user_class uc = new user_class();
     receivedsap_class recsap = new receivedsap_class();
+    access_class accessc = new access_class();
     DatabaseHelper db = new DatabaseHelper(this);
 
     TextView lblItem,lblVariance;
     EditText txtQuantity;
     Button btnAddCart,btnMinus,btnPlus;
+
+    int userID = 0;
 
     String title;
     actualendbal_class ac = new actualendbal_class();
@@ -60,6 +64,9 @@ public class ItemInfo2 extends AppCompatActivity {
         btnMinus = findViewById(R.id.btnMinus);
         btnAddCart = findViewById(R.id.btnAddCart);
         txtQuantity = findViewById(R.id.txtQuantity);
+
+        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+        userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
 
         title = getIntent().getStringExtra("title");
         lblItem.setText(getIntent().getStringExtra("itemname"));
@@ -115,25 +122,73 @@ public class ItemInfo2 extends AppCompatActivity {
                         finish();
                         break;
                     case R.id.nav_receivedProduction:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Manual Received from Production");
-                        startActivity(intent);
-                        finish();
+                        if(!uc.returnWorkgroup(ItemInfo2.this).equals("Manager")){
+                            if(!accessc.isUserAllowed(ItemInfo2.this,"Received from Production", userID)){
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }else if(accessc.checkCutOff(ItemInfo2.this)) {
+                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                            }else{
+                                result = true;
+                                intent = new Intent(getBaseContext(), AvailableItems.class);
+                                intent.putExtra("title", "Manual Received from Production");
+                                startActivity(intent);
+                                finish();
+                            }
+                        }else if(accessc.checkCutOff(ItemInfo2.this)){
+                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "Manual Received from Production");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
                     case R.id.nav_receivedBranch:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Manual Received from Other Branch");
-                        startActivity(intent);
-                        finish();
+                        if(!uc.returnWorkgroup(ItemInfo2.this).equals("Manager")) {
+                            if (!accessc.isUserAllowed(ItemInfo2.this, "Received from Production", userID)) {
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }else if(accessc.checkCutOff(ItemInfo2.this)) {
+                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                            }else {
+                                result = true;
+                                intent = new Intent(getBaseContext(), AvailableItems.class);
+                                intent.putExtra("title", "Manual Received from Other Branch");
+                                startActivity(intent);
+                                finish();
+                            }
+                        }else if(accessc.checkCutOff(ItemInfo2.this)){
+                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "Manual Received from Other Branch");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
                     case R.id.nav_receivedSupplier:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Manual Received from Direct Supplier");
-                        startActivity(intent);
-                        finish();
+                        if(!uc.returnWorkgroup(ItemInfo2.this).equals("Manager")) {
+                            if (!accessc.isUserAllowed(ItemInfo2.this, "Received from Production", userID)) {
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }else if(accessc.checkCutOff(ItemInfo2.this)) {
+                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                            } else {
+                                result = true;
+                                intent = new Intent(getBaseContext(), AvailableItems.class);
+                                intent.putExtra("title", "Manual Received from Direct Supplier");
+                                startActivity(intent);
+                                finish();
+                            }
+                        }else if(accessc.checkCutOff(ItemInfo2.this)){
+                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+                        }else {
+                            result = true;
+                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                            intent.putExtra("title", "Manual Received from Direct Supplier");
+                            startActivity(intent);
+                            finish();
+                        }
                         break;
                     case R.id.nav_transferOut2:
                         result = true;
@@ -160,6 +215,8 @@ public class ItemInfo2 extends AppCompatActivity {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (isAuditorPullOutExist) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(ItemInfo2.this).equals("Auditor")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
@@ -201,6 +258,8 @@ public class ItemInfo2 extends AppCompatActivity {
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
                         }else if (isAuditorExist) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+                        }else if(!uc.returnWorkgroup(ItemInfo2.this).equals("Auditor")){
+                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
                             intent = new Intent(getBaseContext(), AvailableItems.class);
