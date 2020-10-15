@@ -81,15 +81,19 @@ public class actualendbal_class {
                         }
                     }
                 } else if (type.equals("PO Auditor Count") || type.equals("PO Store Count")) {
-                    String query = "SELECT itemname,endbal [quantity] FROM tblinvitems WHERE invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND status=1 ORDER BY endbal DESC, itemname ASC";
+                    String query = "SELECT itemname,endbal [quantity],totalav  FROM tblinvitems WHERE invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND status=1 ORDER BY endbal DESC, itemname ASC";
                     Statement stmt = con.createStatement();
                     ResultSet rs = stmt.executeQuery(query);
                     while (rs.next()) {
-                        String concatString = rs.getString("itemname") + "," + rs.getString("quantity");
+                        int nagalaw = 0;
+                        if(rs.getDouble("totalav") > 0){
+                            nagalaw = 1;
+                        }
+                        String concatString = rs.getString("itemname") + "," + rs.getString("quantity") + "," + nagalaw;
                         results.add(concatString);
                     }
                 } else {
-                    String query = "SELECT a.itemname [result] ,a.endbal [quantity] FROM tblinvitems a INNER JOIN tblitems b ON a.itemname = b.itemname WHERE a.invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC) AND a.itemname LIKE '%" + itemname + "%' ORDER BY a.totalav DESC,a.itemname ASC;";
+                    String query = "SELECT a.itemname [result] ,a.endbal [quantity],a.totalav FROM tblinvitems a INNER JOIN tblitems b ON a.itemname = b.itemname WHERE a.invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC) AND a.itemname LIKE '%" + itemname + "%' ORDER BY a.totalav DESC,a.itemname ASC;";
                     Statement stmt = con.createStatement();
                     ResultSet rs = stmt.executeQuery(query);
                     while (rs.next()) {
@@ -97,7 +101,11 @@ public class actualendbal_class {
                         Statement stmt2 = con.createStatement();
                         ResultSet rs2 = stmt2.executeQuery(query2);
                         if (!rs2.next()) {
-                            String concatString = rs.getString("result") + "," + rs.getString("quantity");
+                            int nagalaw = 0;
+                            if(rs.getDouble("totalav") > 0){
+                                nagalaw = 1;
+                            }
+                            String concatString = rs.getString("result") + "," + rs.getString("quantity") + "," + nagalaw;
                             results.add(concatString);
                         }
                     }

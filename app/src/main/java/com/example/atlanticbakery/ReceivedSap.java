@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Html;
 import android.view.Gravity;
@@ -21,6 +22,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -393,7 +395,6 @@ public class ReceivedSap extends AppCompatActivity {
         ScrollView scrollView = findViewById(R.id.scroll);
         LinearLayout.LayoutParams layoutParamsScroll;
         if(myDb3.countItems().equals(0)){
-            System.out.println("WALA");
             layoutParamsScroll = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 700);
             loadSAPNumber("");
 
@@ -467,11 +468,8 @@ public class ReceivedSap extends AppCompatActivity {
     public void loadCount(){
         Menu menu = navigationView.getMenu();
         MenuItem nav_shoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        MenuItem nav_ReceivedSAP = menu.findItem(R.id.nav_receivedSap);
         int totalCart = myDb.countItems();
-        int totalPendingSAP = recsap.returnPendingSAPNotif(ReceivedSap.this, "");
         nav_shoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
-        nav_ReceivedSAP.setTitle("List Items (" + totalPendingSAP + ")");
     }
 
     public void navigateDone(){
@@ -500,92 +498,101 @@ public class ReceivedSap extends AppCompatActivity {
     @SuppressLint({"SetTextI18n", "ResourceAsColor"})
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     public void loadSAPNumber(final String sapNumber) {
-        GridLayout gridLayout = findViewById(R.id.grid);
-        gridLayout.removeAllViews();
-        try {
-            con = cc.connectionClass(ReceivedSap.this);
-            if (con == null) {
-                Toast.makeText(this, "loadData() Check Your Internet Access", Toast.LENGTH_SHORT).show();
-            } else {
-                List<String> results;
-                boolean isSAPIT = spinner.getSelectedItemPosition() == 0;
-                results = recsap.returnSAPNumber(ReceivedSap.this, sapNumber, isSAPIT);
-                for (String result : results){
-                    CardView cardView = new CardView(ReceivedSap.this);
-                    LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
-                    layoutParamsCv.setMargins(20, 10, 10, 10);
-                    cardView.setLayoutParams(layoutParamsCv);
-                    cardView.setRadius(12);
-                    cardView.setCardElevation(5);
+        LoadingDialog loadingDialog = new LoadingDialog(ReceivedSap.this);
+        loadingDialog.startLoadingDialog();
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                GridLayout gridLayout = findViewById(R.id.grid);
+                gridLayout.removeAllViews();
+                try {
+                    con = cc.connectionClass(ReceivedSap.this);
+                    if (con == null) {
+                        Toast.makeText(getBaseContext(), "loadData() Check Your Internet Access", Toast.LENGTH_SHORT).show();
+                    } else {
+                        List<String> results;
+                        boolean isSAPIT = spinner.getSelectedItemPosition() == 0;
+                        results = recsap.returnSAPNumber(ReceivedSap.this, sapNumber, isSAPIT);
+                        for (String result : results){
+                            CardView cardView = new CardView(ReceivedSap.this);
+                            LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
+                            layoutParamsCv.setMargins(20, 10, 10, 10);
+                            cardView.setLayoutParams(layoutParamsCv);
+                            cardView.setRadius(12);
+                            cardView.setCardElevation(5);
 
-                    cardView.setVisibility(View.VISIBLE);
-                    gridLayout.addView(cardView);
-                    final LinearLayout linearLayout = new LinearLayout(ReceivedSap.this);
-                    LinearLayout.LayoutParams layoutParamsLinear = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 5f);
-                    linearLayout.setLayoutParams(layoutParamsLinear);
-                    linearLayout.setTag(result);
+                            cardView.setVisibility(View.VISIBLE);
+                            gridLayout.addView(cardView);
+                            final LinearLayout linearLayout = new LinearLayout(ReceivedSap.this);
+                            LinearLayout.LayoutParams layoutParamsLinear = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 5f);
+                            linearLayout.setLayoutParams(layoutParamsLinear);
+                            linearLayout.setTag(result);
 
-                    final String finalItem = result;
-                    linearLayout.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            AlertDialog.Builder myDialog = new AlertDialog.Builder(ReceivedSap.this);
-                            myDialog.setCancelable(false);
-                            myDialog.setTitle("Confirmation");
-                            myDialog.setMessage("Are you sure you want to select '" +  finalItem + "'?");
-
-                            myDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            final String finalItem = result;
+                            linearLayout.setOnClickListener(new View.OnClickListener() {
                                 @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
-                                        return;
-                                    }
-                                    mLastClickTime = SystemClock.elapsedRealtime();
-                                    int countError = insertSAPItems(finalItem);
-                                    if(countError <= 0){
-                                        Toast.makeText(ReceivedSap.this, "'" + finalItem + "' added", Toast.LENGTH_SHORT).show();
-                                        startActivity(getIntent());
-                                        finish();
-                                    }else{
-                                        Toast.makeText(ReceivedSap.this, "'" + finalItem + "' not added", Toast.LENGTH_SHORT).show();
-                                    }
+                                public void onClick(View view) {
+                                    AlertDialog.Builder myDialog = new AlertDialog.Builder(ReceivedSap.this);
+                                    myDialog.setCancelable(false);
+                                    myDialog.setTitle("Confirmation");
+                                    myDialog.setMessage("Are you sure you want to select '" +  finalItem + "'?");
+
+                                    myDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
+                                                return;
+                                            }
+                                            mLastClickTime = SystemClock.elapsedRealtime();
+                                            int countError = insertSAPItems(finalItem);
+                                            if(countError <= 0){
+                                                Toast.makeText(ReceivedSap.this, "'" + finalItem + "' added", Toast.LENGTH_SHORT).show();
+                                                startActivity(getIntent());
+                                                finish();
+                                            }else{
+                                                Toast.makeText(ReceivedSap.this, "'" + finalItem + "' not added", Toast.LENGTH_SHORT).show();
+                                            }
+                                        }
+                                    });
+
+                                    myDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            dialogInterface.dismiss();
+                                        }
+                                    });
+
+                                    myDialog.show();
                                 }
                             });
 
-                            myDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    dialogInterface.dismiss();
-                                }
-                            });
+                            linearLayout.setOrientation(LinearLayout.VERTICAL);
+                            linearLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                            linearLayout.setVisibility(View.VISIBLE);
+                            cardView.addView(linearLayout);
 
-                            myDialog.show();
+                            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+                            layoutParams.setMargins(20, 0, 20, 0);
+                            LinearLayout.LayoutParams layoutParamsItemLeft = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                            layoutParamsItemLeft.setMargins(20, -50, 0, 10);
+
+                            TextView txtItemName = new TextView(ReceivedSap.this);
+                            String cutWord = cutWord(result,25);
+                            txtItemName.setText(cutWord);
+                            txtItemName.setLayoutParams(layoutParams);
+                            txtItemName.setTextSize(13);
+                            txtItemName.setVisibility(View.VISIBLE);
+                            linearLayout.addView(txtItemName);
                         }
-                    });
-
-                    linearLayout.setOrientation(LinearLayout.VERTICAL);
-                    linearLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    linearLayout.setVisibility(View.VISIBLE);
-                    cardView.addView(linearLayout);
-
-                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                    layoutParams.setMargins(20, 0, 20, 0);
-                    LinearLayout.LayoutParams layoutParamsItemLeft = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                    layoutParamsItemLeft.setMargins(20, -50, 0, 10);
-
-                    TextView txtItemName = new TextView(ReceivedSap.this);
-                    String cutWord = cutWord(result,25);
-                    txtItemName.setText(cutWord);
-                    txtItemName.setLayoutParams(layoutParams);
-                    txtItemName.setTextSize(13);
-                    txtItemName.setVisibility(View.VISIBLE);
-                    linearLayout.addView(txtItemName);
+                        txtSearch.setAdapter(fillItems(results));
+                    }
+                }catch (Exception ex){
+                    Toast.makeText(ReceivedSap.this, "loadData() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
                 }
-                txtSearch.setAdapter(fillItems(results));
+                loadingDialog.dismissDialog();
             }
-        }catch (Exception ex){
-            Toast.makeText(ReceivedSap.this, "loadData() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
-        }
+        },500);
     }
 
     public ArrayAdapter<String> fillItems(List<String> names){

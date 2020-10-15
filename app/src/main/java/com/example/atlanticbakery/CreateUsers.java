@@ -120,7 +120,7 @@ public class CreateUsers extends AppCompatActivity {
                 String workgroup = cmbWorkgroup.getSelectedItem().toString();
                 String branch = cmbBranch.getSelectedItem().toString();
                 String postype = cmbPOSType.getSelectedItem().toString();
-                z = insertTransaction(name, username, Base64.encodeToString(password.getBytes(),0),workgroup,branch,postype);
+                z = insertTransaction(name, username, Base64.encodeToString(password.getBytes(),0).trim(),workgroup,branch,postype);
                 isSuccess = true;
             }
             return z;
@@ -150,7 +150,7 @@ public class CreateUsers extends AppCompatActivity {
         String result;
         try{
             SharedPreferences sharedPreferences = getSharedPreferences("LOGIN",MODE_PRIVATE);
-            int userid = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+//            int userid = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
             con = cc.connectionClass(this);
             if (con == null) {
                 result = "Check Your Internet Access";
@@ -158,7 +158,7 @@ public class CreateUsers extends AppCompatActivity {
                 String query = "INSERT INTO tblusers (fullname,username,password,workgroup,datecreated," +
                         "createdby,status,brid,postype) VALUES(" +
                         "'" + name + "', '" + username + "','" + password + "','"+ workgroup + "'," +
-                        "(SELECT GETDATE()),(SELECT username FROM tblusers WHERE systemid=" + userid + "),1," +
+                        "(SELECT GETDATE()),(SELECT username FROM tblusers WHERE systemid=1),1," +
                         "(SELECT brid FROM tblbranch WHERE branchcode='" + branch + "'),'" + postype + "');";
                 Statement stmt = con.createStatement();
                 stmt.executeUpdate(query);

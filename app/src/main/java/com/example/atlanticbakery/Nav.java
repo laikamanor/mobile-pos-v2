@@ -347,10 +347,7 @@ public class Nav extends AppCompatActivity  {
     public void loadCount(){
         Menu menu = navigationView.getMenu();
         MenuItem nav_shoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        MenuItem nav_ReceivedSAP = menu.findItem(R.id.nav_receivedSap);
         int totalCart = db.countItems();
-        int totalPendingSAP = recsap.returnPendingSAPNotif(Nav.this, "");
         nav_shoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
-        nav_ReceivedSAP.setTitle("List Items (" + totalPendingSAP + ")");
     }
 }

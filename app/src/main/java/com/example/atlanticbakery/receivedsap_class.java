@@ -21,11 +21,11 @@ public class receivedsap_class {
                 Toast.makeText(activity, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
             } else {
                 String vName = (isSAPIT) ? "vSAP_IT" : "vSAP_PO";
-                String resultQuery = "SELECT docNum [result],Dscription,Quantity FROM " + vName + " WHERE CAST(DocDate AS date)>='10/08/2020' AND docNum LIKE '%" + sapNumber + "%' ORDER BY docNum";
+                String resultQuery = "SELECT docNum [result],Dscription,Quantity FROM " + vName + " WHERE CAST(DocDate AS date)>='10/11/2020' AND docNum LIKE '%" + sapNumber + "%' ORDER BY docNum";
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(resultQuery);
                 while (rs.next()){
-                    String resultQuery2 = "SELECT transaction_id FROM tblproduction WHERE CAST(date AS date)=(select cast(getdate() as date)) AND sap_number='" + rs.getString("result") + "' AND item_name='" + rs.getString("Dscription") + "' AND sap_number !='To Follow' AND status='Completed'";
+                    String resultQuery2 = "SELECT transaction_id FROM tblproduction WHERE CAST(date AS date)>='10/11/2020' AND sap_number='" + rs.getString("result") + "' AND item_name='" + rs.getString("Dscription") + "' AND sap_number !='To Follow' AND status='Completed'";
                     Statement stmt2 = con.createStatement();
                     ResultSet rs2 = stmt2.executeQuery(resultQuery2);
                     if(!rs2.next()){
@@ -49,15 +49,14 @@ public class receivedsap_class {
             con = cc.connectionClass(activity);
             if (con == null) {
                 Toast.makeText(activity, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
-
             } else {
                 String vName = (isSAPIT) ? "vSAP_IT" : "vSAP_PO";
                 String fromWhat = (isSAPIT) ? "FromWhsCod" : "CardName";
-                String resultQuery = "SELECT DISTINCT DocNum [sap_number]," + fromWhat + " [fromWhat],Dscription [item_name], Quantity [quantity]  FROM " + vName + " WHERE CAST(DocDate AS date)>='10/08/2020' AND docNum LIKE '%" + sapNumber + "%'";
+                String resultQuery = "SELECT DISTINCT DocNum [sap_number]," + fromWhat + " [fromWhat],Dscription [item_name], Quantity [quantity]  FROM " + vName + " WHERE CAST(DocDate AS date)>='10/11/2020' AND docNum LIKE '%" + sapNumber + "%'";
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(resultQuery);
                 while (rs.next()){
-                    String resultQuery2 = "SELECT transaction_id FROM tblproduction WHERE CAST(date AS date)>='10/08/2020' AND sap_number='" + sapNumber + "' AND item_name='" + rs.getString("item_name") + "' AND sap_number !='To Follow' AND status='Completed'";
+                    String resultQuery2 = "SELECT transaction_id FROM tblproduction WHERE CAST(date AS date)>='10/11/2020' AND sap_number='" + sapNumber + "' AND item_name='" + rs.getString("item_name") + "' AND sap_number !='To Follow' AND status='Completed'";
                     Statement stmt2 = con.createStatement();
                     ResultSet rs2 = stmt2.executeQuery(resultQuery2);
                     if(!rs2.next()){
@@ -112,11 +111,11 @@ public class receivedsap_class {
             if (con == null) {
                 Toast.makeText(activity, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
             } else {
-                String resultQuery = "SELECT docNum [result],Dscription,Quantity FROM vSAP_IT WHERE CAST(DocDate AS date)>='10/08/2020' AND docNum LIKE '%" + sapNumber + "%' ORDER BY docNum";
+                String resultQuery = "SELECT docNum [result],Dscription,Quantity FROM vSAP_IT WHERE CAST(DocDate AS date)>='10/11/2020' AND docNum LIKE '%" + sapNumber + "%' ORDER BY docNum";
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(resultQuery);
                 while (rs.next()){
-                    String resultQuery2 = "SELECT transaction_id FROM tblproduction WHERE CAST(date AS date)>='10/08/2020' AND sap_number='" + rs.getString("result") + "' AND item_name='" + rs.getString("Dscription") + "' AND sap_number !='To Follow' AND status='Completed'";
+                    String resultQuery2 = "SELECT transaction_id FROM tblproduction WHERE CAST(date AS date)>='10/11/2020' AND sap_number='" + rs.getString("result") + "' AND item_name='" + rs.getString("Dscription") + "' AND sap_number !='To Follow' AND status='Completed'";
                     Statement stmt2 = con.createStatement();
                     ResultSet rs2 = stmt2.executeQuery(resultQuery2);
                     if(!rs2.next()){

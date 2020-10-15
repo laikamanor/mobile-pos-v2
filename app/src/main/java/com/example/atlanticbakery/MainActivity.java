@@ -21,6 +21,11 @@ import java.util.List;
 import  java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
+    DatabaseHelper myDb = new DatabaseHelper(this);
+    DatabaseHelper2 myDb2;
+    DatabaseHelper3 myDb3;
+    DatabaseHelper4 myDb4;
+    DatabaseHelper5 myDb5;
 
     int userid;
     //Declaring layout button,editTexts and progress bar
@@ -37,6 +42,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + getString(R.string.app_name) + "</font>"));
+
+        myDb2 = new DatabaseHelper2(this);
+        myDb3 = new DatabaseHelper3(this);
+        myDb4 = new DatabaseHelper4(this);
+        myDb5 = new DatabaseHelper5(this);
 
         //Getting values from button,editTexts and progress bar
         login = findViewById(R.id.button);
@@ -93,6 +103,11 @@ public class MainActivity extends AppCompatActivity {
                     if (isSuccess) {
                         saveLoggedIn();
                         openMainMenu();
+                        myDb.truncateTable();
+                        myDb2.truncateTable();
+                        myDb3.truncateTable();
+                        myDb4.truncateTable();
+                        myDb5.truncateTable();
                     }
                     Toast.makeText(MainActivity.this, s, Toast.LENGTH_LONG).show();
                     loadingDialog.dismissDialog();

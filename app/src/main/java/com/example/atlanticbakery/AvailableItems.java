@@ -444,14 +444,12 @@ public class AvailableItems extends AppCompatActivity {
                             Toast.makeText(getBaseContext(), "Please choose to option", Toast.LENGTH_SHORT).show();
                         }else if(transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer from Sales")){
                             Toast.makeText(getBaseContext(), "Please choose to option in Main Inventory", Toast.LENGTH_SHORT).show();
-                        }else if(inventory_type != null && transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer to Sales") && !acccesc.isUserAllowed(AvailableItems.this,"Transfer to Sales", userID)){
-                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                        }
-                        else if(!uc.returnWorkgroup(AvailableItems.this).equals("Manager")) {
-                            if (inventory_type != null && transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer to Other Branch") && !acccesc.isUserAllowed(AvailableItems.this, "Transfer to Other Branch", userID)) {
+                        }else if(!uc.returnWorkgroup(AvailableItems.this).equals("Manager")){
+                            if(inventory_type != null && transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer to Sales") && !acccesc.isUserAllowed(AvailableItems.this,"Transfer to Sales", userID)){
                                 Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                            }
-                            else {
+                            }else if(inventory_type != null && transfer_type != null && inventory_type.equals("Main Inventory") && transfer_type.equals("Transfer to Other Branch") && !acccesc.isUserAllowed(AvailableItems.this, "Transfer to Other Branch", userID)){
+                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                            }else{
                                 myDialog.dismiss();
                                 loadData("");
                             }
@@ -562,11 +560,8 @@ public class AvailableItems extends AppCompatActivity {
     public void loadCount(){
         Menu menu = navigationView.getMenu();
         MenuItem nav_shoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        MenuItem nav_ReceivedSAP = menu.findItem(R.id.nav_receivedSap);
         int totalCart = myDb.countItems();
-        int totalPendingSAP = recsap.returnPendingSAPNotif(AvailableItems.this, "");
         nav_shoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
-        nav_ReceivedSAP.setTitle("List Items (" + totalPendingSAP + ")");
     }
 
 
@@ -613,9 +608,8 @@ public class AvailableItems extends AppCompatActivity {
                                     "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.status='Completed' AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
                         } else if (transfer_type != null & inventory_type != null && transfer_type.equals("Transfer from Sales") && inventory_type.equals("Own Inventory")) {
                             query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
-                                    "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from AND b.status='Completed')xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.status='Completed' AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
+                                    "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from AND b.status IN ('Completed','Pending')xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.status='Completed' AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
                         }
-                        System.out.println("QUUERRRY: \n" + query);
                         List<String> items = new ArrayList<>();
                         Statement stmt = con.createStatement();
                         ResultSet rs = stmt.executeQuery(query);
@@ -835,11 +829,14 @@ public class AvailableItems extends AppCompatActivity {
                         String[] words = result.split(",");
                         String item_name = "";
                         double quantity = 0.0;
+                        boolean hasTotalAvailable = false;
                         for (int i = 0; i < words.length; i++) {
                             if (i == 0) {
                                 item_name = words[i];
                             } else if (i == 1) {
                                 quantity = Double.parseDouble(words[i]);
+                            }else if(i == 2){
+                                hasTotalAvailable = Integer.parseInt(words[i]) == 1;
                             }
                         }
                         CardView cardView = new CardView(AvailableItems.this);
@@ -928,7 +925,7 @@ public class AvailableItems extends AppCompatActivity {
                             txtItemLeft.setTextColor(Color.WHITE);
                         }
 
-                        if(quantity == 0){
+                        if(!hasTotalAvailable){
                             linearLayout.setBackgroundColor(Color.parseColor("#545454"));
 //                    linearLayout.setBackgroundColor(Color.BLACK);
                             txtItemName.setTextColor(Color.WHITE);
