@@ -75,7 +75,7 @@ public class actualendbal_class {
                             double variance = sQuantity - aQuantity;
                             if (sQuantity != aQuantity) {
                                 String itemName = rs2.getString("aItemName");
-                                String concatString = itemName + "," + variance;
+                                String concatString = itemName + "," + variance + "," + 1;
                                 results.add(concatString);
                             }
                         }

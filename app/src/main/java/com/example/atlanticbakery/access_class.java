@@ -49,7 +49,8 @@ public class access_class {
                 String serverDate = getServerDate(activity);
                 String dateFrom = "";
                 String status = "";
-                String query = "SELECT TOP 1 CAST(a.date AS date) [date],a.status FROM tblcutoff a INNER JOIN tblusers b ON a.userid = b.systemid WHERE CAST(a.date AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum WHERE verify=0 AND b.workgroup NOT IN ('Administrator','LC Accounting') ORDER BY invsumid ASC)";
+                String query = "SELECT TOP 1 CAST(a.date AS date) [date],a.status FROM tblcutoff a INNER JOIN tblusers b ON a.userid = b.systemid WHERE CAST(a.date AS date)=(SELECT CAST(GETDATE() AS date))";
+                System.out.println();
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 if(rs.next()){

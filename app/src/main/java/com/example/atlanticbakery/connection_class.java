@@ -19,7 +19,7 @@ public class connection_class {
     public Connection connectionClass(Activity activity) {
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
-        Connection connection = null;
+            Connection connection = null;
         String ConnectionURL;
         try {
             sharedPreferences = activity.getSharedPreferences("CONFIG",MODE_PRIVATE);

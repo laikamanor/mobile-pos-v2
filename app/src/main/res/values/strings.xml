@@ -2,4 +2,5 @@
     <string name="app_name">Atlantic Bakery</string>
     <string name="open">Open</string>
     <string name="close">Close</string>
+    <string name="API_URL">http://192.168.11.8:5000</string>
 </resources>

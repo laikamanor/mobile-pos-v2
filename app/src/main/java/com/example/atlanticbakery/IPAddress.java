@@ -49,9 +49,9 @@ public class IPAddress extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar2);
         Button btnSubmit = findViewById(R.id.btnSubmit);
 
-        txtUsername.setVisibility(View.GONE);
-        txtPassword.setVisibility(View.GONE);
-        txtDatabase.setVisibility(View.GONE);
+//        txtUsername.setVisibility(View.GONE);
+//        txtPassword.setVisibility(View.GONE);
+//        txtDatabase.setVisibility(View.GONE);
 
         txtUsername.setText("admin");
         txtPassword.setText("abC@43212020");
