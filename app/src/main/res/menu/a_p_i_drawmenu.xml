@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    tools:ignore="MissingDefaultResource">
+    <item android:title="Signed In Gordon Macaraeg" android:id="@+id/usernameLogin">
+        <group android:checkableBehavior="single">
+        </group>
+    </item>
+    <item android:title="Settings">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_logOut"
+                    android:title="Logout" />
+<!--                <item-->
+<!--                    android:id="@+id/nav_cutOff"-->
+<!--                    android:title="Cut Off" />-->
+            </menu>
+        </group>
+    </item>
+    <item android:title="Items">
+        <group android:checkableBehavior="single">
+            <menu>
+<!--                <item-->
+<!--                    android:id="@+id/nav_scanItem"-->
+<!--                    android:title="Scan Item" />-->
+                <item
+                    android:id="@+id/nav_exploreItems"
+                    android:title="Menu Items" />
+                <item
+                    android:id="@+id/nav_shoppingCart"
+                    android:title="Shopping Cart" />
+            </menu>
+        </group>
+    </item>
+
+    <item android:title="Received from SAP">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_receivedSap"
+                    android:title="Received from SAP" />
+            </menu>
+        </group>
+    </item>
+
+
+    <item android:title="System Transfer Item">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_systemTransferItem"
+                    android:title="System Transfer Item" />
+            </menu>
+        </group>
+    </item>
+
+    <item android:title="Manual Transactions">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_receivedItem"
+                    android:title="Manual Received Item" />
+                <item
+                    android:id="@+id/nav_transferItem"
+                    android:title="Manual Transfer Item" />
+            </menu>
+        </group>
+    </item>
+    <item android:title="Item Request">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_itemRequest"
+                    android:title="Item Request" />
+            </menu>
+        </group>
+    </item>
+    <item android:title="Inventory Count">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_InventoryCount"
+                    android:title="Inventory Count" />
+            </menu>
+        </group>
+    </item>
+</menu>

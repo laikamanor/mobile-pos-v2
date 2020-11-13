@@ -10,8 +10,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import androidx.annotation.Nullable;
 
 public class DatabaseHelper3 extends SQLiteOpenHelper {
-    public static final String DATABASE_NAME = "c.db";
-    public static final String TABLE_NAME = "c";
+    public static final String DATABASE_NAME = "zxx.db";
+    public static final String TABLE_NAME = "zxx";
     public  static  final String COL_1 = "id";
     public  static  final String COL_2 = "sap_number";
     public  static  final String COL_3 = "fromBranch";
@@ -20,6 +20,9 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
     public  static  final String COL_6 = "actual_quantity";
     public  static  final String COL_7 = "isSelected";
     public  static  final String COL_8 = "isSAPIT";
+    public  static  final String COL_9 = "toBranch";
+    public  static  final String COL_10 = "base_id";
+    public  static  final String COL_11 = "fromModule";
     public DatabaseHelper3(@Nullable Context context) {
         super(context, DATABASE_NAME, null, 1);
         SQLiteDatabase db = this.getWritableDatabase();
@@ -27,7 +30,7 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        sqLiteDatabase.execSQL("CREATE TABLE " + TABLE_NAME + "(id INTEGER PRIMARY KEY AUTOINCREMENT,sap_number INTEGER, fromBranch TEXT,item_name TEXT,quantity INTEGER,actual_quantity INTEGER,isSelected INTEGER,isSAPIT INTEGER)");
+        sqLiteDatabase.execSQL("CREATE TABLE " + TABLE_NAME + "(id INTEGER PRIMARY KEY AUTOINCREMENT,sap_number INTEGER, fromBranch TEXT,item_name TEXT,quantity INTEGER,actual_quantity INTEGER,isSelected INTEGER,isSAPIT INTEGER,toBranch TEXT, base_id INTEGER,fromModule TEXT)");
     }
 
     @Override
@@ -36,7 +39,7 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
         onCreate(sqLiteDatabase);
     }
 
-    public boolean insertData(String sapNumber, String fromBranch,  String itemName,Double quantity,Integer actual_quantity,int isSAPIT){
+    public boolean insertData(String sapNumber, String fromBranch,  String itemName,Double quantity,Integer actual_quantity,int isSAPIT,String toBranch,int baseID, String fromModule,int isSelected){
         SQLiteDatabase db = this.getReadableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COL_2, sapNumber);
@@ -44,24 +47,35 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
         contentValues.put(COL_4, itemName);
         contentValues.put(COL_5, quantity);
         contentValues.put(COL_6, actual_quantity);
-        contentValues.put(COL_7, 0);
+        contentValues.put(COL_7, isSelected);
         contentValues.put(COL_8, isSAPIT);
+        contentValues.put(COL_9, toBranch);
+        contentValues.put(COL_10, baseID);
+        contentValues.put(COL_11, fromModule);
         long resultQuery = db.insert(TABLE_NAME,null,contentValues);
         boolean result;
         result = resultQuery != -1;
         return result;
     }
 
-    public Cursor getAllData(){
+    public Cursor getAllData(String fromModule){
         Cursor cursor = null;
         SQLiteDatabase db = this.getWritableDatabase();
-        cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME + ";", null);
+        cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE fromModule='" + fromModule +"';", null);
         return  cursor;
     }
 
     public  Integer deleteData(String id){
         SQLiteDatabase db = this.getWritableDatabase();
         return db.delete(TABLE_NAME, "id = ?", new  String[] {id});
+    }
+
+    public boolean removeData(String id){
+        SQLiteDatabase db  = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COL_7, 0);
+        db.update(TABLE_NAME, contentValues, "id= ?", new String[]{id});
+        return true;
     }
 
     public boolean updateSelected(String id,Integer isSelected, Double actual_quantity){
@@ -87,7 +101,7 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
     public boolean checkItemExist(String itemName,Integer sapNumber){
         boolean result = false;
         SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE item_name='" + itemName + "' AND sap_number=" + sapNumber + ";",null);
+        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE item_name= ? AND sap_number=" + sapNumber + ";",new String[]{itemName});
         if(cursor.moveToFirst()){
             do{
                 result = true;
@@ -97,10 +111,23 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
         return result;
     }
 
-    public Integer countItems(){
+    public boolean checkItem(String itemName,String fromModule){
+        boolean result = false;
+        SQLiteDatabase db = this.getReadableDatabase();
+        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE item_name= ? AND fromModule='" + fromModule + "';",new String[]{itemName});
+        if(cursor.moveToFirst()){
+            do{
+                result = true;
+            }
+            while (cursor.moveToNext());
+        }
+        return result;
+    }
+
+    public Integer countItems(String fromModule){
         int resultPrice = 0;
         SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT COUNT(id) FROM " + TABLE_NAME + ";", null);
+        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT COUNT(id) FROM " + TABLE_NAME + " WHERE fromModule='" + fromModule + "';", null);
         if(result.moveToFirst()){
             do{
                 resultPrice = Integer.parseInt(result.getString(0));

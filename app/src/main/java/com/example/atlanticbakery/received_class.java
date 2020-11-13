@@ -208,8 +208,8 @@ public class received_class {
                 Toast.makeText(activity, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
             } else {
                 String query = "SELECT SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from AND b.status IN ('Completed','Pending'))xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='" + type2 + "' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.item_name LIKE '%" + itemName + "%' GROUP BY x.qty,xx.transferFromSales " + (hasHaving ? "HAVING ISNULL(SUM(a.quantity),0) - ISNULL(x.qty,0) > 0" : "") + ";";
-                System.out.println(query);
                 Statement stmt = con.createStatement();
+                System.out.println(query);
                 ResultSet rs = stmt.executeQuery(query);
                 if(rs.next()){
                     result = rs.getDouble("quantity");

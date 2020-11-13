@@ -11,4 +11,10 @@ class prefs_class {
         editor.remove("userid").apply();
         editor.remove("password").apply();
     }
+
+    public void removeToken(Activity activity){
+        SharedPreferences sharedPreferences = activity.getSharedPreferences("TOKEN",MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.remove("token").apply();
+    }
 }

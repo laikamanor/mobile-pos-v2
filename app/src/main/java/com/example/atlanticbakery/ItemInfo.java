@@ -113,13 +113,13 @@ public class ItemInfo extends AppCompatActivity {
             @SuppressLint("WrongConstant")
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean isStoreExist = ac.isTypeExist(ItemInfo.this, "Store Count");
-                boolean isAuditorExist = ac.isTypeExist(ItemInfo.this, "Auditor Count");
-                boolean isFinalExist = ac.isTypeExist(ItemInfo.this, "Final Count");
+//                boolean isStoreExist = ac.isTypeExist(ItemInfo.this, "Store Count");
+//                boolean isAuditorExist = ac.isTypeExist(ItemInfo.this, "Auditor Count");
+//                boolean isFinalExist = ac.isTypeExist(ItemInfo.this, "Final Count");
 
-                boolean isStorePullOutExist = ac.isTypeExist(ItemInfo.this, "PO Store Count");
-                boolean isAuditorPullOutExist = ac.isTypeExist(ItemInfo.this, "PO Auditor Count");
-                boolean isFinalPullOutExist = ac.isTypeExist(ItemInfo.this, "PO Final Count");
+//                boolean isStorePullOutExist = ac.isTypeExist(ItemInfo.this, "PO Store Count");
+//                boolean isAuditorPullOutExist = ac.isTypeExist(ItemInfo.this, "PO Auditor Count");
+//                boolean isFinalPullOutExist = ac.isTypeExist(ItemInfo.this, "PO Final Count");
                 boolean result = false;
                 Intent intent;
                 switch (menuItem.getItemId()) {
@@ -226,9 +226,9 @@ public class ItemInfo extends AppCompatActivity {
                     case R.id.nav_storeCountListPullOut:
                         if(!accessc.checkCutOff(ItemInfo.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(ItemInfo.this, "PO Auditor Count") && ac.isTypeExist(ItemInfo.this, "PO Store Count") && ac.isTypeExist(ItemInfo.this, "PO Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStorePullOutExist) {
+                        }else if (ac.isTypeExist(ItemInfo.this, "PO Store Count")) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
@@ -241,9 +241,9 @@ public class ItemInfo extends AppCompatActivity {
                     case R.id.nav_auditorCountListPullOut:
                         if(!accessc.checkCutOff(ItemInfo.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(ItemInfo.this, "PO Auditor Count") && ac.isTypeExist(ItemInfo.this, "PO Store Count") && ac.isTypeExist(ItemInfo.this, "PO Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorPullOutExist) {
+                        }else if (ac.isTypeExist(ItemInfo.this, "PO Auditor Count")) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(ItemInfo.this).equals("Auditor")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -258,9 +258,9 @@ public class ItemInfo extends AppCompatActivity {
                     case R.id.nav_finalCountListPullOut:
                         if(!accessc.checkCutOff(ItemInfo.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(ItemInfo.this, "PO Auditor Count") && ac.isTypeExist(ItemInfo.this, "PO Store Count") && ac.isTypeExist(ItemInfo.this, "PO Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
+                        }else if (!ac.isTypeExist(ItemInfo.this, "PO Auditor Count") & !ac.isTypeExist(ItemInfo.this, "PO Store Count")) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(ItemInfo.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -275,9 +275,9 @@ public class ItemInfo extends AppCompatActivity {
                     case R.id.nav_storeCountList:
                         if(!accessc.checkCutOff(ItemInfo.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if(ac.isTypeExist(ItemInfo.this, "Auditor Count") && ac.isTypeExist(ItemInfo.this, "Store Count") && ac.isTypeExist(ItemInfo.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStoreExist) {
+                        }else if (ac.isTypeExist(ItemInfo.this, "Store Count")) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
@@ -290,9 +290,9 @@ public class ItemInfo extends AppCompatActivity {
                     case R.id.nav_auditorCountList:
                         if(!accessc.checkCutOff(ItemInfo.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if(ac.isTypeExist(ItemInfo.this, "Auditor Count") && ac.isTypeExist(ItemInfo.this, "Store Count") && ac.isTypeExist(ItemInfo.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorExist) {
+                        }else if (ac.isTypeExist(ItemInfo.this, "Auditor Count")) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(ItemInfo.this).equals("Auditor")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -307,9 +307,9 @@ public class ItemInfo extends AppCompatActivity {
                     case R.id.nav_finalCountList:
                         if(!accessc.checkCutOff(ItemInfo.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if(ac.isTypeExist(ItemInfo.this, "Auditor Count") && ac.isTypeExist(ItemInfo.this, "Store Count") && ac.isTypeExist(ItemInfo.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorExist & !isStoreExist) {
+                        }else if (!ac.isTypeExist(ItemInfo.this, "Auditor Count") & !ac.isTypeExist(ItemInfo.this, "Store Count")) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(ItemInfo.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -402,7 +402,8 @@ public class ItemInfo extends AppCompatActivity {
         }
 
         lblItem.setText(itemName);
-        double price = itemc.returnItemNamePrice(this, itemName);
+        double price = getIntent().getDoubleExtra("price",0.00);
+//        double price = 5;
         lblPrice.setText("₱" + df.format(price));
 //        lblReceivedQuantity.setText("Delivered Quantity: " + received_quantity);
         lblReceivedQuantity.setText((title.equals("AC Auditor Count List Items") || title.equals("AC Store Count List Items")) ? "Available Items: " + received_quantity : "Delivered Quantity: " + received_quantity);
@@ -418,8 +419,10 @@ public class ItemInfo extends AppCompatActivity {
                         txtDiscount.setEnabled(false);
                         txtTotalPrice.setEnabled(false);
                     } else {
-                        double getPrice = itemc.returnItemNamePrice(ItemInfo.this, lblItem.getText().toString());
-                        double priceBefore = getPrice * Double.parseDouble(txtQuantity.getText().toString());
+                        lblPrice.setText("₱" + df.format(price));
+                        double price = Double.parseDouble(lblPrice.getText().toString().replace("₱",""));
+//                        double getPrice = itemc.returnItemNamePrice(ItemInfo.this, lblItem.getText().toString());
+                        double priceBefore = price * Double.parseDouble(txtQuantity.getText().toString());
                         txtTotalPrice.setText(Double.toString(priceBefore));
                         txtDiscount.setEnabled(true);
                         txtTotalPrice.setEnabled(true);
@@ -453,9 +456,11 @@ public class ItemInfo extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 if(title.equals("Menu Items")) {
-                    double getPrice = itemc.returnItemNamePrice(ItemInfo.this, lblItem.getText().toString());
+                    lblPrice.setText("₱" + df.format(price));
+                    double price = Double.parseDouble(lblPrice.getText().toString().replace("₱",""));
+//                    double getPrice = itemc.returnItemNamePrice(ItemInfo.this, lblItem.getText().toString());
                     double quantity = (txtQuantity.getText().toString().isEmpty()) ? 0.00 : Double.parseDouble(txtQuantity.getText().toString());
-                    double priceBefore = getPrice * quantity;
+                    double priceBefore = price * quantity;
 
                     if(!checkFree.isChecked()){
                         if(Double.parseDouble(txtDiscount.getText().toString()) < 0){
@@ -514,12 +519,15 @@ public class ItemInfo extends AppCompatActivity {
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 if(title.equals("Menu Items")) {
                     if (txtDiscount.hasFocus()) {
-                        double discountPercent, getPrice = itemc.returnItemNamePrice(ItemInfo.this, lblItem.getText().toString());
-                        double priceBefore = Double.parseDouble(txtQuantity.getText().toString()) * getPrice;
+                        lblPrice.setText("₱" + df.format(price));
+                        double price = Double.parseDouble(lblPrice.getText().toString().replace("₱",""));
+                        double discountPercent;
+//                                , getPrice = itemc.returnItemNamePrice(ItemInfo.this, lblItem.getText().toString());
+                        double priceBefore = Double.parseDouble(txtQuantity.getText().toString()) * price;
                         try {
                             if (Double.parseDouble(txtDiscount.getText().toString()) > 25) {
-                                txtDiscount.setText("25.00");
-                                txtDiscount.setSelection(txtDiscount.getText().length() - 3);
+                                txtDiscount.setText("25");
+                                txtDiscount.setSelection(txtDiscount.getText().length() - 1);
                             }
                             if (txtDiscount.getText().toString().isEmpty()) {
                                 txtDiscount.setText("0");
@@ -574,12 +582,17 @@ public class ItemInfo extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 if(title.equals("Menu Items")) {
-                    double getPrice = itemc.returnItemNamePrice(ItemInfo.this, lblItem.getText().toString());
+                    lblPrice.setText("₱" + df.format(price));
+                    double price = Double.parseDouble(lblPrice.getText().toString().replace("₱",""));
+//                    double getPrice = itemc.returnItemNamePrice(ItemInfo.this, lblItem.getText().toString());
                     double quantity = (txtQuantity.getText().toString().isEmpty()) ? 0.00  : Double.parseDouble(txtQuantity.getText().toString());
-                    double priceBefore = quantity * getPrice;
+                    double priceBefore = quantity * price;
                     if (txtTotalPrice.hasFocus()) {
                         try {
                             if (!checkFree.isChecked()) {
+                                if(txtTotalPrice.getText().toString().isEmpty()){
+                                    txtDiscount.setText("100.0");
+                                }
                                 if (Double.parseDouble(txtTotalPrice.getText().toString()) > priceBefore) {
                                     double doubleTotalPrice = Double.parseDouble(txtTotalPrice.getText().toString());
                                     double calculatedDiscount = ((priceBefore - doubleTotalPrice) / priceBefore) * 100;
@@ -611,8 +624,10 @@ public class ItemInfo extends AppCompatActivity {
                 if(title.equals("Menu Items")) {
                     if (!b) {
                         if (txtTotalPrice.getText().toString().isEmpty()) {
-                            double getPrice = itemc.returnItemNamePrice(ItemInfo.this, lblItem.getText().toString());
-                            double priceBefore = Double.parseDouble(txtQuantity.getText().toString()) * getPrice;
+                            lblPrice.setText("₱" + df.format(price));
+                            double price = Double.parseDouble(lblPrice.getText().toString().replace("₱",""));
+//                            double getPrice = itemc.returnItemNamePrice(ItemInfo.this, lblItem.getText().toString());
+                            double priceBefore = Double.parseDouble(txtQuantity.getText().toString()) * price;
                             txtTotalPrice.setText(Double.toString(priceBefore));
                             txtDiscount.setText("0.00");
                         }
@@ -624,107 +639,134 @@ public class ItemInfo extends AppCompatActivity {
         btnAddCart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Handler handler = new Handler();
                 LoadingDialog loadingDialog = new LoadingDialog(ItemInfo.this);
                 loadingDialog.startLoadingDialog();
-                Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
+                Runnable runnable = new Runnable() {
                     @Override
                     public void run() {
-                        boolean isItemNameExist = itemc.checkItemName(ItemInfo.this, itemName);
-                        int quantity;
-                        if(txtQuantity.getText().toString().isEmpty()){
-                            quantity = 0;
-                            txtQuantity.setText("0");
-                        }else{
-                            quantity = Integer.parseInt(txtQuantity.getText().toString());
-                        }
-                        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
-                        int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
-                        boolean hasStock = itemc.checkItemNameStock(ItemInfo.this, itemName, Double.parseDouble(String.valueOf(quantity)));
-                        boolean hasHaving = (trans_type != null && trans_type.equals("Transfer from Sales"));
-                        double OwnStockQuantity = rc.checkOwnInventoryStock(ItemInfo.this, "Transfer to Sales",userID, itemName,hasHaving);
-                        if (!isItemNameExist) {
-                            Toast.makeText(ItemInfo.this, "item not found", Toast.LENGTH_SHORT).show();
-                        }else if(quantity <=0 && !title.equals("AC Store Count List Items") && !title.equals("AC Auditor Count List Items") && !title.equals("PO Store Count List Items") && !title.equals("PO Auditor Count List Items")){
-                            Toast.makeText(ItemInfo.this, "Add Quantity atleast 1", Toast.LENGTH_SHORT).show();
-                        }else if(!hasStock && title.equals("Menu Items") && inv_type != null && inv_type.equals("Main Inventory")) {
-                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                        }else if(OwnStockQuantity <= 0 && title.equals("Menu Items") && inv_type != null && inv_type.equals("Own Inventory")) {
-                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                        }else if(OwnStockQuantity < quantity && title.equals("Menu Items") && inv_type != null && inv_type.equals("Own Inventory")) {
-                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                        }else if(!hasStock && title.equals("Manual Transfer Out") && trans_type.equals("Transfer to Other Branch")) {
-                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                        }else if(OwnStockQuantity <= 0 && trans_type != null && trans_type.equals("Transfer from Sales")) {
-                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                        }else if(!hasStock && trans_type != null && trans_type.equals("Transfer to Sales")) {
-                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                        }else if(OwnStockQuantity < quantity && trans_type != null && trans_type.equals("Transfer from Sales")) {
-                            Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
-                        }else{
-                            double discountPercent = Double.parseDouble(txtDiscount.getText().toString());
-                            double price = itemc.returnItemNamePrice(ItemInfo.this, itemName);
-                            int free;
-                            if(checkFree.isChecked()){
-                                free = 1;
-                            }else{
-                                free = 0;
-                            }
-                            int quantity3;
-                            double quantityy;
-                            if(txtQuantity.getText().toString().isEmpty()){
-                                quantity3 = 0;
-                                quantityy = 0.00;
-                            }else{
-                                quantity3 = Integer.parseInt(txtQuantity.getText().toString());
-                                quantityy = Double.parseDouble(txtQuantity.getText().toString());
-                            }
-                            double discountAmount = (price * quantity3) * (discountPercent / 100);
-                            double totalPrice = (free == 1 ? 0 : (price * quantity3) - discountAmount);
-                            String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
-                            boolean isInserted;
-                            if(title.equals("Menu Items")) {
-                                isInserted = myDb.insertData(quantityy, discountPercent, price, free, totalPrice, itemName,inv_type);
-                            }else if(title.equals("Received from SAP")){
-                                int id = getIntent().getIntExtra("id",0);
-                                isInserted = myDb3.updateSelected(Integer.toString(id),1, quantityy);
-                            }else if(title.equals("AC Auditor Count List Items") || title.equals("AC Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Store Count List Items")) {
-                                String type = "";
-                                if (title.equals("AC Auditor Count List Items")) {
-                                    type = "Auditor Count";
-                                } else if (title.equals("AC Store Count List Items")) {
-                                    type = "Store Count";
-                                } else if (title.equals("PO Auditor Count List Items")) {
-                                    type = "PO Auditor Count";
-                                } else if (title.equals("PO Store Count List Items")) {
-                                    type = "PO Store Count";
-                                }
-                                isInserted = myDb4.insertData(itemName, Double.parseDouble(String.valueOf(quantity3)), type, 1);
-                            }else {
-                                isInserted = myDb2.insertData(itemName, quantity3, title);
-                            }
+                        synchronized (this) {
+                            try {
+                                wait(10);
 
-                            if (isInserted) {
-                                Toast.makeText(getBaseContext(),"Item Added", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(getBaseContext(),"Item Not Added", Toast.LENGTH_SHORT).show();
+                            } catch (InterruptedException ex) {
+
                             }
-                            Intent intent;
-                            if(title.equals("Received from SAP")){
-                                intent = new Intent(getBaseContext(), ReceivedSap.class);
-                            }else{
-                                intent = new Intent(getBaseContext(), AvailableItems.class);
-                                intent.putExtra("transfer_type", trans_type);
-                                intent.putExtra("inventory_type", inv_type);
-                            }
-                            finish();
-                            intent.putExtra("title", title);
-                            startActivity(intent);
-                            finish();
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    boolean isItemNameExist = itemc.checkItemName(ItemInfo.this, itemName);
+                                    int quantity;
+                                    if (txtQuantity.getText().toString().isEmpty()) {
+                                        quantity = 0;
+                                        txtQuantity.setText("0");
+                                    } else {
+                                        quantity = Integer.parseInt(txtQuantity.getText().toString());
+                                    }
+                                    SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+                                    int userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+                                    boolean hasStock = itemc.checkItemNameStock(ItemInfo.this, itemName, Double.parseDouble(String.valueOf(quantity)));
+                                    boolean hasHaving = (trans_type != null && trans_type.equals("Transfer from Sales"));
+                                    double OwnStockQuantity = rc.checkOwnInventoryStock(ItemInfo.this, "Transfer to Sales", userID, itemName, hasHaving);
+                                    if (!isItemNameExist) {
+                                        Toast.makeText(ItemInfo.this, "item not found", Toast.LENGTH_SHORT).show();
+                                    } else if (quantity <= 0 && !title.equals("AC Store Count List Items") && !title.equals("AC Auditor Count List Items") && !title.equals("PO Store Count List Items") && !title.equals("PO Auditor Count List Items")) {
+                                        Toast.makeText(ItemInfo.this, "Add Quantity atleast 1", Toast.LENGTH_SHORT).show();
+                                    } else if (!hasStock && title.equals("Menu Items") && inv_type != null && inv_type.equals("Main Inventory")) {
+                                        Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                                    } else if (OwnStockQuantity <= 0 && title.equals("Menu Items") && inv_type != null && inv_type.equals("Own Inventory")) {
+                                        Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                                    } else if (OwnStockQuantity < quantity && title.equals("Menu Items") && inv_type != null && inv_type.equals("Own Inventory")) {
+                                        Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                                    } else if (!hasStock && title.equals("Manual Transfer Out") && trans_type.equals("Transfer to Other Branch")) {
+                                        Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                                    } else if (OwnStockQuantity <= 0 && trans_type != null && trans_type.equals("Transfer from Sales")) {
+                                        Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                                    } else if (!hasStock && trans_type != null && trans_type.equals("Transfer to Sales")) {
+                                        Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                                    } else if (OwnStockQuantity < quantity && trans_type != null && trans_type.equals("Transfer from Sales")) {
+                                        Toast.makeText(ItemInfo.this, "Insufficient Supply", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        double discountPercent;
+                                        if (txtDiscount.getText().toString().isEmpty()) {
+                                            discountPercent = 0.00;
+                                        } else {
+                                            discountPercent = Double.parseDouble(txtDiscount.getText().toString());
+                                        }
+                                        lblPrice.setText("₱" + df.format(price));
+                                        double price = Double.parseDouble(lblPrice.getText().toString().replace("₱", ""));
+                                        int free;
+                                        if (checkFree.isChecked()) {
+                                            free = 1;
+                                        } else {
+                                            free = 0;
+                                        }
+                                        int quantity3;
+                                        double quantityy;
+                                        if (txtQuantity.getText().toString().isEmpty()) {
+                                            quantity3 = 0;
+                                            quantityy = 0.00;
+                                        } else {
+                                            quantity3 = Integer.parseInt(txtQuantity.getText().toString());
+                                            quantityy = Double.parseDouble(txtQuantity.getText().toString());
+                                        }
+                                        double discountAmount = (price * quantity3) * (discountPercent / 100);
+                                        double totalPrice = (free == 1 ? 0 : (price * quantity3) - discountAmount);
+                                        String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
+                                        boolean isInserted;
+                                        if (title.equals("Menu Items")) {
+                                            isInserted = myDb.insertData(quantityy, discountPercent, price, free, totalPrice, itemName, inv_type);
+                                        } else if (title.equals("Received from SAP")) {
+                                            int id = getIntent().getIntExtra("id", 0);
+                                            isInserted = myDb3.updateSelected(Integer.toString(id), 1, quantityy);
+                                        } else if (title.equals("AC Auditor Count List Items") || title.equals("AC Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Store Count List Items")) {
+                                            String type = "";
+                                            if (title.equals("AC Auditor Count List Items")) {
+                                                type = "Auditor Count";
+                                            } else if (title.equals("AC Store Count List Items")) {
+                                                type = "Store Count";
+                                            } else if (title.equals("PO Auditor Count List Items")) {
+                                                type = "PO Auditor Count";
+                                            } else if (title.equals("PO Store Count List Items")) {
+                                                type = "PO Store Count";
+                                            }
+                                            isInserted = myDb4.insertData(itemName, Double.parseDouble(String.valueOf(quantity3)), type, 1);
+                                        } else {
+                                            isInserted = myDb2.insertData(itemName, quantity3, title);
+                                        }
+
+                                        if (isInserted) {
+                                            Toast.makeText(getBaseContext(), "Item Added", Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            Toast.makeText(getBaseContext(), "Item Not Added", Toast.LENGTH_SHORT).show();
+                                        }
+                                        Intent intent;
+                                        if (title.equals("Received from SAP")) {
+                                            intent = new Intent(getBaseContext(), ReceivedSap.class);
+                                        } else {
+                                            intent = new Intent(getBaseContext(), AvailableItems.class);
+                                            intent.putExtra("transfer_type", trans_type);
+                                            intent.putExtra("inventory_type", inv_type);
+                                        }
+                                        finish();
+                                        intent.putExtra("title", title);
+                                        startActivity(intent);
+                                        finish();
+                                    }
+                                }
+                            });
                         }
-                        loadingDialog.dismissDialog();
+                        runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                loadingDialog.dismissDialog();
+                            }
+                        });
                     }
-                },500);
+                };
+                Thread thread = new Thread(runnable);
+                thread.start();
             }
         });
     }
@@ -732,6 +774,12 @@ public class ItemInfo extends AppCompatActivity {
 
     public String minusPlus(String operator){
         int quantity;
+        if(txtDiscount.getText().toString().isEmpty() && !checkFree.isChecked()){
+            txtDiscount.setText("0");
+        }
+        if(txtTotalPrice.getText().toString().isEmpty() && !checkFree.isChecked()){
+            txtTotalPrice.setText("0.00");
+        }
         if(txtQuantity.getText().toString().isEmpty()){
             quantity = 0;
         }else{

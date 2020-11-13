@@ -92,10 +92,11 @@ public class item_class {
                 if(rs.next()){
                     result = Double.parseDouble(rs.getString("price"));
                 }
-                con.close();
+//                con.close();
             }
         }
         catch (Exception ex){
+            Toast.makeText(activity, "returnItemNamePrice() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
             result = 0.00;
         }
         return result;

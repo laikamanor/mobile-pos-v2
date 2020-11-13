@@ -98,7 +98,7 @@ public class ReceivedSap extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 String sapNumber = txtSearch.getText().toString();
-                if(myDb3.countItems().equals(0)){
+                if(myDb3.countItems("API Received from SAP").equals(0)){
                     loadSAPNumber(sapNumber);
                 }
             }
@@ -384,7 +384,7 @@ public class ReceivedSap extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 String sapNumber = txtSearch.getText().toString();
-                if(myDb3.countItems().equals(0)){
+                if(myDb3.countItems("API Received from SAP").equals(0)){
                     loadSAPNumber(sapNumber);
                 }else{
                     loadItems();
@@ -394,7 +394,7 @@ public class ReceivedSap extends AppCompatActivity {
 
         ScrollView scrollView = findViewById(R.id.scroll);
         LinearLayout.LayoutParams layoutParamsScroll;
-        if(myDb3.countItems().equals(0)){
+        if(myDb3.countItems("API Received from SAP").equals(0)){
             layoutParamsScroll = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 700);
             loadSAPNumber("");
 
@@ -498,101 +498,152 @@ public class ReceivedSap extends AppCompatActivity {
     @SuppressLint({"SetTextI18n", "ResourceAsColor"})
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     public void loadSAPNumber(final String sapNumber) {
+        Handler handler = new Handler();
         LoadingDialog loadingDialog = new LoadingDialog(ReceivedSap.this);
         loadingDialog.startLoadingDialog();
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
+        Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                GridLayout gridLayout = findViewById(R.id.grid);
-                gridLayout.removeAllViews();
-                try {
-                    con = cc.connectionClass(ReceivedSap.this);
-                    if (con == null) {
-                        Toast.makeText(getBaseContext(), "loadData() Check Your Internet Access", Toast.LENGTH_SHORT).show();
-                    } else {
-                        List<String> results;
-                        boolean isSAPIT = spinner.getSelectedItemPosition() == 0;
-                        results = recsap.returnSAPNumber(ReceivedSap.this, sapNumber, isSAPIT);
-                        for (String result : results){
-                            CardView cardView = new CardView(ReceivedSap.this);
-                            LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
-                            layoutParamsCv.setMargins(20, 10, 10, 10);
-                            cardView.setLayoutParams(layoutParamsCv);
-                            cardView.setRadius(12);
-                            cardView.setCardElevation(5);
+                synchronized (this) {
+                    try {
+                        wait(10);
 
-                            cardView.setVisibility(View.VISIBLE);
-                            gridLayout.addView(cardView);
-                            final LinearLayout linearLayout = new LinearLayout(ReceivedSap.this);
-                            LinearLayout.LayoutParams layoutParamsLinear = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 5f);
-                            linearLayout.setLayoutParams(layoutParamsLinear);
-                            linearLayout.setTag(result);
+                    } catch (InterruptedException ex) {
 
-                            final String finalItem = result;
-                            linearLayout.setOnClickListener(new View.OnClickListener() {
-                                @Override
-                                public void onClick(View view) {
-                                    AlertDialog.Builder myDialog = new AlertDialog.Builder(ReceivedSap.this);
-                                    myDialog.setCancelable(false);
-                                    myDialog.setTitle("Confirmation");
-                                    myDialog.setMessage("Are you sure you want to select '" +  finalItem + "'?");
-
-                                    myDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
-                                            if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
-                                                return;
-                                            }
-                                            mLastClickTime = SystemClock.elapsedRealtime();
-                                            int countError = insertSAPItems(finalItem);
-                                            if(countError <= 0){
-                                                Toast.makeText(ReceivedSap.this, "'" + finalItem + "' added", Toast.LENGTH_SHORT).show();
-                                                startActivity(getIntent());
-                                                finish();
-                                            }else{
-                                                Toast.makeText(ReceivedSap.this, "'" + finalItem + "' not added", Toast.LENGTH_SHORT).show();
-                                            }
-                                        }
-                                    });
-
-                                    myDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
-                                            dialogInterface.dismiss();
-                                        }
-                                    });
-
-                                    myDialog.show();
-                                }
-                            });
-
-                            linearLayout.setOrientation(LinearLayout.VERTICAL);
-                            linearLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                            linearLayout.setVisibility(View.VISIBLE);
-                            cardView.addView(linearLayout);
-
-                            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                            layoutParams.setMargins(20, 0, 20, 0);
-                            LinearLayout.LayoutParams layoutParamsItemLeft = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                            layoutParamsItemLeft.setMargins(20, -50, 0, 10);
-
-                            TextView txtItemName = new TextView(ReceivedSap.this);
-                            String cutWord = cutWord(result,25);
-                            txtItemName.setText(cutWord);
-                            txtItemName.setLayoutParams(layoutParams);
-                            txtItemName.setTextSize(13);
-                            txtItemName.setVisibility(View.VISIBLE);
-                            linearLayout.addView(txtItemName);
-                        }
-                        txtSearch.setAdapter(fillItems(results));
                     }
-                }catch (Exception ex){
-                    Toast.makeText(ReceivedSap.this, "loadData() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            GridLayout gridLayout = findViewById(R.id.grid);
+                            gridLayout.removeAllViews();
+                            try {
+                                con = cc.connectionClass(ReceivedSap.this);
+                                if (con == null) {
+                                    Toast.makeText(getBaseContext(), "loadData() Check Your Internet Access", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    List<String> results;
+                                    boolean isSAPIT = spinner.getSelectedItemPosition() == 0;
+                                    results = recsap.returnSAPNumber(ReceivedSap.this, sapNumber, isSAPIT);
+                                    for (String result : results) {
+                                        CardView cardView = new CardView(ReceivedSap.this);
+                                        LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
+                                        layoutParamsCv.setMargins(20, 10, 10, 10);
+                                        cardView.setLayoutParams(layoutParamsCv);
+                                        cardView.setRadius(12);
+                                        cardView.setCardElevation(5);
+
+                                        cardView.setVisibility(View.VISIBLE);
+                                        gridLayout.addView(cardView);
+                                        final LinearLayout linearLayout = new LinearLayout(ReceivedSap.this);
+                                        LinearLayout.LayoutParams layoutParamsLinear = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 5f);
+                                        linearLayout.setLayoutParams(layoutParamsLinear);
+                                        linearLayout.setTag(result);
+
+                                        final String finalItem = result;
+                                        linearLayout.setOnClickListener(new View.OnClickListener() {
+                                            @Override
+                                            public void onClick(View view) {
+                                                AlertDialog.Builder myDialog = new AlertDialog.Builder(ReceivedSap.this);
+                                                myDialog.setCancelable(false);
+                                                myDialog.setTitle("Confirmation");
+                                                myDialog.setMessage("Are you sure you want to select '" + finalItem + "'?");
+
+                                                myDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                                        if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+                                                            return;
+                                                        }
+                                                        mLastClickTime = SystemClock.elapsedRealtime();
+                                                        Handler handler = new Handler();
+                                                        LoadingDialog loadingDialog = new LoadingDialog(ReceivedSap.this);
+                                                        loadingDialog.startLoadingDialog();
+                                                        Runnable runnable = new Runnable() {
+                                                            @Override
+                                                            public void run() {
+                                                                synchronized (this) {
+                                                                    try {
+                                                                        wait(10);
+
+                                                                    } catch (InterruptedException ex) {
+
+                                                                    }
+                                                                    handler.post(new Runnable() {
+                                                                        @Override
+                                                                        public void run() {
+                                                                            int countError = insertSAPItems(finalItem);
+                                                                            if (countError <= 0) {
+                                                                                Toast.makeText(ReceivedSap.this, "'" + finalItem + "' added", Toast.LENGTH_SHORT).show();
+                                                                                startActivity(getIntent());
+                                                                                finish();
+                                                                            } else {
+                                                                                Toast.makeText(ReceivedSap.this, "'" + finalItem + "' not added", Toast.LENGTH_SHORT).show();
+                                                                            }
+                                                                        }
+                                                                    });
+                                                                }
+                                                                runOnUiThread(new Runnable() {
+
+                                                                    @Override
+                                                                    public void run() {
+                                                                        loadingDialog.dismissDialog();
+                                                                    }
+                                                                });
+                                                            }
+                                                        };
+                                                        Thread thread = new Thread(runnable);
+                                                        thread.start();
+                                                    }
+                                                });
+
+                                                myDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                                        dialogInterface.dismiss();
+                                                    }
+                                                });
+
+                                                myDialog.show();
+                                            }
+                                        });
+
+                                        linearLayout.setOrientation(LinearLayout.VERTICAL);
+                                        linearLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                                        linearLayout.setVisibility(View.VISIBLE);
+                                        cardView.addView(linearLayout);
+
+                                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+                                        layoutParams.setMargins(20, 0, 20, 0);
+                                        LinearLayout.LayoutParams layoutParamsItemLeft = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                                        layoutParamsItemLeft.setMargins(20, -50, 0, 10);
+
+                                        TextView txtItemName = new TextView(ReceivedSap.this);
+                                        String cutWord = cutWord(result, 25);
+                                        txtItemName.setText(cutWord);
+                                        txtItemName.setLayoutParams(layoutParams);
+                                        txtItemName.setTextSize(13);
+                                        txtItemName.setVisibility(View.VISIBLE);
+                                        linearLayout.addView(txtItemName);
+                                    }
+                                    txtSearch.setAdapter(fillItems(results));
+                                }
+                            } catch (Exception ex) {
+                                Toast.makeText(ReceivedSap.this, "loadData() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
                 }
-                loadingDialog.dismissDialog();
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        loadingDialog.dismissDialog();
+                    }
+                });
             }
-        },500);
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
     }
 
     public ArrayAdapter<String> fillItems(List<String> names){
@@ -601,93 +652,123 @@ public class ReceivedSap extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     @SuppressLint("SetTextI18n")
-    public void loadItems(){
-        GridLayout gridLayout = findViewById(R.id.grid);
-        gridLayout.removeAllViews();
-        Cursor cursor = myDb3.getAllData();
-        if(cursor != null){
-            while (cursor.moveToNext()){
-                final int id = cursor.getInt(0);
-                final String sapNumber = cursor.getString(1);
-                final String fromBranch = cursor.getString(2);
-                final String itemName = cursor.getString(3);
-                final Double quantity = cursor.getDouble(4);
-                final boolean isSelected = (cursor.getInt(6) > 0);
-                System.out.println("isSelected: " + isSelected);
-                lblSapNumber.setText("IT#: " + sapNumber);
-                lblFromBranch.setText("Branch: " + fromBranch);
+    public void loadItems() {
+        Handler handler = new Handler();
+        LoadingDialog loadingDialog = new LoadingDialog(ReceivedSap.this);
+        loadingDialog.startLoadingDialog();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                synchronized (this) {
+                    try {
+                        wait(10);
 
-                CardView cardView = new CardView(ReceivedSap.this);
-                LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
-                layoutParamsCv.setMargins(20, 10, 10, 10);
-                cardView.setLayoutParams(layoutParamsCv);
-                cardView.setRadius(12);
-                cardView.setCardElevation(5);
+                    } catch (InterruptedException ex) {
 
-                cardView.setVisibility(View.VISIBLE);
-                gridLayout.addView(cardView);
-                final LinearLayout linearLayout = new LinearLayout(ReceivedSap.this);
-                LinearLayout.LayoutParams layoutParamsLinear = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 5f);
-                linearLayout.setLayoutParams(layoutParamsLinear);
-                linearLayout.setTag(id);
+                    }
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            GridLayout gridLayout = findViewById(R.id.grid);
+                            gridLayout.removeAllViews();
+                            Cursor cursor = myDb3.getAllData("Received from SAP");
+                            if (cursor != null) {
+                                while (cursor.moveToNext()) {
+                                    final int id = cursor.getInt(0);
+                                    final String sapNumber = cursor.getString(1);
+                                    final String fromBranch = cursor.getString(2);
+                                    final String itemName = cursor.getString(3);
+                                    final Double quantity = cursor.getDouble(4);
+                                    final boolean isSelected = (cursor.getInt(6) > 0);
+                                    System.out.println("isSelected: " + isSelected);
+                                    lblSapNumber.setText("IT#: " + sapNumber);
+                                    lblFromBranch.setText("Branch: " + fromBranch);
 
-                linearLayout.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        if(isSelected){
-                            Toast.makeText(ReceivedSap.this, "This item is selected",Toast.LENGTH_SHORT).show();
-                        }else{
-                            Intent intent;
-                            intent = new Intent(getBaseContext(), ItemInfo.class);
-                            intent.putExtra("title", "Received from SAP");
-                            intent.putExtra("itemname", itemName);
-                            intent.putExtra("sapNumber", sapNumber);
-                            intent.putExtra("quantity", Double.toString(quantity));
-                            intent.putExtra("fromBranch", fromBranch);
-                            intent.putExtra("id", id);
-                            startActivity(intent);
-                            loadItems();
+                                    CardView cardView = new CardView(ReceivedSap.this);
+                                    LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
+                                    layoutParamsCv.setMargins(20, 10, 10, 10);
+                                    cardView.setLayoutParams(layoutParamsCv);
+                                    cardView.setRadius(12);
+                                    cardView.setCardElevation(5);
+
+                                    cardView.setVisibility(View.VISIBLE);
+                                    gridLayout.addView(cardView);
+                                    final LinearLayout linearLayout = new LinearLayout(ReceivedSap.this);
+                                    LinearLayout.LayoutParams layoutParamsLinear = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 5f);
+                                    linearLayout.setLayoutParams(layoutParamsLinear);
+                                    linearLayout.setTag(id);
+
+                                    linearLayout.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View view) {
+                                            if (isSelected) {
+                                                Toast.makeText(ReceivedSap.this, "This item is selected", Toast.LENGTH_SHORT).show();
+                                            } else {
+                                                Intent intent;
+                                                intent = new Intent(getBaseContext(), ItemInfo.class);
+                                                intent.putExtra("title", "Received from SAP");
+                                                intent.putExtra("itemname", itemName);
+                                                intent.putExtra("sapNumber", sapNumber);
+                                                intent.putExtra("quantity", Double.toString(quantity));
+                                                intent.putExtra("fromBranch", fromBranch);
+                                                intent.putExtra("id", id);
+                                                startActivity(intent);
+                                                loadItems();
+                                            }
+                                        }
+                                    });
+                                    linearLayout.setOrientation(LinearLayout.VERTICAL);
+                                    linearLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                                    linearLayout.setVisibility(View.VISIBLE);
+
+
+                                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+                                    layoutParams.setMargins(20, 0, 20, 0);
+                                    LinearLayout.LayoutParams layoutParamsItemLeft = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                                    layoutParamsItemLeft.setMargins(20, -50, 0, 10);
+
+                                    TextView txtItemName = new TextView(ReceivedSap.this);
+                                    String cutWord = cutWord(itemName, 25);
+                                    txtItemName.setText(cutWord);
+                                    txtItemName.setLayoutParams(layoutParams);
+                                    txtItemName.setTextSize(13);
+                                    txtItemName.setVisibility(View.VISIBLE);
+
+                                    TextView txtItemLeft = new TextView(ReceivedSap.this);
+                                    txtItemLeft.setLayoutParams(layoutParamsItemLeft);
+                                    txtItemLeft.setTextSize(10);
+                                    txtItemLeft.setVisibility(View.VISIBLE);
+                                    txtItemLeft.setText(df.format(quantity) + " qty.");
+                                    txtItemLeft.setTextColor(Color.parseColor("#34A853"));
+
+                                    if (isSelected) {
+                                        linearLayout.setBackgroundColor(Color.RED);
+                                        txtItemName.setTextColor(Color.WHITE);
+                                        txtItemLeft.setTextColor(Color.WHITE);
+                                    } else {
+                                        linearLayout.setBackgroundColor(Color.WHITE);
+                                        txtItemName.setTextColor(Color.BLACK);
+                                        txtItemLeft.setTextColor(Color.parseColor("#34A853"));
+                                    }
+                                    cardView.addView(linearLayout);
+                                    linearLayout.addView(txtItemName);
+                                    linearLayout.addView(txtItemLeft);
+                                }
+                            }
                         }
+                    });
+                }
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        loadingDialog.dismissDialog();
                     }
                 });
-                linearLayout.setOrientation(LinearLayout.VERTICAL);
-                linearLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                linearLayout.setVisibility(View.VISIBLE);
-
-
-                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                layoutParams.setMargins(20, 0, 20, 0);
-                LinearLayout.LayoutParams layoutParamsItemLeft = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                layoutParamsItemLeft.setMargins(20, -50, 0, 10);
-
-                TextView txtItemName = new TextView(ReceivedSap.this);
-                String cutWord = cutWord(itemName, 25);
-                txtItemName.setText(cutWord);
-                txtItemName.setLayoutParams(layoutParams);
-                txtItemName.setTextSize(13);
-                txtItemName.setVisibility(View.VISIBLE);
-
-                TextView txtItemLeft = new TextView(ReceivedSap.this);
-                txtItemLeft.setLayoutParams(layoutParamsItemLeft);
-                txtItemLeft.setTextSize(10);
-                txtItemLeft.setVisibility(View.VISIBLE);
-                txtItemLeft.setText(df.format(quantity) + " qty.");
-                txtItemLeft.setTextColor(Color.parseColor("#34A853"));
-
-                if(isSelected){
-                    linearLayout.setBackgroundColor(Color.RED);
-                    txtItemName.setTextColor(Color.WHITE);
-                    txtItemLeft.setTextColor(Color.WHITE);
-                }else{
-                    linearLayout.setBackgroundColor(Color.WHITE);
-                    txtItemName.setTextColor(Color.BLACK);
-                    txtItemLeft.setTextColor(Color.parseColor("#34A853"));
-                }
-                cardView.addView(linearLayout);
-                linearLayout.addView(txtItemName);
-                linearLayout.addView(txtItemLeft);
             }
-        }
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
     }
 
     public int insertSAPItems(String sapNumber){
@@ -714,7 +795,7 @@ public class ReceivedSap extends AppCompatActivity {
             }
             int isSAPIT_int = (isSAPIT) ? 1 : 0;
             System.out.println(isSAPIT_int);
-            boolean isSuccess = myDb3.insertData(sap_number, fromBranch, itemName,quantity,0,isSAPIT_int);
+            boolean isSuccess = myDb3.insertData(sap_number, fromBranch, itemName,quantity,0,isSAPIT_int,"A1 S-FG",0,"API Received from SAP",0);
             if(!isSuccess){
                 countError += 1;
             }

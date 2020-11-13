@@ -109,13 +109,13 @@ public class Inventory extends AppCompatActivity implements DatePickerDialog.OnD
             @SuppressLint("WrongConstant")
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean isStoreExist = ac.isTypeExist(Inventory.this, "Store Count");
-                boolean isAuditorExist = ac.isTypeExist(Inventory.this, "Auditor Count");
-                boolean isFinalExist = ac.isTypeExist(Inventory.this, "Final Count");
+//                boolean isStoreExist = ac.isTypeExist(Inventory.this, "Store Count");
+//                boolean isAuditorExist = ac.isTypeExist(Inventory.this, "Auditor Count");
+//                boolean isFinalExist = ac.isTypeExist(Inventory.this, "Final Count");
 
-                boolean isStorePullOutExist = ac.isTypeExist(Inventory.this, "Store Count Pull Out");
-                boolean isAuditorPullOutExist = ac.isTypeExist(Inventory.this, "Auditor Count Pull Out");
-                boolean isFinalPullOutExist = ac.isTypeExist(Inventory.this, "Final Count Pull Out");
+//                boolean isStorePullOutExist = ac.isTypeExist(Inventory.this, "Store Count Pull Out");
+//                boolean isAuditorPullOutExist = ac.isTypeExist(Inventory.this, "Auditor Count Pull Out");
+//                boolean isFinalPullOutExist = ac.isTypeExist(Inventory.this, "Final Count Pull Out");
                 boolean result = false;
                 Intent intent;
                 switch (menuItem.getItemId()) {
@@ -222,9 +222,9 @@ public class Inventory extends AppCompatActivity implements DatePickerDialog.OnD
                     case R.id.nav_storeCountListPullOut:
                         if(!accessc.checkCutOff(Inventory.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(Inventory.this, "Auditor Count Pull Out") && ac.isTypeExist(Inventory.this, "Store Count Pull Out") && ac.isTypeExist(Inventory.this, "Final Count Pull Out")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStorePullOutExist) {
+                        }else if (ac.isTypeExist(Inventory.this, "Store Count Pull Out")) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
@@ -237,9 +237,9 @@ public class Inventory extends AppCompatActivity implements DatePickerDialog.OnD
                     case R.id.nav_auditorCountListPullOut:
                         if(!accessc.checkCutOff(Inventory.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(Inventory.this, "Auditor Count Pull Out") && ac.isTypeExist(Inventory.this, "Store Count Pull Out") && ac.isTypeExist(Inventory.this, "Final Count Pull Out")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorPullOutExist) {
+                        }else if (ac.isTypeExist(Inventory.this, "Auditor Count Pull Out")) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(Inventory.this).equals("Auditor")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -254,9 +254,9 @@ public class Inventory extends AppCompatActivity implements DatePickerDialog.OnD
                     case R.id.nav_finalCountListPullOut:
                         if(!accessc.checkCutOff(Inventory.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(Inventory.this, "Auditor Count Pull Out") && ac.isTypeExist(Inventory.this, "Store Count Pull Out") && ac.isTypeExist(Inventory.this, "Final Count Pull Out")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
+                        }else if (!ac.isTypeExist(Inventory.this, "Auditor Count Pull Out") & !ac.isTypeExist(Inventory.this, "Store Count Pull Out")) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(Inventory.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -271,9 +271,9 @@ public class Inventory extends AppCompatActivity implements DatePickerDialog.OnD
                     case R.id.nav_storeCountList:
                         if(!accessc.checkCutOff(Inventory.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if(ac.isTypeExist(Inventory.this, "Auditor Count") && ac.isTypeExist(Inventory.this, "Store Count") && ac.isTypeExist(Inventory.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStoreExist) {
+                        }else if (ac.isTypeExist(Inventory.this, "Store Count")) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
@@ -286,9 +286,9 @@ public class Inventory extends AppCompatActivity implements DatePickerDialog.OnD
                     case R.id.nav_auditorCountList:
                         if(!accessc.checkCutOff(Inventory.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if(ac.isTypeExist(Inventory.this, "Auditor Count") && ac.isTypeExist(Inventory.this, "Store Count") && ac.isTypeExist(Inventory.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorExist) {
+                        }else if (ac.isTypeExist(Inventory.this, "Auditor Count")) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(Inventory.this).equals("Auditor")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -303,9 +303,9 @@ public class Inventory extends AppCompatActivity implements DatePickerDialog.OnD
                     case R.id.nav_finalCountList:
                         if(!accessc.checkCutOff(Inventory.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if(ac.isTypeExist(Inventory.this, "Auditor Count") && ac.isTypeExist(Inventory.this, "Store Count") && ac.isTypeExist(Inventory.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorExist & !isStoreExist) {
+                        }else if (!ac.isTypeExist(Inventory.this, "Auditor Count") & !ac.isTypeExist(Inventory.this, "Store Count")) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(Inventory.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();

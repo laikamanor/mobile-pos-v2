@@ -16,6 +16,7 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Html;
 import android.view.Gravity;
@@ -33,12 +34,26 @@ import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 
 public class ReceivedSap2 extends AppCompatActivity {
     Connection con;
@@ -57,6 +72,8 @@ public class ReceivedSap2 extends AppCompatActivity {
 
     int userID = 0;
 
+    private OkHttpClient client;
+
     long mLastClickTime = 0;
     DecimalFormat df = new DecimalFormat("#,###");
 
@@ -70,6 +87,8 @@ public class ReceivedSap2 extends AppCompatActivity {
         setContentView(R.layout.activity_received_sap2);
         myDb = new DatabaseHelper(this);
         myDb3 = new DatabaseHelper3(this);
+
+        client = new OkHttpClient();
 
         navigationView = findViewById(R.id.nav);
         drawerLayout = findViewById(R.id.navDrawer);
@@ -88,13 +107,13 @@ public class ReceivedSap2 extends AppCompatActivity {
             @SuppressLint("WrongConstant")
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean isStoreExist = ac.isTypeExist(ReceivedSap2.this, "Store Count");
-                boolean isAuditorExist = ac.isTypeExist(ReceivedSap2.this, "Auditor Count");
-                boolean isFinalExist = ac.isTypeExist(ReceivedSap2.this, "Final Count");
+//                boolean isStoreExist = ac.isTypeExist(ReceivedSap2.this, "Store Count");
+//                boolean isAuditorExist = ac.isTypeExist(ReceivedSap2.this, "Auditor Count");
+//                boolean isFinalExist = ac.isTypeExist(ReceivedSap2.this, "Final Count");
 
-                boolean isStorePullOutExist = ac.isTypeExist(ReceivedSap2.this, "Store Count Pull Out");
-                boolean isAuditorPullOutExist = ac.isTypeExist(ReceivedSap2.this, "Auditor Count Pull Out");
-                boolean isFinalPullOutExist = ac.isTypeExist(ReceivedSap2.this, "Final Count Pull Out");
+//                boolean isStorePullOutExist = ac.isTypeExist(ReceivedSap2.this, "Store Count Pull Out");
+//                boolean isAuditorPullOutExist = ac.isTypeExist(ReceivedSap2.this, "Auditor Count Pull Out");
+//                boolean isFinalPullOutExist = ac.isTypeExist(ReceivedSap2.this, "Final Count Pull Out");
                 boolean result = false;
                 Intent intent;
                 switch (menuItem.getItemId()) {
@@ -201,9 +220,9 @@ public class ReceivedSap2 extends AppCompatActivity {
                     case R.id.nav_storeCountListPullOut:
                         if(!accessc.checkCutOff(ReceivedSap2.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(ReceivedSap2.this, "Auditor Count Pull Out") && ac.isTypeExist(ReceivedSap2.this, "Store Count Pull Out") && ac.isTypeExist(ReceivedSap2.this, "Final Count Pull Out")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStorePullOutExist) {
+                        }else if (ac.isTypeExist(ReceivedSap2.this, "Store Count Pull Out")) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(ReceivedSap2.this).equals("Auditor")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -218,9 +237,9 @@ public class ReceivedSap2 extends AppCompatActivity {
                     case R.id.nav_auditorCountListPullOut:
                         if(!accessc.checkCutOff(ReceivedSap2.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(ReceivedSap2.this, "Auditor Count Pull Out") && ac.isTypeExist(ReceivedSap2.this, "Store Count Pull Out") && ac.isTypeExist(ReceivedSap2.this, "Final Count Pull Out")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorPullOutExist) {
+                        }else if (ac.isTypeExist(ReceivedSap2.this, "Auditor Count Pull Out")) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
@@ -233,9 +252,9 @@ public class ReceivedSap2 extends AppCompatActivity {
                     case R.id.nav_finalCountListPullOut:
                         if(!accessc.checkCutOff(ReceivedSap2.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(ReceivedSap2.this, "Auditor Count Pull Out") && ac.isTypeExist(ReceivedSap2.this, "Store Count Pull Out") && ac.isTypeExist(ReceivedSap2.this, "Final Count Pull Out")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
+                        }else if (!ac.isTypeExist(ReceivedSap2.this, "Auditor Count Pull Out") & !ac.isTypeExist(ReceivedSap2.this, "Store Count Pull Out")) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(ReceivedSap2.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -250,9 +269,9 @@ public class ReceivedSap2 extends AppCompatActivity {
                     case R.id.nav_storeCountList:
                         if(!accessc.checkCutOff(ReceivedSap2.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if(ac.isTypeExist(ReceivedSap2.this, "Auditor Count") && ac.isTypeExist(ReceivedSap2.this, "Store Count") && ac.isTypeExist(ReceivedSap2.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStoreExist) {
+                        }else if (ac.isTypeExist(ReceivedSap2.this, "Store Count")) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
@@ -265,9 +284,9 @@ public class ReceivedSap2 extends AppCompatActivity {
                     case R.id.nav_auditorCountList:
                         if(!accessc.checkCutOff(ReceivedSap2.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if( ac.isTypeExist(ReceivedSap2.this, "Auditor Count") && ac.isTypeExist(ReceivedSap2.this, "Store Count") && ac.isTypeExist(ReceivedSap2.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorExist) {
+                        }else if ( ac.isTypeExist(ReceivedSap2.this, "Auditor Count")) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(ReceivedSap2.this).equals("Auditor")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -282,9 +301,9 @@ public class ReceivedSap2 extends AppCompatActivity {
                     case R.id.nav_finalCountList:
                         if(!accessc.checkCutOff(ReceivedSap2.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if( ac.isTypeExist(ReceivedSap2.this, "Auditor Count") && ac.isTypeExist(ReceivedSap2.this, "Store Count") && ac.isTypeExist(ReceivedSap2.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorExist & !isStoreExist) {
+                        }else if (! ac.isTypeExist(ReceivedSap2.this, "Auditor Count") & !ac.isTypeExist(ReceivedSap2.this, "Store Count")) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(ReceivedSap2.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -359,11 +378,11 @@ public class ReceivedSap2 extends AppCompatActivity {
                 txtRemarks.setGravity(View.TEXT_ALIGNMENT_CENTER);
                 layout.addView(txtRemarks);
 
-//                String sapNumber = "";
-//                Cursor cursor = myDb3.getAllData();
-//                if(cursor.moveToNext()){
-//                    sapNumber = cursor.getString(1);
-//                }
+                String sapNumber = "";
+                Cursor cursor = myDb3.getAllData("Received from SAP");
+                if(cursor.moveToNext()){
+                    sapNumber = cursor.getString(1);
+                }
 //                final boolean isShowSAP = recsap.isItemToFollow(ReceivedSap2.this, sapNumber);
 //                TextView lblSapNumber = new TextView(ReceivedSap2.this);
 //                final EditText txtSapNumber = new EditText(ReceivedSap2.this);
@@ -387,9 +406,8 @@ public class ReceivedSap2 extends AppCompatActivity {
                         }
 //                        else if(isShowSAP && txtSapNumber.getText().toString().equals("")){
 //                            Toast.makeText(ReceivedSap2.this, "IT# field is empty", Toast.LENGTH_SHORT).show();
-//                        }
                         else{
-                            Cursor cursor = myDb3.getAllData();
+                            Cursor cursor = myDb3.getAllData("Received from SAP");
                             if(cursor != null){
                                 if(cursor.moveToNext()){
 //                                    String sapNumber = (isShowSAP) ? txtSapNumber.getText().toString() : cursor.getString(1);
@@ -411,6 +429,7 @@ public class ReceivedSap2 extends AppCompatActivity {
                                     }
                                 }
                             }
+//                            apiSaveDataRec(remarks);
                         }
                     }
                 });
@@ -427,6 +446,84 @@ public class ReceivedSap2 extends AppCompatActivity {
             }
         });
     }
+
+    public void apiSaveDataRec(String remarks) {
+        Cursor cursor = myDb3.getAllData("Received from SAP");
+        if (cursor != null) {
+            if (cursor.moveToNext()) {
+                String sap_number = cursor.getString(1);
+                String fromBranch = cursor.getString(2);
+
+                SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+                String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+                JSONObject jsonObject = new JSONObject();
+                try {
+                    // create your json here
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
+                    String currentDateandTime = sdf.format(new Date());
+
+                    JSONObject objectHeaders = new JSONObject();
+
+                    objectHeaders.put("transtype", "SAPIT");
+                    objectHeaders.put("transfer_id", null);
+                    objectHeaders.put("sap_number", sap_number);
+                    objectHeaders.put("transdate", currentDateandTime);
+                    objectHeaders.put("remarks", remarks);
+                    objectHeaders.put("reference2", null);
+                    objectHeaders.put("supplier", null);
+
+                    jsonObject.put("header", objectHeaders);
+
+                    JSONArray arrayDetails = new JSONArray();
+
+                    Cursor cursor2 = myDb3.getAllData("Received from SAP");
+                    while (cursor2.moveToNext()) {
+                        JSONObject objectDetails = new JSONObject();
+                        String itemName = cursor2.getString(3);
+                        Double deliveredQty = cursor2.getDouble(4);
+                        Double actualQty = cursor2.getDouble(5);
+                        objectDetails.put("item_code", itemName);
+                        objectDetails.put("from_whse", fromBranch);
+                        objectDetails.put("to_whse", "A1 S-FG");
+                        objectDetails.put("quantity", deliveredQty);
+                        objectDetails.put("actualrec", actualQty);
+                        objectDetails.put("uom", "pc(s)");
+                        arrayDetails.put(objectDetails);
+                    }
+                    jsonObject.put("details", arrayDetails);
+                    System.out.println(jsonObject.toString());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
+                RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(getString(R.string.API_URL) + "/api/inv/recv/new")
+                        .method("post", body)
+                        .addHeader("Authorization", "Bearer " + token)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                client.newCall(request).enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        System.out.println(e.toString());
+                    }
+
+                    @Override
+                    public void onResponse(Call call, okhttp3.Response response) throws IOException {
+//                        System.out.println(response.body().string());
+                        ReceivedSap2.this.runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(getBaseContext(), "Transaction Completed", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                });
+            }
+        }
+    }
+
 
     public  void onBtnLogout(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -482,7 +579,7 @@ public class ReceivedSap2 extends AppCompatActivity {
             if (con == null) {
                 Toast.makeText(this, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
             } else {
-                Cursor cursor = myDb3.getAllData();
+                Cursor cursor = myDb3.getAllData("Received from SAP");
                 if(cursor != null){
                     while (cursor.moveToNext()) {
                         double quantity;
@@ -523,6 +620,7 @@ public class ReceivedSap2 extends AppCompatActivity {
                     }
                     myDb3.truncateTable();
                     showMessage("Atlantic Bakery", "REFERENCE #: " + "\n" + transactionNumber);
+                    loadData();
                 }
             }
         } catch (Exception ex) {
@@ -548,95 +646,125 @@ public class ReceivedSap2 extends AppCompatActivity {
     }
 
     public void loadData() {
-        LinearLayout linearLayout = findViewById(R.id.layoutNoItems);
+        Handler handler = new Handler();
+        LoadingDialog loadingDialog = new LoadingDialog(ReceivedSap2.this);
+        loadingDialog.startLoadingDialog();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                synchronized (this) {
+                    try {
+                        wait(10);
 
-        TableLayout tableLayout = findViewById(R.id.table_main);
-        tableLayout.removeAllViews();
-        Cursor cursor = myDb3.getAllData();
-        if (cursor != null) {
-            if(myDb3.countItems() > 0){
-                btnProeed.setVisibility(View.VISIBLE);
-                TableRow tableColumn = new TableRow(ReceivedSap2.this);
-                String[] columns = {"Item", "Del. Qty.", "Act. Qty.", "Var.", "Action"};
+                    } catch (InterruptedException ex) {
 
-                for (String s : columns) {
-                    TextView lblColumn1 = new TextView(ReceivedSap2.this);
-                    lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    lblColumn1.setText(s);
-                    lblColumn1.setPadding(10, 0, 10, 0);
-                    tableColumn.addView(lblColumn1);
-                }
-                tableLayout.addView(tableColumn);
-            }
-
-            cursor = myDb3.getAllData();
-            while (cursor.moveToNext()) {
-                final TableRow tableRow = new TableRow(ReceivedSap2.this);
-                String itemName = cursor.getString(3);
-                String v = cutWord(itemName);
-                double del_quantity = cursor.getDouble(4);
-                double act_quantity = cursor.getDouble(5);
-                final int id = cursor.getInt(0);
-                final boolean isSelected = (cursor.getInt(6) != 0);
-
-                if (isSelected) {
-                    TextView lblColumn1 = new TextView(ReceivedSap2.this);
-                    lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    lblColumn1.setText(v);
-                    lblColumn1.setPadding(10, 0, 10, 0);
-                    tableRow.addView(lblColumn1);
-
-                    TextView lblColumn2 = new TextView(ReceivedSap2.this);
-                    lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    lblColumn2.setText(df.format(del_quantity));
-                    lblColumn2.setPadding(10, 10, 10, 10);
-                    tableRow.addView(lblColumn2);
-
-                    TextView lblColumn3 = new TextView(ReceivedSap2.this);
-                    lblColumn3.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    lblColumn3.setText(df.format(act_quantity));
-                    lblColumn3.setPadding(10, 10, 10, 10);
-                    tableRow.addView(lblColumn3);
-
-                    TextView lblColumn4 = new TextView(ReceivedSap2.this);
-                    lblColumn4.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    double variance = act_quantity - del_quantity;
-                    lblColumn4.setText(df.format(variance));
-                    lblColumn4.setPadding(10, 10, 10, 10);
-                    tableRow.addView(lblColumn4);
-
-                    TextView lblColumn5 = new TextView(ReceivedSap2.this);
-                    lblColumn5.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    lblColumn5.setTag(id);
-                    lblColumn5.setText("Remove");
-                    lblColumn5.setPadding(10, 10, 10, 10);
-                    lblColumn5.setTextColor(Color.RED);
-
-                    lblColumn5.setOnClickListener(new View.OnClickListener() {
+                    }
+                    handler.post(new Runnable() {
                         @Override
-                        public void onClick(View view) {
-                            int deletedItem = myDb3.deleteData(Integer.toString(id));
-                            if (deletedItem <= 0) {
-                                Toast.makeText(ReceivedSap2.this, "Item not remove", Toast.LENGTH_SHORT).show();
+                        public void run() {
+                            LinearLayout linearLayout = findViewById(R.id.layoutNoItems);
+
+                            TableLayout tableLayout = findViewById(R.id.table_main);
+                            tableLayout.removeAllViews();
+                            Cursor cursor = myDb3.getAllData("Received from SAP");
+                            if (cursor != null) {
+                                if (myDb3.countItems("API Received from SAP") > 0) {
+                                    btnProeed.setVisibility(View.VISIBLE);
+                                    TableRow tableColumn = new TableRow(ReceivedSap2.this);
+                                    String[] columns = {"Item", "Del. Qty.", "Act. Qty.", "Var.", "Action"};
+
+                                    for (String s : columns) {
+                                        TextView lblColumn1 = new TextView(ReceivedSap2.this);
+                                        lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                                        lblColumn1.setText(s);
+                                        lblColumn1.setPadding(10, 0, 10, 0);
+                                        tableColumn.addView(lblColumn1);
+                                    }
+                                    tableLayout.addView(tableColumn);
+                                }
+
+                                cursor = myDb3.getAllData("Received from SAP");
+                                while (cursor.moveToNext()) {
+                                    final TableRow tableRow = new TableRow(ReceivedSap2.this);
+                                    String itemName = cursor.getString(3);
+                                    String v = cutWord(itemName);
+                                    double del_quantity = cursor.getDouble(4);
+                                    double act_quantity = cursor.getDouble(5);
+                                    final int id = cursor.getInt(0);
+                                    final boolean isSelected = (cursor.getInt(6) != 0);
+
+                                    if (isSelected) {
+                                        TextView lblColumn1 = new TextView(ReceivedSap2.this);
+                                        lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                                        lblColumn1.setText(v);
+                                        lblColumn1.setPadding(10, 0, 10, 0);
+                                        tableRow.addView(lblColumn1);
+
+                                        TextView lblColumn2 = new TextView(ReceivedSap2.this);
+                                        lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                                        lblColumn2.setText(df.format(del_quantity));
+                                        lblColumn2.setPadding(10, 10, 10, 10);
+                                        tableRow.addView(lblColumn2);
+
+                                        TextView lblColumn3 = new TextView(ReceivedSap2.this);
+                                        lblColumn3.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                                        lblColumn3.setText(df.format(act_quantity));
+                                        lblColumn3.setPadding(10, 10, 10, 10);
+                                        tableRow.addView(lblColumn3);
+
+                                        TextView lblColumn4 = new TextView(ReceivedSap2.this);
+                                        lblColumn4.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                                        double variance = act_quantity - del_quantity;
+                                        lblColumn4.setText(df.format(variance));
+                                        lblColumn4.setPadding(10, 10, 10, 10);
+                                        tableRow.addView(lblColumn4);
+
+                                        TextView lblColumn5 = new TextView(ReceivedSap2.this);
+                                        lblColumn5.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                                        lblColumn5.setTag(id);
+                                        lblColumn5.setText("Remove");
+                                        lblColumn5.setPadding(10, 10, 10, 10);
+                                        lblColumn5.setTextColor(Color.RED);
+
+                                        lblColumn5.setOnClickListener(new View.OnClickListener() {
+                                            @Override
+                                            public void onClick(View view) {
+                                                int deletedItem = myDb3.deleteData(Integer.toString(id));
+                                                if (deletedItem <= 0) {
+                                                    Toast.makeText(ReceivedSap2.this, "Item not remove", Toast.LENGTH_SHORT).show();
+                                                } else {
+                                                    Toast.makeText(ReceivedSap2.this, "Item removed", Toast.LENGTH_SHORT).show();
+                                                    loadData();
+                                                }
+                                            }
+                                        });
+                                        tableRow.addView(lblColumn5);
+                                        tableLayout.addView(tableRow);
+                                    }
+                                }
+                            }
+                            if (myDb3.countItems("API Received from SAP") <= 0) {
+                                linearLayout.setVisibility(View.VISIBLE);
+                                btnProeed.setVisibility(View.GONE);
+                                gotoFunction();
                             } else {
-                                Toast.makeText(ReceivedSap2.this, "Item removed", Toast.LENGTH_SHORT).show();
-                                loadData();
+                                linearLayout.setVisibility(View.GONE);
+                                btnProeed.setVisibility(View.VISIBLE);
                             }
                         }
                     });
-                    tableRow.addView(lblColumn5);
-                    tableLayout.addView(tableRow);
                 }
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        loadingDialog.dismissDialog();
+                    }
+                });
             }
-        }
-        if(myDb3.countItems() <= 0){
-            linearLayout.setVisibility(View.VISIBLE);
-            btnProeed.setVisibility(View.GONE);
-            gotoFunction();
-        }else{
-            linearLayout.setVisibility(View.GONE);
-            btnProeed.setVisibility(View.VISIBLE);
-        }
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
     }
 
     public String cutWord(String value){
@@ -647,19 +775,49 @@ public class ReceivedSap2 extends AppCompatActivity {
         return result;
     }
 
-    public void gotoFunction(){
-        Button btnGoto = findViewById(R.id.btnGoto);
-        btnGoto.setOnClickListener(new View.OnClickListener() {
+    public void gotoFunction() {
+        Handler handler = new Handler();
+        LoadingDialog loadingDialog = new LoadingDialog(ReceivedSap2.this);
+        loadingDialog.startLoadingDialog();
+        Runnable runnable = new Runnable() {
             @Override
-            public void onClick(View view) {
-                if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
-                    return;
+            public void run() {
+                synchronized (this) {
+                    try {
+                        wait(10);
+
+                    } catch (InterruptedException ex) {
+
+                    }
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Button btnGoto = findViewById(R.id.btnGoto);
+                            btnGoto.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+                                        return;
+                                    }
+                                    mLastClickTime = SystemClock.elapsedRealtime();
+                                    Intent intent;
+                                    intent = new Intent(getBaseContext(), ReceivedSap.class);
+                                    startActivity(intent);
+                                }
+                            });
+                        }
+                    });
                 }
-                mLastClickTime = SystemClock.elapsedRealtime();
-                Intent intent;
-                intent = new Intent(getBaseContext(), ReceivedSap.class);
-                startActivity(intent);
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        loadingDialog.dismissDialog();
+                    }
+                });
             }
-        });
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
     }
 }

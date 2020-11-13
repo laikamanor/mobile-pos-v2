@@ -6,15 +6,14 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.Html;
 import android.text.InputType;
 import android.text.TextWatcher;
-import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,13 +23,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -44,16 +39,35 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import com.cepheuen.elegantnumberbutton.view.ElegantNumberButton;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.material.navigation.NavigationView;
+import com.google.gson.JsonObject;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 
 public class ShoppingCart extends AppCompatActivity {
     Connection con;
@@ -61,24 +75,19 @@ public class ShoppingCart extends AppCompatActivity {
     String discountID = "";
     String discountName = "";
     long mLastClickTime = 0;
-
+    private RequestQueue mQueue;
     private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle toggle;
     NavigationView navigationView;
 
-    shoppingCart_class sc = new shoppingCart_class();
     ui_class uic = new ui_class();
     prefs_class pc = new prefs_class();
-    actualendbal_class ac = new actualendbal_class();
-    user_class uc = new user_class();
-    connection_class cc = new connection_class();
-    receivedsap_class recsap = new receivedsap_class();
-    access_class accessc = new access_class();
-
     int userID = 0;
 
     DecimalFormat df = new DecimalFormat("#,###.00");
-    String inventory_type;
+    String salesType = "";
+
+    private OkHttpClient client;
     @SuppressLint("RestrictedApi")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -87,6 +96,8 @@ public class ShoppingCart extends AppCompatActivity {
         setContentView(R.layout.activity_shopping_cart);
         myDb = new DatabaseHelper(this);
 
+        client = new OkHttpClient();
+        mQueue = Volley.newRequestQueue(this);
 
         navigationView = findViewById(R.id.nav);
         drawerLayout = findViewById(R.id.navDrawer);
@@ -98,18 +109,19 @@ public class ShoppingCart extends AppCompatActivity {
 
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
         userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+        String fullName = Objects.requireNonNull(sharedPreferences.getString("fullname", ""));
 
+        Menu menu = navigationView.getMenu();
+        MenuItem nav_UsernameLogin = menu.findItem(R.id.usernameLogin);
+        nav_UsernameLogin.setTitle("Signed In " + fullName);
+
+        int totalCart = myDb.countItems();
+        MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
+        nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @SuppressLint("WrongConstant")
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean isStoreExist = ac.isTypeExist(ShoppingCart.this, "Store Count");
-                boolean isAuditorExist = ac.isTypeExist(ShoppingCart.this, "Auditor Count");
-                boolean isFinalExist = ac.isTypeExist(ShoppingCart.this, "Final Count");
-
-                boolean isStorePullOutExist = ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out");
-                boolean isAuditorPullOutExist = ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out");
-                boolean isFinalPullOutExist = ac.isTypeExist(ShoppingCart.this, "Final Count Pull Out");
                 boolean result = false;
                 Intent intent;
                 switch (menuItem.getItemId()) {
@@ -118,228 +130,43 @@ public class ShoppingCart extends AppCompatActivity {
                         drawerLayout.closeDrawer(Gravity.START, false);
                         onBtnLogout();
                         break;
-                    case R.id.nav_scanItem:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        startActivity(uic.goTo(ShoppingCart.this, ScanQRCode.class));
-                        finish();
-                        break;
                     case R.id.nav_exploreItems:
                         result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
+                        intent = new Intent(getBaseContext(), APIReceived.class);
                         intent.putExtra("title", "Menu Items");
+                        intent.putExtra("hiddenTitle", "API Menu Items");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_shoppingCart:
+                    case R.id.nav_receivedItem:
                         result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        startActivity(uic.goTo(ShoppingCart.this, ShoppingCart.class));
-                        finish();
-                        break;
-                    case R.id.nav_receivedProduction:
-                        if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
-                            if(!accessc.isUserAllowed(ShoppingCart.this,"Received from Production", userID)){
-                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                            }else if(accessc.checkCutOff(ShoppingCart.this)) {
-                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-                            }else{
-                                result = true;
-                                intent = new Intent(getBaseContext(), AvailableItems.class);
-                                intent.putExtra("title", "Manual Received from Production");
-                                startActivity(intent);
-                                finish();
-                            }
-                        }else if(accessc.checkCutOff(ShoppingCart.this)){
-                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-                        }else {
-                            result = true;
-                            intent = new Intent(getBaseContext(), AvailableItems.class);
-                            intent.putExtra("title", "Manual Received from Production");
-                            startActivity(intent);
-                            finish();
-                        }
-                        break;
-                    case R.id.nav_receivedBranch:
-                        if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")) {
-                            if (!accessc.isUserAllowed(ShoppingCart.this, "Received from Production", userID)) {
-                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                            }else if(accessc.checkCutOff(ShoppingCart.this)) {
-                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-                            }else {
-                                result = true;
-                                intent = new Intent(getBaseContext(), AvailableItems.class);
-                                intent.putExtra("title", "Manual Received from Other Branch");
-                                startActivity(intent);
-                                finish();
-                            }
-                        }else if(accessc.checkCutOff(ShoppingCart.this)){
-                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-                        }else {
-                            result = true;
-                            intent = new Intent(getBaseContext(), AvailableItems.class);
-                            intent.putExtra("title", "Manual Received from Other Branch");
-                            startActivity(intent);
-                            finish();
-                        }
-                        break;
-                    case R.id.nav_receivedSupplier:
-                        if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")) {
-                            if (!accessc.isUserAllowed(ShoppingCart.this, "Received from Production", userID)) {
-                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                            }else if(accessc.checkCutOff(ShoppingCart.this)) {
-                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-                            } else {
-                                result = true;
-                                intent = new Intent(getBaseContext(), AvailableItems.class);
-                                intent.putExtra("title", "Manual Received from Direct Supplier");
-                                startActivity(intent);
-                                finish();
-                            }
-                        }else if(accessc.checkCutOff(ShoppingCart.this)){
-                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-                        }else {
-                            result = true;
-                            intent = new Intent(getBaseContext(), AvailableItems.class);
-                            intent.putExtra("title", "Manual Received from Direct Supplier");
-                            startActivity(intent);
-                            finish();
-                        }
-                        break;
-                    case R.id.nav_transferOut2:
-                        result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Manual Transfer Out");
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Received Item");
+                        intent.putExtra("hiddenTitle", "API Received Item");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_storeCountListPullOut:
-                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
-                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStorePullOutExist) {
-                            Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
-                        }else{
-                            result = true;
-                            intent = new Intent(getBaseContext(), AvailableItems.class);
-                            intent.putExtra("title", "PO Store Count List Items");
-                            startActivity(intent);
-                            finish();
-                        }
-                        break;
-                    case R.id.nav_auditorCountListPullOut:
-                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
-                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorPullOutExist) {
-                            Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
-                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Auditor")){
-                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                        }else{
-                            result = true;
-                            intent = new Intent(getBaseContext(), AvailableItems.class);
-                            intent.putExtra("title", "PO Auditor Count List Items");
-                            startActivity(intent);
-                            finish();
-                        }
-                        break;
-                    case R.id.nav_finalCountListPullOut:
-                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
-                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
-                            Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
-                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
-                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                        }else {
-                            result = true;
-                            intent = new Intent(getBaseContext(), AvailableItems.class);
-                            intent.putExtra("title", "PO Final Count List Items");
-                            startActivity(intent);
-                            finish();
-                        }
-                        break;
-                    case R.id.nav_storeCountList:
-                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
-                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStoreExist) {
-                            Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
-                        }else{
-                            result = true;
-                            intent = new Intent(getBaseContext(), AvailableItems.class);
-                            intent.putExtra("title", "AC Store Count List Items");
-                            startActivity(intent);
-                            finish();
-                        }
-                        break;
-                    case R.id.nav_auditorCountList:
-                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
-                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorExist) {
-                            Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
-                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Auditor")){
-                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                        }else{
-                            result = true;
-                            intent = new Intent(getBaseContext(), AvailableItems.class);
-                            intent.putExtra("title", "AC Auditor Count List Items");
-                            startActivity(intent);
-                            finish();
-                        }
-                        break;
-                    case R.id.nav_finalCountList:
-                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
-                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorExist & !isStoreExist) {
-                            Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
-                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
-                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                        }else {
-                            result = true;
-                            intent = new Intent(getBaseContext(), AvailableItems.class);
-                            intent.putExtra("title", "AC Final Count List Items");
-                            startActivity(intent);
-                            finish();
-                        }
-                        break;
-                    case R.id.nav_inventory:
+                    case  R.id.nav_receivedSap:
                         result = true;
-                        intent = new Intent(getBaseContext(), Inventory.class);
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_cancelRecTrans:
-                        result = true;
-                        intent = new Intent(getBaseContext(), CancelRecTrans.class);
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_receivedSap:
-                        result = true;
-                        intent = new Intent(getBaseContext(), ReceivedSap.class);
+                        intent = new Intent(getBaseContext(), APIReceived.class);
                         intent.putExtra("title", "Received from SAP");
+                        intent.putExtra("hiddenTitle", "API Received from SAP");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_updateActualEndingBalance:
+                    case  R.id.nav_systemTransferItem:
                         result = true;
-                        intent = new Intent(getBaseContext(), UpdateActualEndingBalance.class);
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "System Transfer Item");
+                        intent.putExtra("hiddenTitle", "API System Transfer Item");
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_itemReceivable:
+                    case  R.id.nav_itemRequest:
                         result = true;
-                        intent = new Intent(getBaseContext(), AvailableItems.class);
-                        intent.putExtra("title", "Item Receivable");
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Item Request");
+                        intent.putExtra("hiddenTitle", "API Item Request");
                         startActivity(intent);
                         finish();
                         break;
@@ -347,6 +174,255 @@ public class ShoppingCart extends AppCompatActivity {
                 return result;
             }
         });
+
+//        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+//            @SuppressLint("WrongConstant")
+//            @Override
+//            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+////                boolean isStoreExist = ac.isTypeExist(ShoppingCart.this, "Store Count");
+////                boolean isAuditorExist = ac.isTypeExist(ShoppingCart.this, "Auditor Count");
+////                boolean isFinalExist = ac.isTypeExist(ShoppingCart.this, "Final Count");
+//
+////                boolean isStorePullOutExist = ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out");
+////                boolean isAuditorPullOutExist = ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out");
+////                boolean isFinalPullOutExist = ac.isTypeExist(ShoppingCart.this, "Final Count Pull Out");
+//                boolean result = false;
+//                Intent intent;
+//                switch (menuItem.getItemId()) {
+//                    case R.id.nav_logOut:
+//                        result = true;
+//                        drawerLayout.closeDrawer(Gravity.START, false);
+//                        onBtnLogout();
+//                        break;
+//                    case R.id.nav_scanItem:
+//                        result = true;
+//                        drawerLayout.closeDrawer(Gravity.START, false);
+//                        startActivity(uic.goTo(ShoppingCart.this, ScanQRCode.class));
+//                        finish();
+//                        break;
+//                    case R.id.nav_exploreItems:
+//                        result = true;
+//                        intent = new Intent(getBaseContext(), AvailableItems.class);
+//                        intent.putExtra("title", "Menu Items");
+//                        startActivity(intent);
+//                        finish();
+//                        break;
+//                    case R.id.nav_shoppingCart:
+//                        result = true;
+//                        drawerLayout.closeDrawer(Gravity.START, false);
+//                        startActivity(uic.goTo(ShoppingCart.this, ShoppingCart.class));
+//                        finish();
+//                        break;
+//                    case R.id.nav_receivedProduction:
+//                        if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
+//                            if(!accessc.isUserAllowed(ShoppingCart.this,"Received from Production", userID)){
+//                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+//                            }else if(accessc.checkCutOff(ShoppingCart.this)) {
+//                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+//                            }else{
+//                                result = true;
+//                                intent = new Intent(getBaseContext(), AvailableItems.class);
+//                                intent.putExtra("title", "Manual Received from Production");
+//                                startActivity(intent);
+//                                finish();
+//                            }
+//                        }else if(accessc.checkCutOff(ShoppingCart.this)){
+//                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+//                        }else {
+//                            result = true;
+//                            intent = new Intent(getBaseContext(), AvailableItems.class);
+//                            intent.putExtra("title", "Manual Received from Production");
+//                            startActivity(intent);
+//                            finish();
+//                        }
+//                        break;
+//                    case R.id.nav_receivedBranch:
+//                        if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")) {
+//                            if (!accessc.isUserAllowed(ShoppingCart.this, "Received from Production", userID)) {
+//                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+//                            }else if(accessc.checkCutOff(ShoppingCart.this)) {
+//                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+//                            }else {
+//                                result = true;
+//                                intent = new Intent(getBaseContext(), AvailableItems.class);
+//                                intent.putExtra("title", "Manual Received from Other Branch");
+//                                startActivity(intent);
+//                                finish();
+//                            }
+//                        }else if(accessc.checkCutOff(ShoppingCart.this)){
+//                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+//                        }else {
+//                            result = true;
+//                            intent = new Intent(getBaseContext(), AvailableItems.class);
+//                            intent.putExtra("title", "Manual Received from Other Branch");
+//                            startActivity(intent);
+//                            finish();
+//                        }
+//                        break;
+//                    case R.id.nav_receivedSupplier:
+//                        if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")) {
+//                            if (!accessc.isUserAllowed(ShoppingCart.this, "Received from Production", userID)) {
+//                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+//                            }else if(accessc.checkCutOff(ShoppingCart.this)) {
+//                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+//                            } else {
+//                                result = true;
+//                                intent = new Intent(getBaseContext(), AvailableItems.class);
+//                                intent.putExtra("title", "Manual Received from Direct Supplier");
+//                                startActivity(intent);
+//                                finish();
+//                            }
+//                        }else if(accessc.checkCutOff(ShoppingCart.this)){
+//                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
+//                        }else {
+//                            result = true;
+//                            intent = new Intent(getBaseContext(), AvailableItems.class);
+//                            intent.putExtra("title", "Manual Received from Direct Supplier");
+//                            startActivity(intent);
+//                            finish();
+//                        }
+//                        break;
+//                    case R.id.nav_transferOut2:
+//                        result = true;
+//                        intent = new Intent(getBaseContext(), AvailableItems.class);
+//                        intent.putExtra("title", "Manual Transfer Out");
+//                        startActivity(intent);
+//                        finish();
+//                        break;
+//                    case R.id.nav_storeCountListPullOut:
+//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
+//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Final Count Pull Out")){
+//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+//                        }else if (ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out")) {
+//                            Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
+//                        }else{
+//                            result = true;
+//                            intent = new Intent(getBaseContext(), AvailableItems.class);
+//                            intent.putExtra("title", "PO Store Count List Items");
+//                            startActivity(intent);
+//                            finish();
+//                        }
+//                        break;
+//                    case R.id.nav_auditorCountListPullOut:
+//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
+//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Final Count Pull Out")){
+//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+//                        }else if (ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out")) {
+//                            Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+//                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Auditor")){
+//                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+//                        }else{
+//                            result = true;
+//                            intent = new Intent(getBaseContext(), AvailableItems.class);
+//                            intent.putExtra("title", "PO Auditor Count List Items");
+//                            startActivity(intent);
+//                            finish();
+//                        }
+//                        break;
+//                    case R.id.nav_finalCountListPullOut:
+//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
+//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Final Count Pull Out")){
+//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+//                        }else if (!ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out") & !ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out")) {
+//                            Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
+//                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
+//                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+//                        }else {
+//                            result = true;
+//                            intent = new Intent(getBaseContext(), AvailableItems.class);
+//                            intent.putExtra("title", "PO Final Count List Items");
+//                            startActivity(intent);
+//                            finish();
+//                        }
+//                        break;
+//                    case R.id.nav_storeCountList:
+//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
+//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count") && ac.isTypeExist(ShoppingCart.this, "Store Count") && ac.isTypeExist(ShoppingCart.this, "Final Count")){
+//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+//                        }else if (ac.isTypeExist(ShoppingCart.this, "Store Count")) {
+//                            Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
+//                        }else{
+//                            result = true;
+//                            intent = new Intent(getBaseContext(), AvailableItems.class);
+//                            intent.putExtra("title", "AC Store Count List Items");
+//                            startActivity(intent);
+//                            finish();
+//                        }
+//                        break;
+//                    case R.id.nav_auditorCountList:
+//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
+//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count") && ac.isTypeExist(ShoppingCart.this, "Store Count") && ac.isTypeExist(ShoppingCart.this, "Final Count")){
+//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+//                        }else if (ac.isTypeExist(ShoppingCart.this, "Auditor Count")) {
+//                            Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
+//                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Auditor")){
+//                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+//                        }else{
+//                            result = true;
+//                            intent = new Intent(getBaseContext(), AvailableItems.class);
+//                            intent.putExtra("title", "AC Auditor Count List Items");
+//                            startActivity(intent);
+//                            finish();
+//                        }
+//                        break;
+//                    case R.id.nav_finalCountList:
+//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
+//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
+//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count") && ac.isTypeExist(ShoppingCart.this, "Store Count") && ac.isTypeExist(ShoppingCart.this, "Final Count")){
+//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
+//                        }else if (!ac.isTypeExist(ShoppingCart.this, "Auditor Count") & !ac.isTypeExist(ShoppingCart.this, "Store Count")) {
+//                            Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
+//                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
+//                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+//                        }else {
+//                            result = true;
+//                            intent = new Intent(getBaseContext(), AvailableItems.class);
+//                            intent.putExtra("title", "AC Final Count List Items");
+//                            startActivity(intent);
+//                            finish();
+//                        }
+//                        break;
+//                    case R.id.nav_inventory:
+//                        result = true;
+//                        intent = new Intent(getBaseContext(), Inventory.class);
+//                        startActivity(intent);
+//                        finish();
+//                        break;
+//                    case R.id.nav_cancelRecTrans:
+//                        result = true;
+//                        intent = new Intent(getBaseContext(), CancelRecTrans.class);
+//                        startActivity(intent);
+//                        finish();
+//                        break;
+//                    case R.id.nav_receivedSap:
+//                        result = true;
+//                        intent = new Intent(getBaseContext(), ReceivedSap.class);
+//                        intent.putExtra("title", "Received from SAP");
+//                        startActivity(intent);
+//                        finish();
+//                        break;
+//                    case R.id.nav_updateActualEndingBalance:
+//                        result = true;
+//                        intent = new Intent(getBaseContext(), UpdateActualEndingBalance.class);
+//                        startActivity(intent);
+//                        finish();
+//                        break;
+//                    case R.id.nav_itemReceivable:
+//                        result = true;
+//                        intent = new Intent(getBaseContext(), AvailableItems.class);
+//                        intent.putExtra("title", "Item Receivable");
+//                        startActivity(intent);
+//                        finish();
+//                        break;
+//                }
+//                return result;
+//            }
+//        });
 
         Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar())).setTitle(Html.fromHtml("<font color='#ffffff'>Shopping Cart</font>"));
         getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
@@ -376,16 +452,8 @@ public class ShoppingCart extends AppCompatActivity {
         alertDialog.show();
     }
 
-    public void loadCount(){
-        Menu menu = navigationView.getMenu();
-        MenuItem nav_shoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        int totalCart = myDb.countItems();
-        nav_shoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
-    }
-
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        loadCount();
         if(toggle.onOptionsItemSelected(item)){
             return true;
         }
@@ -428,11 +496,49 @@ public class ShoppingCart extends AppCompatActivity {
                         return;
                     }
                     mLastClickTime = SystemClock.elapsedRealtime();
-                    Intent intent;
-                    intent = new Intent(getBaseContext(), AvailableItems.class);
-                    intent.putExtra("inventory_type", inventory_type);
-                    intent.putExtra("title", "Menu Items");
-                    startActivity(intent);
+                    Handler handler = new Handler();
+                    LoadingDialog loadingDialog = new LoadingDialog(ShoppingCart.this);
+                    loadingDialog.startLoadingDialog();
+                    Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            synchronized (this) {
+                                try {
+                                    wait(10);
+                                } catch (InterruptedException ex) {
+
+                                }
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+//                                        if(getIntent().getStringExtra("hiddenTitle") == "API Menu Items"){
+//
+//                                        }else{
+//                                            Intent intent;
+//                                            intent = new Intent(getBaseContext(), AvailableItems.class);
+//                                            intent.putExtra("inventory_type", inventory_type);
+//                                            intent.putExtra("title", "Menu Items");
+//                                            startActivity(intent);
+//                                        }
+                                        Intent intent;
+                                        intent = new Intent(getBaseContext(), APIReceived.class);
+                                        intent.putExtra("title", "Menu Items");
+                                        intent.putExtra("hiddenTitle", "API Menu Items");
+                                        startActivity(intent);
+                                    }
+                                });
+                            }
+                            runOnUiThread(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    loadingDialog.dismissDialog();
+                                }
+                            });
+                        }
+                    };
+                    Thread thread = new Thread(runnable);
+                    thread.start();
                 }
             });
 
@@ -588,11 +694,13 @@ public class ShoppingCart extends AppCompatActivity {
             final Spinner cmbDiscountType = new Spinner(this);
             cmbDiscountType.setTag("cmbDiscountType");
             cmbDiscountType.setLayoutParams(lpDiscountType);
-            List<String> discounts = sc.returnDiscounts(ShoppingCart.this);
+//            List<String> discounts = sc.returnDiscounts(ShoppingCart.this);
 
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, discounts);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            cmbDiscountType.setAdapter(adapter);
+//            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, discounts);
+//            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//            cmbDiscountType.setAdapter(adapter);
+
+
 
             cmbDiscountType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
@@ -714,7 +822,6 @@ public class ShoppingCart extends AppCompatActivity {
         layout.setOrientation(LinearLayout.VERTICAL);
 
         TextView lblARTitle = new TextView(ShoppingCart.this);
-        lblARTitle.setText("Choose Tender Type");
         lblARTitle.setTextSize(20);
         lblARTitle.setGravity(View.TEXT_ALIGNMENT_CENTER);
         layout.addView(lblARTitle);
@@ -728,7 +835,7 @@ public class ShoppingCart extends AppCompatActivity {
         double discountType = 0.00;
         if(cmbDiscount.getSelectedItemPosition() != 0){
             String spinnerText = (String) cmbDiscount.getSelectedItem();
-            discountType = sc.getDiscountPercent(ShoppingCart.this, spinnerText);
+//            discountType = sc.getDiscountPercent(ShoppingCart.this, spinnerText);
         }
 
         final double getSubTotal = myDb.getSubTotal() - (myDb.getSubTotal() * (discountType / 100));
@@ -785,69 +892,136 @@ public class ShoppingCart extends AppCompatActivity {
         lblChange.setTextSize(20);
         lblChange.setGravity(View.TEXT_ALIGNMENT_CENTER);
 
-        final RadioGroup rbGroup = new RadioGroup(ShoppingCart.this);
-        rbGroup.setId(View.generateViewId());
-        rbGroup.setTag("RBGroup");
+         Spinner cmbTenderType = new Spinner(this);
+         List<String> discounts = new ArrayList<>();
 
-        final RadioButton rbCash = new RadioButton(ShoppingCart.this);
-        rbCash.setTag("ARCash");
-        rbCash.setText("CASH");
-        rbCash.setId(View.generateViewId());
+        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+        String IPaddress = sharedPreferences2.getString("IPAddress", "");
 
-        rbCash.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        String URL = IPaddress + "/api/sales/type/get_all";
+        final JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL, null, response -> {
+            try {
+                if (response.getBoolean("success")) {
+                    JSONArray jsonArray = response.getJSONArray("data");
+                    for (int ii = 0; ii < jsonArray.length(); ii++) {
+                        JSONObject jsonObject = jsonArray.getJSONObject(ii);
+                        discounts.add(jsonObject.getString("code"));
+                    }
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, discounts);
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    cmbTenderType.setAdapter(adapter);
+                } else {
+                    String msg = response.getString("message");
+                    if (msg.equals("Token is invalid")) {
+                        final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
+                        builder.setCancelable(false);
+                        builder.setMessage("Your session is expired. Please login again.");
+                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                pc.loggedOut(ShoppingCart.this);
+                                pc.removeToken(ShoppingCart.this);
+                                startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
+                                finish();
+                                dialog.dismiss();
+                            }
+                        });
+                        builder.show();
+                    } else {
+                        Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            } catch (Exception ex) {
+                Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_SHORT).show();
+            }
+        }, error -> Toast.makeText(getBaseContext(), error.getMessage(), Toast.LENGTH_SHORT).show()) {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked){
-                    txtCustomer.setText("CASH");
-                    txtCustomer.setEnabled(false);
+            public Map<String, String> getHeaders() {
+                SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+                String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+                Map<String, String> params = new HashMap<>();
+                params.put("Content-Type", "application/json");
+                params.put("Authorization", "Bearer " + token);
+                return params;
+            }
+        };
+        mQueue.add(request);
+
+        cmbTenderType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                if(cmbTenderType.getSelectedItemPosition() == cmbTenderType.getSelectedItem().toString().indexOf("CASH")){
+                    txttendered.setText("0.00");
                     txttendered.setEnabled(true);
-                    txtCustomer.setAdapter(null);
-                }
-            }
-        });
-
-        final RadioButton rbARSales = new RadioButton(ShoppingCart.this);
-        rbARSales.setText("AR Sales");
-        rbARSales.setTag("ARSales");
-        rbARSales.setId(View.generateViewId());
-
-        rbARSales.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked){
+                    txtCustomer.setText("");
+                    txtCustomer.setEnabled(false);
+                }else{
+                    txttendered.setText("0.00");
+                    txttendered.setEnabled(false);
                     txtCustomer.setText("");
                     txtCustomer.setEnabled(true);
                     txtCustomer.requestFocus();
-                    txttendered.setEnabled(false);
-                    txttendered.setText("0.0");
-                    txtCustomer.setAdapter(fillName(sc.returnCustomer(ShoppingCart.this, "Customer")));
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(txtCustomer, InputMethodManager.SHOW_IMPLICIT);
                 }
+                String URL = IPaddress + "/api/customer/get_all?transtype=sales";
+                final JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL, null, response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            JSONArray jsonArray = response.getJSONArray("data");
+                            final List<String> result = new ArrayList<>();
+                            for (int ii = 0; ii < jsonArray.length(); ii++) {
+                                JSONObject jsonObject = jsonArray.getJSONObject(ii);
+                                result.add(jsonObject.getString("code"));
+                            }
+                            if (result != null) {
+                                txtCustomer.setAdapter(fillName(result));
+                            }
+                        } else {
+                            String msg = response.getString("message");
+                            if (msg.equals("Token is invalid")) {
+                                final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
+                                builder.setCancelable(false);
+                                builder.setMessage("Your session is expired. Please login again.");
+                                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        pc.loggedOut(ShoppingCart.this);
+                                        pc.removeToken(ShoppingCart.this);
+                                        startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
+                                        finish();
+                                        dialog.dismiss();
+                                    }
+                                });
+                                builder.show();
+                            } else {
+                                Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    } catch (Exception ex) {
+                        Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_SHORT).show();
+                    }
+                }, error -> Toast.makeText(getBaseContext(), error.getMessage(), Toast.LENGTH_SHORT).show()) {
+                    @Override
+                    public Map<String, String> getHeaders() {
+                        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+                        String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+                        Map<String, String> params = new HashMap<>();
+                        params.put("Content-Type", "application/json");
+                        params.put("Authorization", "Bearer " + token);
+                        return params;
+                    }
+                };
+                mQueue.add(request);
             }
-        });
 
-        final RadioButton rbARCharge = new RadioButton(ShoppingCart.this);
-        rbARCharge.setText("AR Charge");
-        rbARCharge.setTag("ARCharge");
-        rbARCharge.setId(View.generateViewId());
-
-        rbARCharge.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked){
-                    txtCustomer.setText("");
-                    txtCustomer.setEnabled(true);
-                    txtCustomer.requestFocus();
-                    txttendered.setEnabled(false);
-                    txttendered.setText("0.0");
-                    txtCustomer.setAdapter(fillName(sc.returnCustomer(ShoppingCart.this,"Employee")));
-                }
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
             }
         });
 
-        layout.addView(rbGroup);
-        rbGroup.addView(rbCash);
-        rbGroup.addView(rbARSales);
-        rbGroup.addView(rbARCharge);
+        layout.addView(cmbTenderType);
 
         layout.addView(txtCustomer);
         layout.addView(lblSubtotal);
@@ -860,72 +1034,90 @@ public class ShoppingCart extends AppCompatActivity {
         myDialog.setPositiveButton("Proceed", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                final String customerName = txtCustomer.getText().toString().trim();
-                String tendertype = "";
-                //TENDER TYPE
-                if(rbCash.isChecked()){
-                    tendertype = "Cash";
-                }else if(rbARSales.isChecked()){
-                    tendertype = "A.R Sales";
-                }else if(rbARCharge.isChecked()){
-                    tendertype = "A.R Charge";
-                }
-                if(!rbCash.isChecked() && !rbARCharge.isChecked() && !rbARSales.isChecked()){
-                    toastMsg("Please select Service Type",0);
-                }
-                else if(customerName.isEmpty()){
-                    toastMsg("Name field is required",0);
-                }else if(!tendertype.equals("Cash") && !sc.checkCustomer(ShoppingCart.this,customerName, tendertype) ){
-                    toastMsg("Name not found",0);
-                }
-                else{
-                    AlertDialog.Builder dialogConfirmation = new AlertDialog.Builder(ShoppingCart.this);
-                    dialogConfirmation.setTitle("Confirm Order?");
-                    final String finalTendertype = tendertype;
-                    dialogConfirmation.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            String disctype;
-                            String tendered = txttendered.getText().toString();
-                            double tenderamt;
-//                                          DISCOUNT TYPE
-                            View root = getWindow().getDecorView().getRootView();
-                            Spinner currentDiscountType = root.findViewWithTag("cmbDiscountType");
-                            if(currentDiscountType.getSelectedItemPosition() == 0){
-                                disctype = "N/A";
-                            }else{
-                                disctype = currentDiscountType.getSelectedItem().toString();
-                            }
-//                                          TENDER AMOUNT
-                            if(tendered.isEmpty()){
-                                tenderamt = 0.00;
-                            }else if(Double.parseDouble(tendered) < 0){
-                                tenderamt = 0.00;
-                            }else{
-                                tenderamt = Double.parseDouble(tendered);
-                            }
-//                                          CUSTOMER
+                Handler handler = new Handler();
+                LoadingDialog loadingDialog = new LoadingDialog(ShoppingCart.this);
+                loadingDialog.startLoadingDialog();
+                Runnable runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronized (this) {
                             try {
-                                insertTransaction(finalTendertype,disctype,tenderamt,customerName);
-                                discountID = "";
-                                discountName = "";
+                                wait(10);
+                            } catch (InterruptedException ex) {
 
-                            } catch (Exception e) {
-                                showMessage("Error", e.getMessage());
                             }
-                        }
-                    });
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    final String customerName = txtCustomer.getText().toString().trim();
+                                    String tendertype = cmbTenderType.getSelectedItem().toString();
+                                    if (cmbTenderType.getAdapter() == null) {
+                                        toastMsg("Please select Service Type", 0);
+                                    } else if (customerName.isEmpty() && cmbTenderType.getSelectedItemPosition() > 0) {
+                                        toastMsg("Name field is required", 0);
+                                    } else {
+                                        AlertDialog.Builder dialogConfirmation = new AlertDialog.Builder(ShoppingCart.this);
+                                        dialogConfirmation.setTitle("Confirm Order?");
+                                        final String finalTendertype = tendertype;
+                                        dialogConfirmation.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                String disctype;
+                                                String tendered = txttendered.getText().toString();
+                                                double tenderamt;
+//                                          DISCOUNT TYPE
+//                                                View root = getWindow().getDecorView().getRootView();
+//                                                Spinner currentDiscountType = root.findViewWithTag("cmbDiscountType");
+//                                                if (currentDiscountType.getSelectedItemPosition() == 0) {
+//                                                    disctype = "N/A";
+//                                                } else {
+//                                                    disctype = currentDiscountType.getSelectedItem().toString();
+//                                                }
+//                                          TENDER AMOUNT
+                                                if (tendered.isEmpty()) {
+                                                    tenderamt = 0.00;
+                                                } else if (Double.parseDouble(tendered) < 0) {
+                                                    tenderamt = 0.00;
+                                                } else {
+                                                    tenderamt = Double.parseDouble(tendered);
+                                                }
+//                                          CUSTOMER
+                                                try {
+                                                    APISaveTransaction(finalTendertype, tenderamt, txtCustomer.getText().toString());
+//                                                    insertTransaction(finalTendertype, disctype, tenderamt, customerName);
+                                                    discountID = "";
+                                                    discountName = "";
 
-                    dialogConfirmation.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                        }
-                    });
+                                                } catch (Exception e) {
+                                                    showMessage("Error", e.getMessage());
+                                                }
+                                            }
+                                        });
 
-                    dialogConfirmation.show();
-                }
+                                        dialogConfirmation.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                dialog.cancel();
+                                            }
+                                        });
+
+                                        dialogConfirmation.show();
+                                    }
+                                }
+                            });
+                        }
+                        runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                loadingDialog.dismissDialog();
+                            }
+                        });
+                    }
+                };
+                Thread thread = new Thread(runnable);
+                thread.start();
             }
         });
         myDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -958,7 +1150,7 @@ public class ShoppingCart extends AppCompatActivity {
         double discountType = 0.00;
         if(cmbDiscount.getSelectedItemPosition() != 0){
             String spinnerText = (String) cmbDiscount.getSelectedItem();
-            discountType = sc.getDiscountPercent(ShoppingCart.this, spinnerText);
+//            discountType = sc.getDiscountPercent(ShoppingCart.this, spinnerText);
         }
 
         double getSubTotal = myDb.getSubTotal() - (myDb.getSubTotal() * (discountType / 100));
@@ -998,76 +1190,255 @@ public class ShoppingCart extends AppCompatActivity {
         builder.show();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public void insertTransaction(final String tendertype, final String disctype, final Double tenderamt, final String customer) {
-        try {
-            SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
-            int userid = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
-            Integer ordernum = sc.getOrderNumber(ShoppingCart.this);
-            Double less = sc.getDiscountPercent(ShoppingCart.this, disctype);
-            double change;
-            con = cc.connectionClass(ShoppingCart.this);
-            if (con == null) {
-                Toast.makeText(ShoppingCart.this, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
-            } else {
-                double getSubTotal = myDb.getSubTotal() - (myDb.getSubTotal() * (less / 100));
-                if (tenderamt > getSubTotal) {
-                    change = tenderamt - getSubTotal;
-                } else {
-                    change = 0.00;
-                }
-                double discamt = myDb.getSubTotal() * (less / 100);
-                double subtotalBefore = myDb.getSubTotalBefore();
-                Cursor result2 = myDb.getAllData();
-                if(result2.moveToNext()){
-                    inventory_type = result2.getString(7);
-                }
+//    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+//    public void insertTransaction(final String tendertype, final String disctype, final Double tenderamt, final String customer) {
+//        try {
+//            SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
+//            int userid = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
+//            Integer ordernum = sc.getOrderNumber(ShoppingCart.this);
+//            Double less = sc.getDiscountPercent(ShoppingCart.this, disctype);
+//            double change;
+//            con = cc.connectionClass(ShoppingCart.this);
+//            if (con == null) {
+//                Toast.makeText(ShoppingCart.this, "Check Your Internet Access", Toast.LENGTH_SHORT).show();
+//            } else {
+//                double getSubTotal = myDb.getSubTotal() - (myDb.getSubTotal() * (less / 100));
+//                if (tenderamt > getSubTotal) {
+//                    change = tenderamt - getSubTotal;
+//                } else {
+//                    change = 0.00;
+//                }
+//                double discamt = myDb.getSubTotal() * (less / 100);
+//                double subtotalBefore = myDb.getSubTotalBefore();
+//                Cursor result2 = myDb.getAllData();
+//                if(result2.moveToNext()){
+//                    inventory_type = result2.getString(7);
+//                }
+//
+//                String query = "INSERT INTO tbltransaction2 (ornum, ordernum, transdate, cashier," +
+//                        " tendertype, servicetype, delcharge, subtotal, disctype, less, vatsales, vat," +
+//                        " amtdue, tenderamt, change, refund, comment, remarks, customer, tinnum, tablenum," +
+//                        " pax, createdby, datecreated, datemodified, status, status2, area, gctotal, typez," +
+//                        " discamt,inventory_type) VALUES ('000'," + ordernum + ",(SELECT FORMAT (GETDATE(), 'MM/dd/yyyy')),(SELECT username FROM tblusers WHERE" +
+//                        " systemid=" + userid + "),'" + tendertype + "','Take Out'," +
+//                        "0," + subtotalBefore + ",'" + disctype + "'," + less + ",0,0," + getSubTotal + "," + tenderamt + "," + change + "," +
+//                        "0,'','','" + customer + "',0,0,0,(SELECT username FROM tblusers WHERE systemid=" + userid + ")," +
+//                        "(SELECT GETDATE()),(SELECT GETDATE()),1,'Unpaid','Sales',0,(SELECT postype FROM tblusers WHERE systemid=" +
+//                        "" + userid + ")," + discamt + ",'" + inventory_type + "');";
+//                Statement stmt = con.createStatement();
+//                stmt.executeUpdate(query);
+//
+//                if (!disctype.equals("N/A")) {
+//                    Statement stmtSenior = con.createStatement();
+//                    String querySenior = "INSERT INTO tblsenior (transnum,idno,name,disctype,datedisc,status)" +
+//                            "VALUES ('" + ordernum + "','" + discountID + "','" + discountName + "','" + disctype + "'," +
+//                            "(SELECT GETDATE()),3)";
+//                    stmtSenior.executeUpdate(querySenior);
+//                }
+//                Cursor result = myDb.getAllData();
+//                while (result.moveToNext()) {
+//                    String itemname = result.getString(1);
+//                    double quantity = Double.parseDouble(result.getString(2));
+//                    double totalprice = Double.parseDouble(result.getString(5));
+//                    double discount = Double.parseDouble(result.getString(4));
+//                    double discountPercent = discount / 100;
+//                    int free = Integer.parseInt(result.getString(6));
+//                    String query2 = "Insert into tblorder2 (ordernum, category, itemname, qty, price, totalprice, dscnt, free," +
+//                            "request, status, discprice, disctrans,area,gc,less,deliver,datecreated,pricebefore,discamt)" +
+//                            "VALUES(" + ordernum + ",(SELECT category FROM tblitems WHERE itemname='" + itemname + "'),'" + itemname + "'" +
+//                            "," + quantity + ",(SELECT price FROM tblitems WHERE itemname='" + itemname + "')," + totalprice + "," + discount + "," + free + "" +
+//                            ",'',1,(SELECT SUM(price - ((" + discount + "/ 100) *price)) FROM tblitems WHERE itemname='" + itemname + "'),0,'Sales',0,0,0,(SELECT GETDATE())," +
+//                            "(SELECT SUM(price * " + quantity + ") FROM tblitems WHERE itemname='" + itemname + "')," +
+//                            "(SELECT " + discountPercent + " * (price * " + quantity + ") FROM tblitems WHERE itemname='" + itemname + "'));";
+//                    Statement stmt2 = con.createStatement();
+//                    stmt2.executeUpdate(query2);
+//                }
+//                con.close();
+//                myDb.truncateTable();
+//                showMessage("Transaction Completed", "Order #: " + ordernum + "\n" + "Change: " + change);
+//                loadData();
+//
+//            }
+//        } catch (SQLException ex) {
+//            showMessage("Error", ex.getMessage());
+//        }
+//    }
 
-                String query = "INSERT INTO tbltransaction2 (ornum, ordernum, transdate, cashier," +
-                        " tendertype, servicetype, delcharge, subtotal, disctype, less, vatsales, vat," +
-                        " amtdue, tenderamt, change, refund, comment, remarks, customer, tinnum, tablenum," +
-                        " pax, createdby, datecreated, datemodified, status, status2, area, gctotal, typez," +
-                        " discamt,inventory_type) VALUES ('000'," + ordernum + ",(SELECT FORMAT (GETDATE(), 'MM/dd/yyyy')),(SELECT username FROM tblusers WHERE" +
-                        " systemid=" + userid + "),'" + tendertype + "','Take Out'," +
-                        "0," + subtotalBefore + ",'" + disctype + "'," + less + ",0,0," + getSubTotal + "," + tenderamt + "," + change + "," +
-                        "0,'','','" + customer + "',0,0,0,(SELECT username FROM tblusers WHERE systemid=" + userid + ")," +
-                        "(SELECT GETDATE()),(SELECT GETDATE()),1,'Unpaid','Sales',0,(SELECT postype FROM tblusers WHERE systemid=" +
-                        "" + userid + ")," + discamt + ",'" + inventory_type + "');";
-                Statement stmt = con.createStatement();
-                stmt.executeUpdate(query);
+    public void APISaveTransaction(String transtype, Double tenderAmount, String customerName){
+        try{
+            SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+            String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+            JSONObject jsonObject = new JSONObject();
 
-                if (!disctype.equals("N/A")) {
-                    Statement stmtSenior = con.createStatement();
-                    String querySenior = "INSERT INTO tblsenior (transnum,idno,name,disctype,datedisc,status)" +
-                            "VALUES ('" + ordernum + "','" + discountID + "','" + discountName + "','" + disctype + "'," +
-                            "(SELECT GETDATE()),3)";
-                    stmtSenior.executeUpdate(querySenior);
-                }
-                Cursor result = myDb.getAllData();
-                while (result.moveToNext()) {
-                    String itemname = result.getString(1);
-                    double quantity = Double.parseDouble(result.getString(2));
-                    double totalprice = Double.parseDouble(result.getString(5));
-                    double discount = Double.parseDouble(result.getString(4));
-                    double discountPercent = discount / 100;
-                    int free = Integer.parseInt(result.getString(6));
-                    String query2 = "Insert into tblorder2 (ordernum, category, itemname, qty, price, totalprice, dscnt, free," +
-                            "request, status, discprice, disctrans,area,gc,less,deliver,datecreated,pricebefore,discamt)" +
-                            "VALUES(" + ordernum + ",(SELECT category FROM tblitems WHERE itemname='" + itemname + "'),'" + itemname + "'" +
-                            "," + quantity + ",(SELECT price FROM tblitems WHERE itemname='" + itemname + "')," + totalprice + "," + discount + "," + free + "" +
-                            ",'',1,(SELECT SUM(price - ((" + discount + "/ 100) *price)) FROM tblitems WHERE itemname='" + itemname + "'),0,'Sales',0,0,0,(SELECT GETDATE())," +
-                            "(SELECT SUM(price * " + quantity + ") FROM tblitems WHERE itemname='" + itemname + "')," +
-                            "(SELECT " + discountPercent + " * (price * " + quantity + ") FROM tblitems WHERE itemname='" + itemname + "'));";
-                    Statement stmt2 = con.createStatement();
-                    stmt2.executeUpdate(query2);
-                }
-                con.close();
-                myDb.truncateTable();
-                showMessage("Transaction Completed", "Order #: " + ordernum + "\n" + "Change: " + change);
-                loadData();
+            // create your json here
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
+            String currentDateandTime = sdf.format(new Date());
+            JSONObject jsonObjectHeader = new JSONObject();
+            jsonObjectHeader.put("transdate",currentDateandTime);
+
+            if(!transtype.equals("CASH")){
+//                String URL = getString(R.string.API_URL) + "/api/customer/getall";
+//                final JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL, null, response -> {
+//                    try{
+//                        if(response.getBoolean("success")){
+//                            JSONArray jsonArray = response.getJSONArray("data");
+//                            for(int i = 0; i < jsonArray.length(); i ++){
+//                                JSONObject jsonObject2 = jsonArray.getJSONObject(i);
+//                                if(customerName.trim() == jsonObject2.getString("name").trim()){
+//                                    jsonObjectHeader.put("cust_code",jsonObject2.getString("code"));
+//                                    continue;
+//                                }
+//                            }
+//                        }
+//                    }catch (Exception ex){
+//                        Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_SHORT).show();
+//                    }
+//                }, error -> Toast.makeText(getBaseContext(), "Connection Timeout", Toast.LENGTH_SHORT).show()) {
+//                    @Override
+//                    public Map<String, String> getHeaders() {
+//                        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+//                        String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+//                        Map<String, String> params = new HashMap<>();
+//                        params.put("Content-Type", "application/json");
+//                        params.put("Authorization", "Bearer " + token);
+//                        return params;
+//                    }
+//                };
+//                mQueue.add(request);
+                jsonObjectHeader.put("cust_code", customerName);
+                jsonObjectHeader.put("cust_name",customerName);
             }
-        } catch (SQLException ex) {
-            showMessage("Error", ex.getMessage());
+
+            jsonObjectHeader.put("remarks",null);
+            jsonObjectHeader.put("transtype",transtype);
+            jsonObjectHeader.put("reference2",null);
+            jsonObjectHeader.put("delfee",0);
+            jsonObjectHeader.put("discprcnt",0);
+            jsonObjectHeader.put("gc_amount",null);
+            jsonObjectHeader.put("tenderamt",tenderAmount);
+            jsonObjectHeader.put("sap_number",null);
+            jsonObject.put("header",jsonObjectHeader);
+            Cursor cursor = myDb.getAllData();
+            if(cursor != null){
+                JSONArray arrayRows = new JSONArray();
+                while (cursor.moveToNext()){
+                    JSONObject jsonObjectRow = new JSONObject();
+                    jsonObjectRow.put("item_code", cursor.getString(1));
+                    jsonObjectRow.put("quantity", cursor.getDouble(2));
+                    jsonObjectRow.put("uom", "pc(s)");
+                    jsonObjectRow.put("unit_price", cursor.getDouble(3));
+                    jsonObjectRow.put("discprcnt", cursor.getDouble(4));
+                    boolean free = (cursor.getInt(6) > 0);
+                    jsonObjectRow.put("free", free);
+                    arrayRows.put(jsonObjectRow);
+                }
+                jsonObject.put("rows", arrayRows);
+            }
+
+            SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+            String IPaddress = sharedPreferences2.getString("IPAddress", "");
+
+            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+            System.out.println(jsonObject);
+            RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+            okhttp3.Request request = new okhttp3.Request.Builder()
+                    .url(IPaddress + "/api/sales/new")
+                    .method("post", body)
+                    .addHeader("Authorization", "Bearer " + token)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    ShoppingCart.this.runOnUiThread(new Runnable() {
+                        public void run() {
+                            Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+
+                @Override
+                public void onResponse(Call call, okhttp3.Response response) throws IOException {
+                    String result;
+                    result = response.body().string();
+                    if (response.isSuccessful()) {
+                        String finalResult = result;
+                        ShoppingCart.this.runOnUiThread(new Runnable() {
+                            public void run() {
+                                try {
+                                    Toast.makeText(getBaseContext(), "Transaction Completed", Toast.LENGTH_SHORT).show();
+                                    JSONObject jj = new JSONObject(finalResult);
+                                    boolean isSuccess = jj.getBoolean("success");
+                                    if (isSuccess) {
+                                        JSONObject jsonObjectData = jj.getJSONObject("data");
+                                        final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
+                                        builder.setCancelable(false);
+                                        builder.setMessage("Order #: " + jsonObjectData.getString("reference"));
+                                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                myDb.truncateTable();
+                                                loadData();
+                                                dialog.dismiss();
+                                            }
+                                        });
+                                        builder.show();
+
+                                    } else {
+                                        String msg = jj.getString("message");
+                                        if (msg.equals("Token is invalid")) {
+                                            final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
+                                            builder.setCancelable(false);
+                                            builder.setMessage("Your session is expired. Please login again.");
+                                            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                    pc.loggedOut(ShoppingCart.this);
+                                                    pc.removeToken(ShoppingCart.this);
+                                                    startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
+                                                    finish();
+                                                    dialog.dismiss();
+                                                }
+                                            });
+                                            builder.show();
+                                        } else {
+                                            Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+                        });
+                    } else {
+                        try{
+                            result = response.body().string();
+                        }catch(Exception ex) {
+//                            ShoppingCart.this.runOnUiThread(new Runnable() {
+//                                public void run() {
+//                                    Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+//                                }
+//                            });
+                        }
+                        String finalResult1 = result;
+                        ShoppingCart.this.runOnUiThread(new Runnable() {
+                            public void run() {
+                                try {
+                                    JSONObject jj = new JSONObject(finalResult1);
+                                    Toast.makeText(getBaseContext(), "ERROR: \n" + jj.getString("message"), Toast.LENGTH_SHORT).show();
+                                } catch (
+                                        Exception ex) {
+                                    Toast.makeText(getBaseContext(), "ERROR: \n" + ex.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        } catch (Exception ex){
+            Toast.makeText(ShoppingCart.this, "APISaveTransaction() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
 }

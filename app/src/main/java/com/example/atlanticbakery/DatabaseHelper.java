@@ -6,7 +6,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-
+import java.util.regex.Matcher;
 import androidx.annotation.Nullable;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
@@ -71,7 +71,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public boolean checkItem(String itemName){
         boolean result = false;
         SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE itemname='" + itemName + "';", null);
+        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE itemname= ?;", new String[]{itemName});
         if(cursor.moveToFirst()){
             do{
                 result = true;

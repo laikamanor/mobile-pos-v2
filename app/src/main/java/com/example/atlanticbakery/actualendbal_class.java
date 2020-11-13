@@ -62,7 +62,7 @@ public class actualendbal_class {
             } else {
                 if (type.equals("Final Count") || type.equals("PO Final Count")) {
                     String s = (type.equals("PO Final Count")) ? "PO " : "";
-                    String query = "SELECT itemname [sItemName],quantity [sQuantity] FROM tblactualendbal WHERE type='" + s + "Store Count' AND CAST(datecreated AS date)=(SELECT CAST(GETDATE() AS date)) AND status=1 ORDER BY itemname ASC;";
+                    String query = "SELECT itemname [sItemName],quantity [sQuantity] FROM tblactualendbal WHERE type='" + s + "Store Count' AND CAST(datecreated AS date)=(SELECT CAST(GETDATE() AS date)) AND itemname LIKE '%" + itemname + "%' AND status=1 ORDER BY itemname ASC;";
                     Statement stmt = con.createStatement();
                     ResultSet rs = stmt.executeQuery(query);
                     while (rs.next()) {
@@ -81,32 +81,32 @@ public class actualendbal_class {
                         }
                     }
                 } else if (type.equals("PO Auditor Count") || type.equals("PO Store Count")) {
-                    String query = "SELECT itemname,endbal [quantity],totalav  FROM tblinvitems WHERE invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND status=1 ORDER BY endbal DESC, itemname ASC";
+                    String query = "SELECT itemname,endbal [quantity],totalav  FROM tblinvitems WHERE invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND status=1 AND itemname LIKE '%" + itemname + "%' ORDER BY endbal DESC, itemname ASC";
                     Statement stmt = con.createStatement();
                     ResultSet rs = stmt.executeQuery(query);
                     while (rs.next()) {
                         int nagalaw = 0;
-                        if(rs.getDouble("totalav") > 0){
+                        if (rs.getDouble("totalav") > 0) {
                             nagalaw = 1;
                         }
                         String concatString = rs.getString("itemname") + "," + rs.getString("quantity") + "," + nagalaw;
                         results.add(concatString);
                     }
                 } else {
-                    String query = "SELECT a.itemname [result] ,a.endbal [quantity],a.totalav FROM tblinvitems a INNER JOIN tblitems b ON a.itemname = b.itemname WHERE a.invnum=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC) AND a.itemname LIKE '%" + itemname + "%' ORDER BY a.totalav DESC,a.itemname ASC;";
+                    String query = "SELECT a.itemname [result],CASE WHEN x.transaction_id IS NULL THEN a.endbal END [quantity], a.totalav FROM tblinvitems a INNER JOIN tblitems b ON a.itemname = b.itemname OUTER APPLY(SELECT c.transaction_id FROM tblproduction c WHERE c.inv_id=(Select TOP 1 invnum from tblinvsum ORDER BY invsumid DESC) AND c.type='Actual Ending Balance' AND c.item_name= a.itemname AND c.status='Completed')x WHERE a.invnum=(Select TOP 1 invnum from tblinvsum ORDER BY invsumid DESC) AND a.itemname LIKE '%" + itemname + "%' ORDER BY a.totalav DESC,a.itemname ASC;";
                     Statement stmt = con.createStatement();
                     ResultSet rs = stmt.executeQuery(query);
                     while (rs.next()) {
-                        String query2 = "SELECT inv_id FROM tblproduction a WHERE a.inv_id=(Select TOP 1 invnum from tblinvsum WHERE area='Sales' order by invsumid DESC) AND a.type='Actual Ending Balance' AND a.item_name='" + rs.getString("result") + "';";
-                        Statement stmt2 = con.createStatement();
-                        ResultSet rs2 = stmt2.executeQuery(query2);
-                        if (!rs2.next()) {
-                            int nagalaw = 0;
-                            if(rs.getDouble("totalav") > 0){
-                                nagalaw = 1;
+                        if (rs.getString("quantity") != null) {
+                            if (rs.getDouble("totalav") > 0) {
+                                String concatString = rs.getString("result") + "," + rs.getString("quantity") + "," + 1;
+                                results.add(concatString);
                             }
-                            String concatString = rs.getString("result") + "," + rs.getString("quantity") + "," + nagalaw;
-                            results.add(concatString);
+                        } else {
+                            if (rs.getDouble("totalav") <= 0) {
+                                String concatString = rs.getString("result") + "," + rs.getString("quantity") + "," + 0;
+                                results.add(concatString);
+                            }
                         }
                     }
                 }

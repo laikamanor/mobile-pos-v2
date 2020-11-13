@@ -77,7 +77,7 @@ public class DatabaseHelper2 extends SQLiteOpenHelper {
     public boolean checkItem(String itemName,String title){
         boolean result = false;
         SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE itemname='" + itemName + "' AND type='" + title + "';", null);
+        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE itemname = ? AND type='" + title + "';", new String[]{itemName});
         if(cursor.moveToFirst()){
             do{
                 result = true;

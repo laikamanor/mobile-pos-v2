@@ -9,6 +9,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import androidx.annotation.Nullable;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class DatabaseHelper4 extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "bnm.db";
@@ -87,13 +90,19 @@ public class DatabaseHelper4 extends SQLiteOpenHelper {
 
     public boolean checkItem(String itemName,String type){
         boolean result = false;
-        SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE itemname='" + itemName + "' AND type='" + type + "';", null);
-        if(cursor.moveToFirst()){
-            do{
-                result = true;
+        Cursor cursor = null;
+        try {
+            SQLiteDatabase db = this.getReadableDatabase();
+            cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE itemname=? AND type='" + type + "';", new String[]{itemName});
+            if (cursor != null) {
+                if (cursor.moveToNext()) {
+                    result = true;
+                }
             }
-            while (cursor.moveToNext());
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
         }
         return result;
     }

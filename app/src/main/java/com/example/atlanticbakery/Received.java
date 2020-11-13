@@ -100,13 +100,13 @@ public class Received extends AppCompatActivity {
             @SuppressLint("WrongConstant")
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean isStoreExist = ac.isTypeExist(Received.this, "Store Count");
-                boolean isAuditorExist = ac.isTypeExist(Received.this, "Auditor Count");
-                boolean isFinalExist = ac.isTypeExist(Received.this, "Final Count");
+//                boolean isStoreExist = ac.isTypeExist(Received.this, "Store Count");
+//                boolean isAuditorExist = ac.isTypeExist(Received.this, "Auditor Count");
+//                boolean isFinalExist = ac.isTypeExist(Received.this, "Final Count");
 
-                boolean isStorePullOutExist = ac.isTypeExist(Received.this, "Store Count Pull Out");
-                boolean isAuditorPullOutExist = ac.isTypeExist(Received.this, "Auditor Count Pull Out");
-                boolean isFinalPullOutExist = ac.isTypeExist(Received.this, "Final Count Pull Out");
+//                boolean isStorePullOutExist = ac.isTypeExist(Received.this, "Store Count Pull Out");
+//                boolean isAuditorPullOutExist = ac.isTypeExist(Received.this, "Auditor Count Pull Out");
+//                boolean isFinalPullOutExist = ac.isTypeExist(Received.this, "Final Count Pull Out");
                 boolean result = false;
                 Intent intent;
                 switch (menuItem.getItemId()) {
@@ -213,9 +213,9 @@ public class Received extends AppCompatActivity {
                     case R.id.nav_storeCountListPullOut:
                         if(!accessc.checkCutOff(Received.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(Received.this, "Auditor Count Pull Out") && ac.isTypeExist(Received.this, "Store Count Pull Out") && ac.isTypeExist(Received.this, "Final Count Pull Out")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStorePullOutExist) {
+                        }else if (ac.isTypeExist(Received.this, "Store Count Pull Out")) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
@@ -228,9 +228,9 @@ public class Received extends AppCompatActivity {
                     case R.id.nav_auditorCountListPullOut:
                         if(!accessc.checkCutOff(Received.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(Received.this, "Auditor Count Pull Out") && ac.isTypeExist(Received.this, "Store Count Pull Out") && ac.isTypeExist(Received.this, "Final Count Pull Out")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorPullOutExist) {
+                        }else if (ac.isTypeExist(Received.this, "Auditor Count Pull Out")) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(Received.this).equals("Auditor")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -245,9 +245,9 @@ public class Received extends AppCompatActivity {
                     case R.id.nav_finalCountListPullOut:
                         if(!accessc.checkCutOff(Received.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(Received.this, "Auditor Count Pull Out") && ac.isTypeExist(Received.this, "Store Count Pull Out") && ac.isTypeExist(Received.this, "Final Count Pull Out")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
+                        }else if (!ac.isTypeExist(Received.this, "Auditor Count Pull Out") & !ac.isTypeExist(Received.this, "Store Count Pull Out")) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(Received.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -262,9 +262,9 @@ public class Received extends AppCompatActivity {
                     case R.id.nav_storeCountList:
                         if(!accessc.checkCutOff(Received.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if(ac.isTypeExist(Received.this, "Auditor Count") && ac.isTypeExist(Received.this, "Store Count") && ac.isTypeExist(Received.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStoreExist) {
+                        }else if (ac.isTypeExist(Received.this, "Store Count")) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
@@ -277,9 +277,9 @@ public class Received extends AppCompatActivity {
                     case R.id.nav_auditorCountList:
                         if(!accessc.checkCutOff(Received.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if(ac.isTypeExist(Received.this, "Auditor Count") && ac.isTypeExist(Received.this, "Store Count") && ac.isTypeExist(Received.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorExist) {
+                        }else if (ac.isTypeExist(Received.this, "Auditor Count")) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(Received.this).equals("Auditor")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -294,9 +294,9 @@ public class Received extends AppCompatActivity {
                     case R.id.nav_finalCountList:
                         if(!accessc.checkCutOff(Received.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if(ac.isTypeExist(Received.this, "Auditor Count") && ac.isTypeExist(Received.this, "Store Count") && ac.isTypeExist(Received.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorExist & !isStoreExist) {
+                        }else if (!ac.isTypeExist(Received.this, "Auditor Count") & !ac.isTypeExist(Received.this, "Store Count")) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(Received.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();

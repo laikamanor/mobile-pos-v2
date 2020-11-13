@@ -85,13 +85,13 @@ import java.util.Objects;
             @SuppressLint("WrongConstant")
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean isStoreExist = ac.isTypeExist(CancelRecTrans.this, "Store Count");
-                boolean isAuditorExist = ac.isTypeExist(CancelRecTrans.this, "Auditor Count");
-                boolean isFinalExist = ac.isTypeExist(CancelRecTrans.this, "Final Count");
+//                boolean isStoreExist = ac.isTypeExist(CancelRecTrans.this, "Store Count");
+//                boolean isAuditorExist = ac.isTypeExist(CancelRecTrans.this, "Auditor Count");
+//                boolean isFinalExist = ac.isTypeExist(CancelRecTrans.this, "Final Count");
 
-                boolean isStorePullOutExist = ac.isTypeExist(CancelRecTrans.this, "PO Store Count");
-                boolean isAuditorPullOutExist = ac.isTypeExist(CancelRecTrans.this, "PO Auditor Count");
-                boolean isFinalPullOutExist = ac.isTypeExist(CancelRecTrans.this, "PO Final Count");
+//                boolean isStorePullOutExist = ac.isTypeExist(CancelRecTrans.this, "PO Store Count");
+//                boolean isAuditorPullOutExist = ac.isTypeExist(CancelRecTrans.this, "PO Auditor Count");
+//                boolean isFinalPullOutExist = ac.isTypeExist(CancelRecTrans.this, "PO Final Count");
                 boolean result = false;
                 Intent intent;
                 switch (menuItem.getItemId()) {
@@ -198,9 +198,9 @@ import java.util.Objects;
                     case R.id.nav_storeCountListPullOut:
                         if(!accessc.checkCutOff(CancelRecTrans.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(CancelRecTrans.this, "PO Auditor Count") && ac.isTypeExist(CancelRecTrans.this, "PO Store Count") && ac.isTypeExist(CancelRecTrans.this, "PO Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStorePullOutExist) {
+                        }else if (ac.isTypeExist(CancelRecTrans.this, "PO Store Count")) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
@@ -213,9 +213,9 @@ import java.util.Objects;
                     case R.id.nav_auditorCountListPullOut:
                         if(!accessc.checkCutOff(CancelRecTrans.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(CancelRecTrans.this, "PO Auditor Count") && ac.isTypeExist(CancelRecTrans.this, "PO Store Count") && ac.isTypeExist(CancelRecTrans.this, "PO Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorPullOutExist) {
+                        }else if (ac.isTypeExist(CancelRecTrans.this, "PO Auditor Count")) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(CancelRecTrans.this).equals("Auditor")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -230,9 +230,9 @@ import java.util.Objects;
                     case R.id.nav_finalCountListPullOut:
                         if(!accessc.checkCutOff(CancelRecTrans.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorPullOutExist && isStorePullOutExist && isFinalPullOutExist){
+                        }else if(ac.isTypeExist(CancelRecTrans.this, "PO Auditor Count") && ac.isTypeExist(CancelRecTrans.this, "PO Store Count") && ac.isTypeExist(CancelRecTrans.this, "PO Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorPullOutExist & !isStorePullOutExist) {
+                        }else if (!ac.isTypeExist(CancelRecTrans.this, "PO Auditor Count") & !ac.isTypeExist(CancelRecTrans.this, "PO Store Count")) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(CancelRecTrans.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -247,9 +247,9 @@ import java.util.Objects;
                     case R.id.nav_storeCountList:
                         if(!accessc.checkCutOff(CancelRecTrans.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if( ac.isTypeExist(CancelRecTrans.this, "Auditor Count") && ac.isTypeExist(CancelRecTrans.this, "Store Count") && ac.isTypeExist(CancelRecTrans.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isStoreExist) {
+                        }else if (ac.isTypeExist(CancelRecTrans.this, "Store Count")) {
                             Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
                         }else{
                             result = true;
@@ -262,9 +262,9 @@ import java.util.Objects;
                     case R.id.nav_auditorCountList:
                         if(!accessc.checkCutOff(CancelRecTrans.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if( ac.isTypeExist(CancelRecTrans.this, "Auditor Count") && ac.isTypeExist(CancelRecTrans.this, "Store Count") && ac.isTypeExist(CancelRecTrans.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (isAuditorExist) {
+                        }else if ( ac.isTypeExist(CancelRecTrans.this, "Auditor Count")) {
                             Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(CancelRecTrans.this).equals("Auditor")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
@@ -279,9 +279,9 @@ import java.util.Objects;
                     case R.id.nav_finalCountList:
                         if(!accessc.checkCutOff(CancelRecTrans.this)) {
                             Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-                        }else if(isAuditorExist && isStoreExist && isFinalExist){
+                        }else if( ac.isTypeExist(CancelRecTrans.this, "Auditor Count") && ac.isTypeExist(CancelRecTrans.this, "Store Count") && ac.isTypeExist(CancelRecTrans.this, "Final Count")){
                             Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-                        }else if (!isAuditorExist & !isStoreExist) {
+                        }else if (! ac.isTypeExist(CancelRecTrans.this, "Auditor Count") & !ac.isTypeExist(CancelRecTrans.this, "Store Count")) {
                             Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
                         }else if(!uc.returnWorkgroup(CancelRecTrans.this).equals("Manager")){
                             Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
