@@ -11,7 +11,7 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="0dp"
         >
 
         <LinearLayout
@@ -20,6 +20,15 @@
             android:orientation="vertical"
             android:layout_margin="20dp">
 
+
+            <Button
+                android:id="@+id/btnBack"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_marginBottom="10dp"
+                android:background="@color/colorBlue"
+                android:text="BACK"
+                android:textColor="@color/colorWhite" />
 
             <CheckBox
                 android:id="@+id/checkFree"
@@ -60,7 +69,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="20dp"
                     android:layout_marginRight="2dp"
-                    android:background="@color/colorPrimaryDark"
+                    android:background="@color/colorPrimary"
                     android:textColor="@color/colorWhite"
                     android:text="-"
                     android:textSize="20sp"
@@ -73,10 +82,11 @@
                     android:background="@android:color/white"
                     android:gravity="center_horizontal"
                     android:inputType="number"
-                    android:text="0"
+                    android:text=""
                     android:textAlignment="center"
                     android:textSize="30sp"
                     android:id="@+id/txtQuantity"
+                    android:imeOptions="actionDone"
                     />
 
                 <Button
@@ -84,7 +94,7 @@
                     android:layout_height="50dp"
                     android:layout_marginLeft="2dp"
                     android:layout_marginTop="20dp"
-                    android:background="@color/colorPrimaryDark"
+                    android:background="@color/colorPrimary"
                     android:textColor="@color/colorWhite"
                     android:text="+"
                     android:textSize="20sp"
@@ -102,7 +112,8 @@
                     android:layout_marginBottom="10dp"
                     android:background="@color/colorGray"
                     android:inputType="numberDecimal"
-                    android:text="0"
+                    android:imeOptions="actionDone"
+                    android:text=""
                     android:textSize="30sp"
                     android:id="@+id/txtDisount" />
 
@@ -112,6 +123,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:layout_marginBottom="10dp"
+                    android:imeOptions="actionDone"
                     android:text="%"
                     android:textSize="30sp" />
             </LinearLayout>
@@ -122,11 +134,12 @@
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:inputType="numberDecimal"
+                android:imeOptions="actionDone"
                 android:textSize="30sp"
                 android:background="@color/colorGray"
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="10dp"
-                android:text="0" />
+                android:text="" />
 
             <TextView
                 android:id="@+id/lblVariance"

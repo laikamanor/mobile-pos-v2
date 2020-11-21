@@ -65,9 +65,11 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
         return  cursor;
     }
 
-    public  Integer deleteData(String id){
+    public  boolean deleteData(String id){
         SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete(TABLE_NAME, "id = ?", new  String[] {id});
+        int result = db.delete(TABLE_NAME, "id = ?", new  String[] {id});
+        boolean bResult = result <= 0 ? false : true;
+        return bResult;
     }
 
     public boolean removeData(String id){
@@ -87,10 +89,11 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
         return true;
     }
 
-    public  Integer deleteItem(String id){
-        SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete(TABLE_NAME, "id = ?", new  String[] {id});
-    }
+//    public Integer deleteItem(String id){
+//        SQLiteDatabase db = this.getWritableDatabase();
+//        int result =  db.delete(TABLE_NAME, "id = ?", new  String[] {id});
+//        return  result;
+//    }
 
     public void truncateTable(){
         SQLiteDatabase db = this.getWritableDatabase();
@@ -121,6 +124,7 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
             }
             while (cursor.moveToNext());
         }
+        cursor.close();
         return result;
     }
 
@@ -128,6 +132,19 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
         int resultPrice = 0;
         SQLiteDatabase db = this.getReadableDatabase();
         @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT COUNT(id) FROM " + TABLE_NAME + " WHERE fromModule='" + fromModule + "';", null);
+        if(result.moveToFirst()){
+            do{
+                resultPrice = Integer.parseInt(result.getString(0));
+            }
+            while (result.moveToNext());
+        }
+        return resultPrice;
+    }
+
+    public Integer countSAPItems(String fromModule){
+        int resultPrice = 0;
+        SQLiteDatabase db = this.getReadableDatabase();
+        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT COUNT(id) FROM " + TABLE_NAME + " WHERE fromModule='" + fromModule + "' AND isSelected=1;", null);
         if(result.moveToFirst()){
             do{
                 resultPrice = Integer.parseInt(result.getString(0));

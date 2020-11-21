@@ -1,6 +1,9 @@
 package com.example.atlanticbakery;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,9 +16,11 @@ import android.os.SystemClock;
 import android.text.Html;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -42,10 +47,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -81,7 +89,9 @@ public class APIReceived extends AppCompatActivity {
 
     Menu menu;
 
-    JSONObject globalJsonObject;
+//    JSONObject globalJsonObject;
+
+    private long backPressedTime;
     @SuppressLint("WrongConstant")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,7 +112,7 @@ public class APIReceived extends AppCompatActivity {
 
         client = new OkHttpClient();
 
-        globalJsonObject = new JSONObject();
+//        globalJsonObject = new JSONObject();
 
         title = getIntent().getStringExtra("title");
         hidden_title = getIntent().getStringExtra("hiddenTitle");
@@ -183,7 +193,7 @@ public class APIReceived extends AppCompatActivity {
                 case R.id.nav_systemTransferItem:
                     result = true;
                     intent = new Intent(getBaseContext(), APIReceived.class);
-                    intent.putExtra("title", "System Transfer Item");
+                    intent.putExtra("title", "Received from System Transfer Item");
                     intent.putExtra("hiddenTitle", "API System Transfer Item");
                     startActivity(intent);
                     finish();
@@ -201,6 +211,30 @@ public class APIReceived extends AppCompatActivity {
                     intent = new Intent(getBaseContext(), APIReceived.class);
                     intent.putExtra("title", "Inventory Count");
                     intent.putExtra("hiddenTitle", "API Inventory Count");
+                    startActivity(intent);
+                    finish();
+                    break;
+                case  R.id.nav_invConfirmation:
+                    result = true;
+                    intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
+                    intent.putExtra("title", "Inv. and P.O Count Confirmation");
+                    intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
+                    startActivity(intent);
+                    finish();
+                    break;
+                case R.id.nav_cutOff:
+                    result = true;
+                    drawerLayout.closeDrawer(Gravity.START, false);
+                    intent = new Intent(getBaseContext(), CutOff.class);
+                    intent.putExtra("title", "Cut Off");
+                    intent.putExtra("hiddenTitle", "API Cut Off");
+                    startActivity(intent);
+                    break;
+                case  R.id.nav_pullOutCount:
+                    result = true;
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Pull Out Request");
+                    intent.putExtra("hiddenTitle", "API Pull Out Count");
                     startActivity(intent);
                     finish();
                     break;
@@ -226,28 +260,31 @@ public class APIReceived extends AppCompatActivity {
 
     }
 
+
     @Override
     protected void onResume() {
         super.onResume();
+        //        Toast.makeText(getBaseContext(), "RECEIVED", Toast.LENGTH_SHORT).show();
         int totalCart = myDb.countItems();
         MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
         nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
 
-        if(hidden_title.equals("API Received from SAP")) {
+        if (hidden_title.equals("API Received from SAP")) {
             lblSelectedType.setVisibility(View.VISIBLE);
             spinner.setVisibility(View.VISIBLE);
-        }else{
+        } else {
             lblSelectedType.setVisibility(View.GONE);
             spinner.setVisibility(View.GONE);
         }
 
-        if(myDb3.countItems(hidden_title) > 0 && hidden_title.equals("API Received from SAP")){
+        if (myDb3.countItems(hidden_title) > 0 && hidden_title.equals("API Received from SAP")) {
             lblFromBranch.setVisibility(View.VISIBLE);
             lblSapNumber.setVisibility(View.VISIBLE);
             lblSelectedType.setVisibility(View.GONE);
             spinner.setVisibility(View.GONE);
             loadSelectedSAPNumberItems();
-        }else if (myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API Received from SAP")){
+        }
+        else if (myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API Received from SAP")) {
             List<String> items = Arrays.asList("IT", "PO");
             ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -257,55 +294,98 @@ public class APIReceived extends AppCompatActivity {
             lblSelectedType.setVisibility(View.VISIBLE);
             spinner.setVisibility(View.VISIBLE);
             getItems(0);
-        }else if (myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API System Transfer Item")) {
+        } else if (myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API System Transfer Item")) {
             lblFromBranch.setVisibility(View.GONE);
             lblSapNumber.setVisibility(View.GONE);
             lblSelectedType.setVisibility(View.GONE);
             spinner.setVisibility(View.GONE);
             getItems(0);
-        }else if(myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API Received Item")){
+        } else if (myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API Received Item")) {
             lblFromBranch.setVisibility(View.GONE);
             lblSapNumber.setVisibility(View.GONE);
             lblSelectedType.setVisibility(View.GONE);
             spinner.setVisibility(View.GONE);
             getItems(0);
-        }else if(myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API Item Request")){
+        } else if (myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API Item Request")) {
             lblFromBranch.setVisibility(View.GONE);
             lblSapNumber.setVisibility(View.GONE);
             lblSelectedType.setVisibility(View.GONE);
             spinner.setVisibility(View.GONE);
             getItems(0);
-        }
-        else if(hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item")) {
+        } else if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item")) {
             lblFromBranch.setVisibility(View.GONE);
             lblSapNumber.setVisibility(View.GONE);
             lblSelectedType.setVisibility(View.GONE);
             spinner.setVisibility(View.GONE);
             getItems(0);
-        }else if(hidden_title.equals("API Inventory Count")) {
+        } else if (hidden_title.equals("API Inventory Count") || hidden_title.equals("API Pull Out Count")) {
             lblFromBranch.setVisibility(View.GONE);
             lblSapNumber.setVisibility(View.GONE);
             lblSelectedType.setVisibility(View.GONE);
             spinner.setVisibility(View.GONE);
             getItems(0);
-        }else if(myDb3.countItems(hidden_title) > 0 && hidden_title.equals(("API System Transfer Item"))) {
-            Intent intent = new Intent(getBaseContext(), ItemReceivable.class);
-            intent.putExtra("title", title);
-            intent.putExtra("hiddenTitle", hidden_title);
-            startActivity(intent);
-            finish();
+        } else if (myDb3.countItems(hidden_title) > 0 && hidden_title.equals(("API System Transfer Item"))) {
+            lblFromBranch.setVisibility(View.VISIBLE);
+            lblSapNumber.setVisibility(View.VISIBLE);
+            lblSelectedType.setVisibility(View.GONE);
+            spinner.setVisibility(View.GONE);
+            loadSelectedSAPNumberItems();
         }
 
         btnSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(myDb3.countItems(hidden_title) > 0 && hidden_title.equals("API Received from SAP")) {
+                if (myDb3.countItems(hidden_title) > 0 && hidden_title.equals("API Received from SAP")) {
                     loadSelectedSAPNumberItems();
-                }else{
+                } else {
                     getItems(0);
                 }
             }
         });
+
+        txtSearch.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                if ((keyEvent != null && (keyEvent.getKeyCode() == KeyEvent.KEYCODE_ENTER)) || (i == EditorInfo.IME_ACTION_DONE)) {
+                    Toast.makeText(getBaseContext(), "PRESSED", Toast.LENGTH_SHORT).show();
+                }
+                return false;
+            }
+        });
+    }
+
+    private boolean isApplicationBroughtToBackground(Context context) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(1);
+        if (!tasks.isEmpty()) {
+            ComponentName topActivity = tasks.get(0).topActivity;
+            if (!topActivity.getPackageName().equals(context.getPackageName())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public void onBackPressed() {
+//        if(backPressedTime + 2000 > System.currentTimeMillis()){
+//            super.onBackPressed();
+//            return;
+//        }
+//        else{
+//            Toast.makeText(getBaseContext(), "Press back again to close " + title, Toast.LENGTH_SHORT).show();
+//        }
+//        backPressedTime = System.currentTimeMillis();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            //preventing default implementation previous to android.os.Build.VERSION_CODES.ECLAIR
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     @Override
@@ -578,7 +658,7 @@ public class APIReceived extends AppCompatActivity {
 
                             if (countError <= 0) {
                                 Toast.makeText(APIReceived.this, "'" + selectedSapNumber + "' added", Toast.LENGTH_SHORT).show();
-                                Intent intent = new Intent(getBaseContext(), ItemReceivable.class);
+                                Intent intent = new Intent(getBaseContext(), APIReceived.class);
                                 intent.putExtra("title", title);
                                 intent.putExtra("hiddenTitle", hidden_title);
                                 startActivity(intent);
@@ -626,112 +706,114 @@ public class APIReceived extends AppCompatActivity {
     }
 
     public void getItems(int docEntry) {
-        if (globalJsonObject.toString().equals("{}")) {
-            SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
-            String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
-            progressBar.setVisibility(View.VISIBLE);
-            Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    synchronized (this) {
-                        try {
-                            wait(10);
-                        } catch (InterruptedException ex) {
+        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+        String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+        progressBar.setVisibility(View.VISIBLE);
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                synchronized (this) {
+                    try {
+                        wait(10);
+                    } catch (InterruptedException ex) {
+                    }
+                    String appendURL = "";
+                    if (docEntry > 0) {
+                        appendURL = "/api/sapb1/itdetails/" + docEntry;
+                    } else if (hidden_title.equals("API Received Item")) {
+                        appendURL = "/api/item/getall";
+                    } else if (hidden_title.equals("API Item Request")) {
+                        appendURL = "/api/item/getall";
+                    } else if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item")) {
+                        appendURL = "/api/inv/whseinv/getall";
+                    } else if (hidden_title.equals("API System Transfer Item")) {
+                        appendURL = "/api/inv/trfr/forrec";
+                    } else if (hidden_title.equals("API Received from SAP") && spinner.getSelectedItemPosition() == 0) {
+                        appendURL = "/api/sapb1/getit";
+                    } else if (hidden_title.equals("API Received from SAP") && spinner.getSelectedItemPosition() == 1) {
+                        appendURL = "/api/sapb1/getpo";
+                    } else if (hidden_title.equals("API Inventory Count")) {
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                        String currentDate = sdf.format(new Date());
+                        appendURL = "/api/inv/count/create?date=" + currentDate;
+                    } else if (hidden_title.equals("API Pull Out Count")) {
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                        String currentDate = sdf.format(new Date());
+                        String isInvCount = (hidden_title.equals("API Inventory Count") ? "inv/count" : "pulloutreq");
+                        appendURL = "/api/" + isInvCount + "/create?date=" + currentDate;
+                    }
+
+                    SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+                    String IPaddress = sharedPreferences2.getString("IPAddress", "");
+
+                    String URL = IPaddress + appendURL;
+                    okhttp3.Request request = new okhttp3.Request.Builder()
+                            .url(URL)
+                            .method("get", null)
+                            .addHeader("Authorization", "Bearer " + token)
+                            .addHeader("Content-Type", "application/json")
+                            .build();
+                    client.newCall(request).enqueue(new Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
                         }
-                        String appendURL = "";
-                        if (docEntry > 0) {
-                            appendURL = "/api/sapb1/itdetails/" + docEntry;
-                        } else if (hidden_title.equals("API Received Item")) {
-                            appendURL = "/api/item/getall";
-                        } else if (hidden_title.equals("API Item Request")) {
-                            appendURL = "/api/item/getall";
-                        } else if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item")) {
-                            appendURL = "/api/inv/whseinv/getall";
-                        } else if (hidden_title.equals("API System Transfer Item")) {
-                            appendURL = "/api/inv/trfr/forrec";
-                        } else if (hidden_title.equals("API Received from SAP") && spinner.getSelectedItemPosition() == 0) {
-                            appendURL = "/api/sapb1/getit";
-                        } else if (hidden_title.equals("API Received from SAP") && spinner.getSelectedItemPosition() == 1) {
-                            appendURL = "/api/sapb1/getpo";
-                        }else if (hidden_title.equals("API Inventory Count")) {
-                            appendURL = "/api/inv/count/create";
-                        }
 
-                        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-                        String IPaddress = sharedPreferences2.getString("IPAddress", "");
-
-
-                        String URL = IPaddress + appendURL;
-                        System.out.println(URL);
-                        okhttp3.Request request = new okhttp3.Request.Builder()
-                                .url(URL)
-                                .method("get", null)
-                                .addHeader("Authorization", "Bearer " + token)
-                                .addHeader("Content-Type", "application/json")
-                                .build();
-                        client.newCall(request).enqueue(new Callback() {
-                            @Override
-                            public void onFailure(Call call, IOException e) {
+                        @Override
+                        public void onResponse(Call call, okhttp3.Response response) {
+                            try {
+                                String sResult = response.body().string();
+                                appendData(sResult);
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             }
-
-                            @Override
-                            public void onResponse(Call call, okhttp3.Response response) {
-                                try {
-                                    String sResult = response.body().string();
-                                    appendData(sResult);
-                                } catch (Exception ex) {
-                                    ex.printStackTrace();
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                                }
-                            }
-                        });
-                    }
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            progressBar.setVisibility(View.GONE);
                         }
                     });
                 }
-            };
-            Thread thread = new Thread(runnable);
-            thread.start();
-            btnDone.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
-                        return;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressBar.setVisibility(View.GONE);
                     }
-                    mLastClickTime = SystemClock.elapsedRealtime();
-                    navigateDone();
+                });
+            }
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
+        btnDone.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+                    return;
                 }
-            });
-        } else {
-            appendData("");
-        }
+                mLastClickTime = SystemClock.elapsedRealtime();
+                navigateDone();
+            }
+        });
     }
 
     public void appendData( String sResult) {
         try {
             JSONObject jsonObjectReponse;
             List<String> listItems = new ArrayList<String>();
-            if (!globalJsonObject.toString().equals("{}")) {
-                jsonObjectReponse = globalJsonObject;
-            } else {
-                jsonObjectReponse = new JSONObject(sResult);
-                globalJsonObject = jsonObjectReponse;
-            }
+//            if (!globalJsonObject.toString().equals("{}")) {
+//                jsonObjectReponse = globalJsonObject;
+//            } else {
+//                jsonObjectReponse = new JSONObject(sResult);
+////                globalJsonObject = jsonObjectReponse;
+//            }
+            jsonObjectReponse = new JSONObject(sResult);
 //            if (response.isSuccessful()) {
             if (jsonObjectReponse.getBoolean("success")) {
                 JSONArray jsonArray = jsonObjectReponse.getJSONArray("data");
@@ -748,39 +830,66 @@ public class APIReceived extends AppCompatActivity {
                                 double price = 0.00;
                                 double stockQuantity = 0.00;
                                 int docEntry1 = 0;
+                                int store_quantity = 0, auditor_quantity = 0, variance_quantity = 0;
 
-                                if (hidden_title.equals("API Received Item") || hidden_title.equals("API Item Request")) {
-                                    item = jsonObject1.getString("item_name");
-                                } else if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Inventory Count")) {
-                                    item = jsonObject1.getString("item_code");
+                                switch (hidden_title) {
+                                    case "API Item Request":
+                                        item = jsonObject1.getString("item_name");
+                                        break;
+                                    case "API Menu Items":
+                                    case "API Transfer Item":
+                                    case "API Inventory Count":
+                                    case "API Pull Out Count":
+                                    case "API Received Item":
+                                        SharedPreferences sharedPreferences2 = getSharedPreferences("LOGIN", MODE_PRIVATE);
+                                        String isManager = sharedPreferences2.getString("isManager", "");
+                                        item = jsonObject1.getString("item_code");
 //                                    JSONObject jsonObjectItem = jsonObject1.getJSONObject("item");
-                                    if(hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item")){
-                                        price = jsonObject1.getDouble("price");
-                                    }
-                                    stockQuantity = jsonObject1.getDouble("quantity");
-                                } else if (hidden_title.equals("API System Transfer Item")) {
-                                    item = jsonObject1.getString("reference");
-                                    docEntry1 = jsonObject1.getInt("id");
-                                } else {
-                                    item = jsonObject1.getString("DocNum");
-                                    docEntry1 = jsonObject1.getInt("DocEntry");
+                                        if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item")) {
+                                            price = jsonObject1.getDouble("price");
+                                        }
+                                        if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Inventory Count")) {
+
+                                            stockQuantity = jsonObject1.getDouble("quantity");
+                                        } else if (hidden_title.equals("API Pull Out Count") && Integer.parseInt(isManager) <= 0) {
+                                            stockQuantity = jsonObject1.getDouble("quantity");
+                                        }
+
+                                        if(Integer.parseInt(isManager) > 0 && hidden_title.equals("API Inventory Count")){
+                                            store_quantity = jsonObject1.getInt("sales_count");
+                                            auditor_quantity = jsonObject1.getInt("auditor_count");
+                                            variance_quantity = jsonObject1.getInt("variance");
+                                        }
+
+                                        if(Integer.parseInt(isManager) > 0 && hidden_title.equals("API Pull Out Count")){
+                                            store_quantity = jsonObject1.getInt("sales_count");
+                                            auditor_quantity = jsonObject1.getInt("auditor_count");
+                                            variance_quantity = jsonObject1.getInt("variance");
+                                        }
+
+                                        break;
+                                    case "API System Transfer Item":
+                                        item = jsonObject1.getString("reference");
+                                        docEntry1 = jsonObject1.getInt("id");
+                                        break;
+                                    default:
+                                        item = jsonObject1.getString("DocNum");
+                                        docEntry1 = jsonObject1.getInt("DocEntry");
+                                        break;
                                 }
                                 listItems.add(item);
                                 String supplier = "";
                                 if (hidden_title.equals("API Received from SAP") && spinner.getSelectedItemPosition() == 1) {
                                     supplier = jsonObject1.getString("CardCode");
                                 }
-                                if(hidden_title.equals("API Menu Items") || hidden_title.equals("API Item Request")){
-                                    uiItems(item, price, stockQuantity, docEntry1, supplier);
-                                }else if(hidden_title.equals("API Inventory Count") && stockQuantity <= 0){
-                                    uiItems(item, price, stockQuantity, docEntry1, supplier);
-                                }
+                                uiItems(item, price, stockQuantity, docEntry1, supplier,store_quantity,auditor_quantity, variance_quantity);
                             }
                         } catch (Exception ex) {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_SHORT).show();
+                                    ex.printStackTrace();
+                                    Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
                                 }
                             });
                         }
@@ -825,7 +934,8 @@ public class APIReceived extends AppCompatActivity {
         }
     }
 
-    public void uiItems(String item, Double price, Double stockQuantity, int docEntry1, String supplier){
+    @SuppressLint("SetTextI18n")
+    public void uiItems(String item, Double price, Double stockQuantity, int docEntry1, String supplier, int store_quantity, int auditor_quantity, int variance_quantity){
             GridLayout gridLayout = findViewById(R.id.grid);
             CardView cardView = new CardView(getBaseContext());
             LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
@@ -857,46 +967,45 @@ public class APIReceived extends AppCompatActivity {
                     if (myDb.checkItem(item)) {
                         Toast.makeText(getBaseContext(), "This item is selected", Toast.LENGTH_SHORT).show();
                     } else {
-                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity);
+                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity,store_quantity,auditor_quantity,variance_quantity);
                     }
 
                 } else if (hidden_title.equals("API Received Item")) {
                     if (myDb4.checkItem(item, title)) {
                         Toast.makeText(getBaseContext(), "This item is selected", Toast.LENGTH_SHORT).show();
                     } else {
-                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity);
+                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity,store_quantity,auditor_quantity,variance_quantity);
                     }
 
                 } else if (hidden_title.equals("API Transfer Item")) {
                     if (myDb4.checkItem(item, title)) {
                         Toast.makeText(getBaseContext(), "This item is selected", Toast.LENGTH_SHORT).show();
                     } else {
-                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity);
+                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity,store_quantity,auditor_quantity,variance_quantity);
                     }
 
                 } else if (hidden_title.equals("API Transfer Item")) {
                     if (finalStockQuantity <= 0) {
                         Toast.makeText(getBaseContext(), "This item is not available", Toast.LENGTH_SHORT).show();
                     } else {
-                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity );
+                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity,store_quantity,auditor_quantity,variance_quantity);
                     }
                 } else if (hidden_title.equals("API Item Request")) {
                     if (myDb4.checkItem(item, title)) {
                         Toast.makeText(getBaseContext(), "This item is selected", Toast.LENGTH_SHORT).show();
                     } else {
-                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity);
+                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity,store_quantity,auditor_quantity,variance_quantity);
                     }
 
                 } else if (hidden_title.equals("API Inventory Count")) {
                     if (myDb3.checkItem(item, hidden_title)) {
                         Toast.makeText(getBaseContext(), "This item is selected", Toast.LENGTH_SHORT).show();
                     } else {
-                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity);
+                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity,store_quantity,auditor_quantity,variance_quantity);
                     }
-
                 }
                 else {
-                    anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity);
+                    anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity,store_quantity,auditor_quantity,variance_quantity);
                 }
             });
 
@@ -914,7 +1023,7 @@ public class APIReceived extends AppCompatActivity {
             txtItemName.setVisibility(View.VISIBLE);
             linearLayout.addView(txtItemName);
 
-            if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Received Item") || hidden_title.equals("API Item Request") || hidden_title.equals("API Inventory Count")) {
+            if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Received Item") || hidden_title.equals("API Item Request") || hidden_title.equals("API Inventory Count") || hidden_title.equals("API Pull Out Count")) {
                 TextView txtItemLeft = new TextView(getBaseContext());
                 txtItemLeft.setLayoutParams(layoutParamsItemLeft);
                 txtItemLeft.setTextSize(10);
@@ -928,6 +1037,36 @@ public class APIReceived extends AppCompatActivity {
                     } else if (stockQuantity > 11) {
                         txtItemLeft.setTextColor(Color.rgb(30, 203, 6));
                     }
+                }
+
+                SharedPreferences sharedPreferences2 = getSharedPreferences("LOGIN", MODE_PRIVATE);
+                String isManager = sharedPreferences2.getString("isManager", "");
+                if(Integer.parseInt(isManager) > 0 && hidden_title.equals("API Inventory Count")){
+                    txtItemLeft.setText(df.format(variance_quantity) + " variance");
+                    if(variance_quantity < 0){
+                        txtItemLeft.setTextColor(Color.RED);
+                    }else{
+                        txtItemLeft.setTextColor(Color.rgb(6, 188, 212));
+                    }
+                }
+                if(Integer.parseInt(isManager) > 0 && hidden_title.equals("API Pull Out Count")){
+                    txtItemLeft.setText(df.format(variance_quantity) + " variance");
+                    if(variance_quantity < 0){
+                        txtItemLeft.setTextColor(Color.RED);
+                    }else{
+                        txtItemLeft.setTextColor(Color.rgb(6, 188, 212));
+                    }
+                }
+
+                if(stockQuantity <= 0  && hidden_title.equals("API Inventory Count")){
+                    linearLayout.setBackgroundColor(Color.GRAY);
+                    txtItemName.setTextColor(Color.WHITE);
+                    txtItemLeft.setTextColor(Color.WHITE);
+                }
+                if(stockQuantity <= 0  && hidden_title.equals("API Pull Out Count") && Integer.parseInt(isManager) <= 0){
+                    linearLayout.setBackgroundColor(Color.GRAY);
+                    txtItemName.setTextColor(Color.WHITE);
+                    txtItemLeft.setTextColor(Color.WHITE);
                 }
 
                 if (myDb4.checkItem(item, title) && hidden_title.equals("API Received Item")) {
@@ -950,14 +1089,18 @@ public class APIReceived extends AppCompatActivity {
                     linearLayout.setBackgroundColor(Color.RED);
                     txtItemName.setTextColor(Color.WHITE);
                     txtItemLeft.setTextColor(Color.WHITE);
+                }else if(hidden_title.equals("API Pull Out Count") && myDb3.checkItem(item, hidden_title)){
+                    linearLayout.setBackgroundColor(Color.RED);
+                    txtItemName.setTextColor(Color.WHITE);
+                    txtItemLeft.setTextColor(Color.WHITE);
                 }
 
                 linearLayout.addView(txtItemLeft);
             }
     }
 
-    public void anotherFunction(String finalItem, double finalPrice, Integer finalDocEntry, String finalSupplier,double quantity){
-        if (hidden_title.equals("API Received Item") || hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request") || hidden_title.equals("API Inventory Count")) {
+    public void anotherFunction(String finalItem, double finalPrice, Integer finalDocEntry, String finalSupplier,double quantity,int store_quantity, int auditor_quantity, int variance_quantity){
+        if (hidden_title.equals("API Received Item") || hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request") || hidden_title.equals("API Inventory Count") || hidden_title.equals("API Pull Out Count")) {
             Intent intent;
             intent = new Intent(getBaseContext(), API_ItemInfo.class);
             intent.putExtra("title", title);
@@ -966,6 +1109,19 @@ public class APIReceived extends AppCompatActivity {
             intent.putExtra("quantity", quantity);
             if (hidden_title.equals("API Menu Items")) {
                 intent.putExtra("price", finalPrice);
+            }
+
+            SharedPreferences sharedPreferences2 = getSharedPreferences("LOGIN", MODE_PRIVATE);
+            String isManager = sharedPreferences2.getString("isManager", "");
+            if(Integer.parseInt(isManager) > 0 && hidden_title.equals("API Inventory Count")){
+                intent.putExtra("store_quantity", store_quantity);
+                intent.putExtra("auditor_quantity", auditor_quantity);
+                intent.putExtra("variance_quantity",variance_quantity);
+            }
+            if(Integer.parseInt(isManager) > 0 && hidden_title.equals("API Pull Out Count")){
+                intent.putExtra("store_quantity", store_quantity);
+                intent.putExtra("auditor_quantity", auditor_quantity);
+                intent.putExtra("variance_quantity",variance_quantity);
             }
             startActivity(intent);
         } else if (hidden_title.equals("API Received from SAP") || hidden_title.equals("API System Transfer Item")) {

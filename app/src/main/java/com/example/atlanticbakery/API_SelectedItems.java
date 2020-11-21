@@ -14,6 +14,7 @@ import android.os.SystemClock;
 import android.text.Html;
 import android.text.InputType;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -69,7 +70,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
     DatabaseHelper4 myDb4;
     DatabaseHelper3 myDb3;
     long mLastClickTime = 0;
-    Button btnProceed;
+    Button btnProceed,btnBack;
     DecimalFormat df = new DecimalFormat("#,###");
     String title,hiddenTitle;
     private OkHttpClient client;
@@ -82,9 +83,6 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
     NavigationView navigationView;
 
     DatabaseHelper myDb;
-
-    DatePickerDialog datePickerDialog;
-    Calendar c;
     TextView lblSelectedDate;
 
     Menu menu;
@@ -99,6 +97,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
         myDb4 = new DatabaseHelper4(this);
         myDb3 = new DatabaseHelper3(this);
         btnProceed = findViewById(R.id.btnProceed);
+        btnBack = findViewById(R.id.btnBack);
         title = getIntent().getStringExtra("title");
         hiddenTitle = getIntent().getStringExtra("hiddenTitle");
         mQueue = Volley.newRequestQueue(this);
@@ -182,6 +181,38 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                     intent = new Intent(getBaseContext(), APIReceived.class);
                     intent.putExtra("title", "Item Request");
                     intent.putExtra("hiddenTitle", "API Item Request");
+                    startActivity(intent);
+                    finish();
+                    break;
+                case  R.id.nav_InventoryCount:
+                    result = true;
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Inventory Count");
+                    intent.putExtra("hiddenTitle", "API Inventory Count");
+                    startActivity(intent);
+                    finish();
+                    break;
+                case  R.id.nav_invConfirmation:
+                    result = true;
+                    intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
+                    intent.putExtra("title", "Inv. and P.O Count Confirmation");
+                    intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
+                    startActivity(intent);
+                    finish();
+                    break;
+                case R.id.nav_cutOff:
+                    result = true;
+                    drawerLayout.closeDrawer(Gravity.START, false);
+                    intent = new Intent(getBaseContext(), CutOff.class);
+                    intent.putExtra("title", "Cut Off");
+                    intent.putExtra("hiddenTitle", "API Cut Off");
+                    startActivity(intent);
+                    break;
+                case  R.id.nav_pullOutCount:
+                    result = true;
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Pull Out Request");
+                    intent.putExtra("hiddenTitle", "API Pull Out Count");
                     startActivity(intent);
                     finish();
                     break;
@@ -286,6 +317,8 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                         apiSaveTransferItem(cmbBranch.getSelectedItem().toString(), txtRemarks.getText().toString());
                     }else if(hiddenTitle.equals("API Item Request")){
                         apiItemRequest(txtRemarks.getText().toString());
+                    }else if(hiddenTitle.equals("API Inventory Count") || hiddenTitle.equals("API Pull Out Count")){
+                        apiSaveInventoryCount(txtRemarks.getText().toString());
                     }
                     else{
                         apiSaveDataRec(finalSupplier, txtRemarks.getText().toString());
@@ -298,17 +331,33 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             myDialog.setView(layout);
             myDialog.show();
         });
+
+        btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
     }
+
 
     @Override
     protected void onResume() {
         super.onResume();
-
         int totalCart = myDb.countItems();
         MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
         nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
 
         loadItems();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            //preventing default implementation previous to android.os.Build.VERSION_CODES.ECLAIR
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     public  void onBtnLogout(){
@@ -414,6 +463,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                             intent.putExtra("title", title);
                             intent.putExtra("hiddenTitle", hiddenTitle);
                             startActivity(intent);
+                            finish();
                         });
                     }else {
                         API_SelectedItems.this.runOnUiThread(() -> {
@@ -517,6 +567,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                             intent.putExtra("title", title);
                             intent.putExtra("hiddenTitle", hiddenTitle);
                             startActivity(intent);
+                            finish();
                         });
                     }else {
                         API_SelectedItems.this.runOnUiThread(() -> {
@@ -604,7 +655,6 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
 
         SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
         String IPaddress = sharedPreferences2.getString("IPAddress", "");
-
         RequestBody body = RequestBody.create(JSON, jsonObject.toString());
         okhttp3.Request request = new okhttp3.Request.Builder()
                 .url(IPaddress + "/api/inv/recv/new")
@@ -644,6 +694,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                             intent.putExtra("title", title);
                             intent.putExtra("hiddenTitle", hiddenTitle);
                             startActivity(intent);
+                            finish();
                         } else {
                             String msg = jj.getString("message");
                             if(msg.equals("Token is invalid")){
@@ -721,7 +772,6 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                     Map<String, String> params = new HashMap<>();
                     params.put("Content-Type", "application/json");
                     params.put("Authorization", "Bearer " + token);
-                    System.out.println(params.toString());
                     return params;
                 }
             };
@@ -741,8 +791,22 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
         Handler handler = new Handler();
         handler.postDelayed(() -> {
             Cursor cursor;
-            int count = (hiddenTitle.equals("API Received from SAP") ? myDb3.countItems(hiddenTitle) : myDb4.countItems(title));
+            int count = (hiddenTitle.equals("API Received from SAP") || hiddenTitle.equals("API Inventory Count") || hiddenTitle.equals("API System Transfer Item") ? myDb3.countItems(hiddenTitle) : myDb4.countItems(title));
 //                int count = myDb4.countItems(title);
+
+            if(hiddenTitle.equals("API Received from SAP")){
+                count = myDb3.countSAPItems(hiddenTitle);
+            }else if(hiddenTitle.equals("API Inventory Count")){
+                count = myDb3.countItems(hiddenTitle);
+            }else if(hiddenTitle.equals("API Pull Out Count")){
+                count = myDb3.countItems(hiddenTitle);
+            }else if(hiddenTitle.equals("API System Transfer Item")){
+                count = myDb3.countItems(hiddenTitle);
+            }
+            else{
+                count = myDb4.countItems(title);
+            }
+
             LinearLayout layout = findViewById(R.id.layoutNoItems);
 
             if (count == 0) {
@@ -768,7 +832,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 TableRow tableColumn = new TableRow(API_SelectedItems.this);
                 final TableLayout tableLayout = findViewById(R.id.table_main);
                 tableLayout.removeAllViews();
-                String[] columns = (hiddenTitle.equals("API Received from SAP") ? new String[]{"Item", "Del. Qty.", "Act. Qty.", "Var.", "Action"} :  new String[]{"Item", "Qty."});
+                String[] columns = (hiddenTitle.equals("API Received from SAP") || hiddenTitle.equals("API System Transfer Item") ? new String[]{"Item", "Del. Qty.", "Act. Qty.", "Var.", "Action"} :  new String[]{"Item", "Qty."});
 
                 for (String s : columns) {
                     TextView lblColumn1 = new TextView(API_SelectedItems.this);
@@ -778,52 +842,79 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                     tableColumn.addView(lblColumn1);
                 }
                 tableLayout.addView(tableColumn);
-                cursor = (hiddenTitle.equals("API Received from SAP") ? myDb3.getAllData(hiddenTitle)  :myDb4.getAllData(title));
+                cursor = (hiddenTitle.equals("API Received from SAP") || hiddenTitle.equals("API Inventory Count") || hiddenTitle.equals("API Pull Out Count") || hiddenTitle.equals("API System Transfer Item") ? myDb3.getAllData(hiddenTitle)  :myDb4.getAllData(title));
 
 //                    cursor = myDb4.getAllData(title);
 
                 if (cursor != null) {
                     while (cursor.moveToNext()) {
 
-                        if(hiddenTitle.equals("API Received from SAP")){
+                        if(hiddenTitle.equals("API Received from SAP") || hiddenTitle.equals("API Inventory Count") || hiddenTitle.equals("API Pull Out Count") || hiddenTitle.equals("API System Transfer Item")){
                             if(cursor.getInt(6) == 1){
                                 final TableRow tableRow = new TableRow(API_SelectedItems.this);
-                                String itemName = cursor.getString((hiddenTitle.equals("API Received from SAP") ? 3 : 1));
+                                tableRow.setBackgroundColor(Color.WHITE);
+                                String itemName = cursor.getString((hiddenTitle.equals("API Received from SAP") || hiddenTitle.equals("API Inventory Count") || hiddenTitle.equals("API Pull Out Count") || hiddenTitle.equals("API System Transfer Item") ? 3 : 1));
                                 String v = cutWord(itemName);
-                                double quantity = cursor.getDouble((hiddenTitle.equals("API Received from SAP") ? 4 : 2));
+                                double quantity = 0.00;
+
+                                if(hiddenTitle.equals("API Received from SAP") || hiddenTitle.equals("API System Transfer Item")){
+                                    quantity = cursor.getDouble(4);
+                                }else if(hiddenTitle.equals("API Inventory Count") || hiddenTitle.equals("API Pull Out Count")){
+                                    quantity = cursor.getDouble(5);
+                                }else{
+                                    quantity = cursor.getDouble(2);
+                                }
+
                                 final int id = cursor.getInt(0);
 
-                                TextView lblColumn1 = new TextView(API_SelectedItems.this);
+                                LinearLayout linearLayoutItem = new LinearLayout(this);
+                                linearLayoutItem.setPadding(10, 10, 10, 10);
+                                linearLayoutItem.setOrientation(LinearLayout.VERTICAL);
+                                linearLayoutItem.setBackgroundColor(Color.WHITE);
+                                linearLayoutItem.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                                tableRow.addView(linearLayoutItem);
+
+                                LinearLayout.LayoutParams layoutParamsItem = new LinearLayout.LayoutParams(200, LinearLayout.LayoutParams.WRAP_CONTENT);
+                                TextView lblColumn1 = new TextView(this);
                                 lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                                lblColumn1.setText(v);
-                                lblColumn1.setPadding(10, 0, 10, 0);
+                                lblColumn1.setLayoutParams(layoutParamsItem);
+//                       String v = cutWord(item);
+                                lblColumn1.setText(itemName);
+                                lblColumn1.setTextSize(13);
+                                lblColumn1.setBackgroundColor(Color.WHITE);
 
                                 lblColumn1.setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View view) {
-                                        Toast.makeText(getBaseContext(), v, Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getBaseContext(), itemName, Toast.LENGTH_SHORT).show();
                                     }
                                 });
 
-                                tableRow.addView(lblColumn1);
+                                linearLayoutItem.addView(lblColumn1);
 
                                 TextView lblColumn2 = new TextView(API_SelectedItems.this);
                                 lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
                                 lblColumn2.setText(df.format(quantity));
+                                lblColumn2.setTextSize(13);
+                                lblColumn2.setBackgroundColor(Color.WHITE);
                                 lblColumn2.setPadding(10, 10, 10, 10);
                                 tableRow.addView(lblColumn2);
 
-                                if(hiddenTitle.equals("API Received from SAP")){
+                                if(hiddenTitle.equals("API Received from SAP") || hiddenTitle.equals("API System Transfer Item")){
                                     TextView lblColumn4 = new TextView(API_SelectedItems.this);
                                     lblColumn4.setGravity(View.TEXT_ALIGNMENT_CENTER);
                                     lblColumn4.setText(df.format(cursor.getDouble(5)));
+                                    lblColumn4.setBackgroundColor(Color.WHITE);
                                     lblColumn4.setPadding(10, 10, 10, 10);
+                                    lblColumn4.setTextSize(13);
                                     tableRow.addView(lblColumn4);
 
                                     TextView lblColumn5 = new TextView(API_SelectedItems.this);
                                     lblColumn5.setGravity(View.TEXT_ALIGNMENT_CENTER);
                                     double variance = cursor.getDouble(5) - quantity;
                                     lblColumn5.setText(df.format(variance));
+                                    lblColumn5.setBackgroundColor(Color.WHITE);
+                                    lblColumn5.setTextSize(13);
                                     lblColumn5.setPadding(10, 10, 10, 10);
                                     tableRow.addView(lblColumn5);
                                 }
@@ -831,19 +922,22 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                                 TextView lblColumn3 = new TextView(API_SelectedItems.this);
                                 lblColumn3.setGravity(View.TEXT_ALIGNMENT_CENTER);
                                 lblColumn3.setTag(id);
+                                lblColumn3.setBackgroundColor(Color.WHITE);
                                 lblColumn3.setText("Remove");
+                                lblColumn3.setTextSize(13);
                                 lblColumn3.setPadding(10, 10, 10, 10);
                                 lblColumn3.setTextColor(Color.RED);
 
                                 lblColumn3.setOnClickListener(view -> {
                                     boolean deletedItem;
-                                    deletedItem = myDb3.removeData(Integer.toString(id));
+                                    deletedItem = (hiddenTitle.equals("API Received from SAP") || hiddenTitle.equals("API System Transfer Item") ? myDb3.removeData(Integer.toString(id)) : myDb3.deleteData(Integer.toString(id)));
                                     if (!deletedItem) {
                                         Toast.makeText(API_SelectedItems.this, "Item not remove", Toast.LENGTH_SHORT).show();
                                     } else {
                                         Toast.makeText(API_SelectedItems.this, "Item removed", Toast.LENGTH_SHORT).show();
                                         loadItems();
                                     }
+
 
                                     if (myDb4.countItems(title).equals(0)) {
                                         tableLayout.removeAllViews();
@@ -855,37 +949,59 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
 
                                 tableLayout.addView(tableRow);
                             }
+                            View viewLine = new View(this);
+                            LinearLayout.LayoutParams layoutParamsLine = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
+                            viewLine.setLayoutParams(layoutParamsLine);
+                            viewLine.setBackgroundColor(Color.GRAY);
+                            tableLayout.addView(viewLine);
                         }else{
                             final TableRow tableRow = new TableRow(API_SelectedItems.this);
-                            String itemName = cursor.getString((hiddenTitle.equals("API Received from SAP") ? 3 : 1));
+                            tableRow.setBackgroundColor(Color.WHITE);
+                            String itemName = cursor.getString(1);
                             String v = cutWord(itemName);
-                            double quantity = cursor.getDouble((hiddenTitle.equals("API Received from SAP") ? 4 : 2));
+                            double quantity = cursor.getDouble(2);
                             final int id = cursor.getInt(0);
 
-                            TextView lblColumn1 = new TextView(API_SelectedItems.this);
+                            LinearLayout linearLayoutItem = new LinearLayout(this);
+                            linearLayoutItem.setPadding(10, 10, 10, 10);
+                            linearLayoutItem.setOrientation(LinearLayout.VERTICAL);
+                            linearLayoutItem.setBackgroundColor(Color.WHITE);
+                            linearLayoutItem.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                            tableRow.addView(linearLayoutItem);
+
+                            LinearLayout.LayoutParams layoutParamsItem = new LinearLayout.LayoutParams(200, LinearLayout.LayoutParams.WRAP_CONTENT);
+                            TextView lblColumn1 = new TextView(this);
                             lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                            lblColumn1.setText(v);
-                            lblColumn1.setPadding(10, 0, 10, 0);
-                            tableRow.addView(lblColumn1);
+                            lblColumn1.setLayoutParams(layoutParamsItem);
+                            lblColumn1.setBackgroundColor(Color.WHITE);
+                            lblColumn1.setText(itemName);
+                            lblColumn1.setTextSize(15);
+                            lblColumn1.setBackgroundColor(Color.WHITE);
+
+                            lblColumn1.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    Toast.makeText(getBaseContext(), itemName, Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                            linearLayoutItem.addView(lblColumn1);
+
 
                             TextView lblColumn2 = new TextView(API_SelectedItems.this);
+                            lblColumn2.setBackgroundColor(Color.WHITE);
                             lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
                             lblColumn2.setText(df.format(quantity));
+                            lblColumn2.setTextSize(15);
                             lblColumn2.setPadding(10, 10, 10, 10);
                             tableRow.addView(lblColumn2);
 
-                            if(hiddenTitle.equals("API Received from SAP")){
-                                TextView lblColumn4 = new TextView(API_SelectedItems.this);
-                                lblColumn4.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                                lblColumn4.setText(df.format(cursor.getDouble(5)));
-                                lblColumn4.setPadding(10, 10, 10, 10);
-                                tableRow.addView(lblColumn4);
-                            }
-
                             TextView lblColumn3 = new TextView(API_SelectedItems.this);
                             lblColumn3.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                            lblColumn3.setBackgroundColor(Color.WHITE);
                             lblColumn3.setTag(id);
                             lblColumn3.setText("Remove");
+                            lblColumn3.setTextSize(13);
                             lblColumn3.setPadding(10, 10, 10, 10);
                             lblColumn3.setTextColor(Color.RED);
 
@@ -908,6 +1024,13 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                             tableRow.addView(lblColumn3);
 
                             tableLayout.addView(tableRow);
+
+                            View viewLine = new View(this);
+                            LinearLayout.LayoutParams layoutParamsLine = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
+                            viewLine.setLayoutParams(layoutParamsLine);
+                            viewLine.setBackgroundColor(Color.GRAY);
+                            tableLayout.addView(viewLine);
+
                         }
                     }
                 }
@@ -933,12 +1056,25 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
 
                     JSONObject objectHeaders = new JSONObject();
 
-                    objectHeaders.put("transtype", (cursor.getInt(7) == 1) ? "SAPIT" : "SAPPO");
-                    objectHeaders.put("transfer_id", null);
-                    objectHeaders.put("sap_number", sap_number);
+                    String transType;
+                    if(cursor.getInt(7) <= 0 && hiddenTitle.equals("API Received from SAP")){
+                        transType = "SAPPO";
+                    }else if(cursor.getInt(7) > 0 && hiddenTitle.equals("API Received from SAP")){
+                        transType = "SAPIT";
+                    }else {
+                        transType = "TRFR";
+                    }
+
+                    objectHeaders.put("transtype", transType);
+                  if(hiddenTitle.equals("API Received from SAP")){
+                      objectHeaders.put("transfer_id", null);
+                  }else {
+                      objectHeaders.put("base_id", (cursor.getInt(9) <= 0 ? null : cursor.getInt(9)));
+                  }
+                    objectHeaders.put("sap_number", (hiddenTitle.equals("API Received from SAP") ? (sap_number.isEmpty() ? null : sap_number) : null));
                     objectHeaders.put("transdate", currentDateandTime);
                     objectHeaders.put("remarks", remarks);
-                    objectHeaders.put("reference2", null);
+                    objectHeaders.put((hiddenTitle.equals("API Received from SAP") ? "reference2" : "ref2"), null);
                     objectHeaders.put("supplier", (cursor.getInt(7) == 0) ? supplier : null);
                     jsonObject.put("header", objectHeaders);
 
@@ -965,6 +1101,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+                System.out.println(jsonObject);
                 MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
                 RequestBody body = RequestBody.create(JSON, jsonObject.toString());
@@ -1010,6 +1147,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                                     intent.putExtra("title", title);
                                     intent.putExtra("hiddenTitle", hiddenTitle);
                                     startActivity(intent);
+                                    finish();
                                 } else {
                                     String msg = jj.getString("message");
                                     if (msg.equals("Token is invalid")) {
@@ -1025,7 +1163,124 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                                         });
                                         builder.show();
                                     } else {
-                                        System.out.println(jj.toString());
+                                        Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        });
+                    }
+                });
+            }
+        }
+    }
+
+    public void apiSaveInventoryCount(String remarks) {
+        Cursor cursor = myDb3.getAllData(hiddenTitle);
+        if (cursor != null) {
+            if (cursor.moveToNext()) {
+                SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+                String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+                JSONObject jsonObject = new JSONObject();
+                try {
+                    // create your json here
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
+                    String currentDateandTime = sdf.format(new Date());
+
+                    JSONObject objectHeaders = new JSONObject();
+
+                    objectHeaders.put("transdate", currentDateandTime);
+                    objectHeaders.put("remarks", remarks);
+                    jsonObject.put("header", objectHeaders);
+
+                    JSONArray arrayDetails = new JSONArray();
+
+                    Cursor cursor2 = myDb3.getAllData(hiddenTitle);
+                    while (cursor2.moveToNext()) {
+                        if(cursor2.getInt(6) == 1) {
+                            JSONObject objectDetails = new JSONObject();
+                            String itemName = cursor2.getString(3);
+                            Double deliveredQty = cursor2.getDouble(4);
+                            Double actualQty = cursor2.getDouble(5);
+
+                            objectDetails.put("item_code", itemName);
+
+                            if(hiddenTitle.equals("API Inventory Count")){
+                                objectDetails.put("quantity", deliveredQty);
+                            }
+
+                            objectDetails.put((hiddenTitle.equals("API Inventory Count") ? "actual_count" : "quantity"), actualQty);
+                            objectDetails.put("uom", "pc(s)");
+                            arrayDetails.put(objectDetails);
+                        }
+                    }
+                    jsonObject.put("rows", arrayDetails);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+                RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+
+                SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+                String IPaddress = sharedPreferences2.getString("IPAddress", "");
+
+                String isInvCount = (hiddenTitle.equals("API Inventory Count") ? "inv/count" : "pulloutreq");
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(IPaddress + "/api/" + isInvCount + "/create")
+                        .method("post", body)
+                        .addHeader("Authorization", "Bearer " + token)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                client.newCall(request).enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onResponse(Call call, okhttp3.Response response) {
+                        String result = "";
+                        try {
+                            result = response.body().string();
+                            System.out.println(result);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        String finalResult = result;
+                        API_SelectedItems.this.runOnUiThread(() -> {
+                            try {
+                                JSONObject jj = new JSONObject(finalResult);
+                                boolean isSuccess = jj.getBoolean("success");
+                                if (isSuccess) {
+                                    myDb3.truncateTable();
+                                    Toast.makeText(getBaseContext(), jj.getString("message"), Toast.LENGTH_SHORT).show();
+                                    Intent intent;
+                                    intent = new Intent(getBaseContext(), API_SelectedItems.class);
+                                    intent.putExtra("title", title);
+                                    intent.putExtra("hiddenTitle", hiddenTitle);
+                                    startActivity(intent);
+                                    finish();
+                                } else {
+                                    String msg = jj.getString("message");
+                                    if (msg.equals("Token is invalid")) {
+                                        final AlertDialog.Builder builder = new AlertDialog.Builder(API_SelectedItems.this);
+                                        builder.setCancelable(false);
+                                        builder.setMessage("Your session is expired. Please login again.");
+                                        builder.setPositiveButton("OK", (dialog, which) -> {
+                                            pc.loggedOut(API_SelectedItems.this);
+                                            pc.removeToken(API_SelectedItems.this);
+                                            startActivity(uic.goTo(API_SelectedItems.this, MainActivity.class));
+                                            finish();
+                                            dialog.dismiss();
+                                        });
+                                        builder.show();
+                                    } else {
                                         Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
                                     }
                                 }

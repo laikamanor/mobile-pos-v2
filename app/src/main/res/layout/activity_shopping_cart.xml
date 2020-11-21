@@ -5,16 +5,32 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/navDrawer">
 
+
+
   <ScrollView
       android:layout_width="match_parent"
       android:layout_height="match_parent"
       android:background="@android:color/white">
+
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:id="@+id/parentLayout"
         android:background="@android:color/white">
+
+      <Button
+          android:id="@+id/btnBack"
+          android:layout_width="wrap_content"
+          android:layout_height="32dp"
+          android:layout_marginBottom="10dp"
+          android:background="@color/colorBlue"
+          android:text="BACK"
+          android:textColor="@color/colorWhite"
+          android:layout_marginLeft="20dp"
+          android:layout_marginTop="20dp"/>
+
     </LinearLayout>
   </ScrollView>
 

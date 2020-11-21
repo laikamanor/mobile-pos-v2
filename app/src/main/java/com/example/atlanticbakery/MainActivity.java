@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Html;
 import android.util.Base64;
+import android.view.KeyEvent;
 import  android.view.View;
 import android.widget.Button;
 import  android.widget.EditText;
@@ -51,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     DatabaseHelper4 myDb4;
     DatabaseHelper5 myDb5;
 
-    int userid;
+    int userid,isManager = 0;
     String fullName="",whse = "";
     //Declaring layout button,editTexts and progress bar
     Button login;
@@ -135,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
 
                                 SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
                                 String IPaddress = sharedPreferences2.getString("IPAddress", "");
+                                System.out.println(IPaddress + "/api/auth/login?username="+ us + "&password=" + ps);
                                 okhttp3.Request request = new okhttp3.Request.Builder()
                                         .url(IPaddress + "/api/auth/login?username="+ us + "&password=" + ps)
                                         .method("get", null)
@@ -167,32 +169,31 @@ public class MainActivity extends AppCompatActivity {
                                                             }
                                                             handler.post(() -> {
                                                                 try {
+                                                                    assert response.body() != null;
+                                                                    String result = response.body().string();
+                                                                    JSONObject jsonObject1 = new JSONObject(result);
                                                                     if (response.isSuccessful()) {
-                                                                        String msg;
-                                                                        assert response.body() != null;
-                                                                        String result = response.body().string();
-                                                                        JSONObject jsonObject1 = new JSONObject(result);
-
+                                                                        Toast.makeText(getBaseContext(), jsonObject1.getString("message"), Toast.LENGTH_SHORT).show();
                                                                         if (jsonObject1.getBoolean("success")) {
                                                                             JSONObject jsonObjectData = jsonObject1.getJSONObject("data");
                                                                             userid = jsonObjectData.getInt("id");
                                                                             String resultToken = jsonObject1.getString("token");
                                                                             fullName = jsonObjectData.getString("fullname");
                                                                             whse = jsonObjectData.getString("whse");
+                                                                            boolean isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
+                                                                            isManager = (isManagerB ? 1 : 0);
                                                                             System.out.println(whse);
                                                                             saveToken(resultToken);
                                                                             saveLoggedIn();
-                                                                            msg = "Login Success";
                                                                             openAPIMainMenu();
                                                                             myDb.truncateTable();
                                                                             myDb2.truncateTable();
                                                                             myDb3.truncateTable();
                                                                             myDb4.truncateTable();
                                                                             myDb5.truncateTable();
-                                                                        } else {
-                                                                            msg = jsonObject1.getString("message");
                                                                         }
-                                                                        Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
+                                                                    }else{
+                                                                        Toast.makeText(getBaseContext(), jsonObject1.getString("message"), Toast.LENGTH_SHORT).show();
                                                                     }
                                                                 } catch (Exception ex) {
                                                                     ex.printStackTrace();
@@ -220,6 +221,15 @@ public class MainActivity extends AppCompatActivity {
         };
         Thread thread = new Thread(runnable);
         thread.start();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            //preventing default implementation previous to android.os.Build.VERSION_CODES.ECLAIR
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -283,6 +293,7 @@ public class MainActivity extends AppCompatActivity {
         editor.putString("fullname",fullName).apply();
         editor.putString("userid",Integer.toString(userid)).apply();
         editor.putString("whse",whse).apply();
+        editor.putString("isManager",Integer.toString(isManager)).apply();
 //        uc.insetLoginLogs(MainActivity.this, susername);
 //        uc.checkCutOff(MainActivity.this, susername);
     }

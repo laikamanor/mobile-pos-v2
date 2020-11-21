@@ -11,16 +11,28 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationView;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 
 public class API_Nav extends AppCompatActivity {
     prefs_class pc = new prefs_class();
@@ -29,6 +41,9 @@ public class API_Nav extends AppCompatActivity {
     private ActionBarDrawerToggle toggle;
     NavigationView navigationView;
     DatabaseHelper myDb;
+
+    private OkHttpClient client;
+    Menu menu;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,6 +53,8 @@ public class API_Nav extends AppCompatActivity {
         drawerLayout = findViewById(R.id.navDrawer);
         toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
 
+        client = new OkHttpClient();
+
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -45,7 +62,7 @@ public class API_Nav extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
         String fullName = Objects.requireNonNull(sharedPreferences.getString("fullname", ""));
 
-        Menu menu = navigationView.getMenu();
+        menu = navigationView.getMenu();
         MenuItem nav_shoppingCart = menu.findItem(R.id.usernameLogin);
         nav_shoppingCart.setTitle("Signed In " + fullName);
 
@@ -63,6 +80,14 @@ public class API_Nav extends AppCompatActivity {
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
                         onBtnLogout();
+                        break;
+                    case R.id.nav_cutOff:
+                        result = true;
+                        drawerLayout.closeDrawer(Gravity.START, false);
+                        intent = new Intent(getBaseContext(), CutOff.class);
+                        intent.putExtra("title", "Cut Off");
+                        intent.putExtra("hiddenTitle", "API Cut Off");
+                        startActivity(intent);
                         break;
                     case R.id.nav_exploreItems:
                         result = true;
@@ -107,7 +132,7 @@ public class API_Nav extends AppCompatActivity {
                     case  R.id.nav_systemTransferItem:
                         result = true;
                         intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "System Transfer Item");
+                        intent.putExtra("title", "Received from System Transfer Item");
                         intent.putExtra("hiddenTitle", "API System Transfer Item");
                         startActivity(intent);
                         finish();
@@ -128,12 +153,36 @@ public class API_Nav extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case  R.id.nav_invConfirmation:
+                        result = true;
+                        intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
+                        intent.putExtra("title", "Inv. and P.O Count Confirmation");
+                        intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case  R.id.nav_pullOutCount:
+                        result = true;
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Pull Out Request");
+                        intent.putExtra("hiddenTitle", "API Pull Out Count");
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
             }
         });
     }
 
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            //preventing default implementation previous to android.os.Build.VERSION_CODES.ECLAIR
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
 
     public  void onBtnLogout(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);

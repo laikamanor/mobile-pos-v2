@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Html;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -48,7 +49,7 @@ import okhttp3.RequestBody;
 
 public class ItemReceivable extends AppCompatActivity {
     String title,hiddenTitle;
-    Button btnProceed;
+    Button btnProceed,btnBack;
     DecimalFormat df = new DecimalFormat("#,###");
     SharedPreferences sharedPreferences;
     DatabaseHelper3 myDb3;
@@ -65,6 +66,7 @@ public class ItemReceivable extends AppCompatActivity {
     DatabaseHelper myDb;
 
     Menu menu;
+    private long backPressedTime;
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +78,7 @@ public class ItemReceivable extends AppCompatActivity {
         client = new OkHttpClient();
 
         btnProceed = findViewById(R.id.btnProceed);
+        btnBack = findViewById(R.id.btnBack);
         lblTransactionNumber = findViewById(R.id.lblTransactionNumber);
         sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
         title = getIntent().getStringExtra("title");
@@ -153,7 +156,7 @@ public class ItemReceivable extends AppCompatActivity {
                     case  R.id.nav_systemTransferItem:
                         result = true;
                         intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "System Transfer Item");
+                        intent.putExtra("title", "Received from System Transfer Item");
                         intent.putExtra("hiddenTitle", "API System Transfer Item");
                         startActivity(intent);
                         finish();
@@ -166,8 +169,47 @@ public class ItemReceivable extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case  R.id.nav_InventoryCount:
+                        result = true;
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Inventory Count");
+                        intent.putExtra("hiddenTitle", "API Inventory Count");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case  R.id.nav_invConfirmation:
+                        result = true;
+                        intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
+                        intent.putExtra("title", "Inv. and P.O Count Confirmation");
+                        intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_cutOff:
+                        result = true;
+                        drawerLayout.closeDrawer(Gravity.START, false);
+                        intent = new Intent(getBaseContext(), CutOff.class);
+                        intent.putExtra("title", "Cut Off");
+                        intent.putExtra("hiddenTitle", "API Cut Off");
+                        startActivity(intent);
+                        break;
+                    case  R.id.nav_pullOutCount:
+                        result = true;
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Pull Out Request");
+                        intent.putExtra("hiddenTitle", "API Pull Out Count");
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
+            }
+        });
+
+        btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
             }
         });
 
@@ -230,10 +272,18 @@ public class ItemReceivable extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
         int totalCart = myDb.countItems();
         MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
         nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            //preventing default implementation previous to android.os.Build.VERSION_CODES.ECLAIR
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     public void apiSaveData(String remarks){

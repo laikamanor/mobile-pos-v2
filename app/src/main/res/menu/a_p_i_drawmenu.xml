@@ -12,9 +12,9 @@
                 <item
                     android:id="@+id/nav_logOut"
                     android:title="Logout" />
-<!--                <item-->
-<!--                    android:id="@+id/nav_cutOff"-->
-<!--                    android:title="Cut Off" />-->
+                <item
+                    android:id="@+id/nav_cutOff"
+                    android:title="Cut Off" />
             </menu>
         </group>
     </item>
@@ -45,12 +45,12 @@
     </item>
 
 
-    <item android:title="System Transfer Item">
+    <item android:title="Received from System Transfer Item">
         <group android:checkableBehavior="single">
             <menu>
                 <item
                     android:id="@+id/nav_systemTransferItem"
-                    android:title="System Transfer Item" />
+                    android:title="Received from System Transfer Item" />
             </menu>
         </group>
     </item>
@@ -82,6 +82,24 @@
                 <item
                     android:id="@+id/nav_InventoryCount"
                     android:title="Inventory Count" />
+            </menu>
+        </group>
+    </item>
+    <item android:title="Pull Out Count">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_pullOutCount"
+                    android:title="Pull Out Request" />
+            </menu>
+        </group>
+    </item>
+    <item android:title="Inv. and P.O Count Confirmation">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_invConfirmation"
+                    android:title="Inv. and P.O Count Confirmation" />
             </menu>
         </group>
     </item>

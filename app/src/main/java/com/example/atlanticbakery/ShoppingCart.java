@@ -15,6 +15,7 @@ import android.text.Html;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -85,9 +86,13 @@ public class ShoppingCart extends AppCompatActivity {
     int userID = 0;
 
     DecimalFormat df = new DecimalFormat("#,###.00");
+    DecimalFormat dfInt = new DecimalFormat("#,###");
     String salesType = "";
 
     private OkHttpClient client;
+
+    Menu menu;
+
     @SuppressLint("RestrictedApi")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -107,17 +112,15 @@ public class ShoppingCart extends AppCompatActivity {
         toggle.syncState();
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
 
+
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
         userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
         String fullName = Objects.requireNonNull(sharedPreferences.getString("fullname", ""));
 
-        Menu menu = navigationView.getMenu();
+        menu = navigationView.getMenu();
         MenuItem nav_UsernameLogin = menu.findItem(R.id.usernameLogin);
         nav_UsernameLogin.setTitle("Signed In " + fullName);
 
-        int totalCart = myDb.countItems();
-        MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @SuppressLint("WrongConstant")
             @Override
@@ -146,6 +149,14 @@ public class ShoppingCart extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_transferItem:
+                        result = true;
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Transfer Item");
+                        intent.putExtra("hiddenTitle", "API Transfer Item");
+                        startActivity(intent);
+                        finish();
+                        break;
                     case  R.id.nav_receivedSap:
                         result = true;
                         intent = new Intent(getBaseContext(), APIReceived.class);
@@ -157,7 +168,7 @@ public class ShoppingCart extends AppCompatActivity {
                     case  R.id.nav_systemTransferItem:
                         result = true;
                         intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "System Transfer Item");
+                        intent.putExtra("title", "Received from System Transfer Item");
                         intent.putExtra("hiddenTitle", "API System Transfer Item");
                         startActivity(intent);
                         finish();
@@ -167,6 +178,38 @@ public class ShoppingCart extends AppCompatActivity {
                         intent = new Intent(getBaseContext(), APIReceived.class);
                         intent.putExtra("title", "Item Request");
                         intent.putExtra("hiddenTitle", "API Item Request");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_cutOff:
+                        result = true;
+                        drawerLayout.closeDrawer(Gravity.START, false);
+                        intent = new Intent(getBaseContext(), CutOff.class);
+                        intent.putExtra("title", "Cut Off");
+                        intent.putExtra("hiddenTitle", "API Cut Off");
+                        startActivity(intent);
+                        break;
+                    case  R.id.nav_pullOutCount:
+                        result = true;
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Pull Out Request");
+                        intent.putExtra("hiddenTitle", "API Pull Out Count");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case  R.id.nav_InventoryCount:
+                        result = true;
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Inventory Count");
+                        intent.putExtra("hiddenTitle", "API Inventory Count");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case  R.id.nav_invConfirmation:
+                        result = true;
+                        intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
+                        intent.putExtra("title", "Inv. and P.O Count Confirmation");
+                        intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
                         startActivity(intent);
                         finish();
                         break;
@@ -428,7 +471,9 @@ public class ShoppingCart extends AppCompatActivity {
         getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
 
         loadData();
+
     }
+
 
     public void onBtnLogout(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -452,8 +497,14 @@ public class ShoppingCart extends AppCompatActivity {
         alertDialog.show();
     }
 
+
+
+
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int totalCart = myDb.countItems();
+        MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
+        nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
         if(toggle.onOptionsItemSelected(item)){
             return true;
         }
@@ -465,6 +516,26 @@ public class ShoppingCart extends AppCompatActivity {
     public void loadData() {
         final LinearLayout layout = findViewById(R.id.parentLayout);
         layout.removeAllViews();
+
+        final LinearLayout.LayoutParams layoutParamsBtnback = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 70);
+        layoutParamsBtnback.setMargins(20,20,0,10);
+        Button btnBack = new Button(this);
+        btnBack.setLayoutParams(layoutParamsBtnback);
+        btnBack.setBackgroundColor(R.color.colorBlue);
+        btnBack.setTextColor(Color.rgb(255, 255, 255));
+        btnBack.setText("BACK");
+        btnBack.setTextSize(13);
+
+        btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
+
+        layout.addView(btnBack);
+
+
         final LinearLayout.LayoutParams layoutParamsNoItems = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
         layoutParamsNoItems.setMargins(50, 20, 50, 0);
         final LinearLayout.LayoutParams layoutParamsLblError = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
@@ -553,6 +624,7 @@ public class ShoppingCart extends AppCompatActivity {
             LinearLayout.LayoutParams layoutParamsTableLayout = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             LinearLayout.LayoutParams layoutParamsDiscount = new LinearLayout.LayoutParams(200, LinearLayout.LayoutParams.WRAP_CONTENT);
             LinearLayout.LayoutParams lpDiscountType = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+            LinearLayout.LayoutParams layoutParamsItem = new LinearLayout.LayoutParams(200, LinearLayout.LayoutParams.WRAP_CONTENT);
             layoutParamsBtnRemoveItem.gravity = Gravity.RIGHT;
 
             layoutParamsQuantity.setMargins(20, 0, 20, 20);
@@ -571,7 +643,7 @@ public class ShoppingCart extends AppCompatActivity {
             tableLayout.setLayoutParams(layoutParamsTableLayout);
             tableLayout.setBackgroundColor(Color.rgb(244,244,244));
 
-            String[] columns = {"Free","Item","Price,","Qty.","Disc.", "Total","Action"};
+            String[] columns = {"Item","Price,","Qty.","Disc.", "Total","Action"};
 
             TableRow tableColumn = new TableRow(this);
             for (String s : columns) {
@@ -579,7 +651,7 @@ public class ShoppingCart extends AppCompatActivity {
                 lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
                 lblColumn1.setText(s);
                 lblColumn1.setPadding(10, 0, 10, 0);
-                lblColumn1.setTextSize(10);
+                lblColumn1.setTextSize(13);
                 tableColumn.addView(lblColumn1);
             }
             tableLayout.addView(tableColumn);
@@ -590,30 +662,28 @@ public class ShoppingCart extends AppCompatActivity {
                if(!result.equals(null)){
                    while (result.moveToNext()) {
                        final TableRow tableRow = new TableRow(this);
+                       tableRow.setBackgroundColor(Color.WHITE);
                        final String item = result.getString(1);
                        double price = result.getDouble(3);
                        double quantity = result.getDouble(2);
                        double discount = result.getDouble(4);
-                       int free = result.getInt(6);
-                       String isFree = (free == 0) ? "Not":"Free";
                        double discountAmount = (price * quantity) * (discount / 100);
                        double total = (price * quantity) - discountAmount;
                        int id = result.getInt(0);
 
-                       TextView lblColumn1 = new TextView(this);
-                       lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                       lblColumn1.setText(isFree);
-                       lblColumn1.setPadding(10, 10, 10, 10);
-                       lblColumn1.setTextSize(10);
-                       lblColumn1.setBackgroundColor(Color.WHITE);
-                       tableRow.addView(lblColumn1);
+                       LinearLayout linearLayoutItem = new LinearLayout(this);
+                       linearLayoutItem.setPadding(10, 10, 10, 10);
+                       linearLayoutItem.setOrientation(LinearLayout.VERTICAL);
+                       linearLayoutItem.setBackgroundColor(Color.WHITE);
+                       linearLayoutItem.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                       tableRow.addView(linearLayoutItem);
 
                        TextView lblColumn2 = new TextView(this);
                        lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                       String v = cutWord(item);
-                       lblColumn2.setText(v);
-                       lblColumn2.setPadding(10, 10, 10, 10);
-                       lblColumn2.setTextSize(10);
+                       lblColumn2.setLayoutParams(layoutParamsItem);
+//                       String v = cutWord(item);
+                       lblColumn2.setText(item);
+                       lblColumn2.setTextSize(15);
                        lblColumn2.setBackgroundColor(Color.WHITE);
 
                        lblColumn2.setOnClickListener(new View.OnClickListener() {
@@ -623,22 +693,22 @@ public class ShoppingCart extends AppCompatActivity {
                            }
                        });
 
-                       tableRow.addView(lblColumn2);
+                       linearLayoutItem.addView(lblColumn2);
 
                        TextView lblColumn3 = new TextView(this);
                        lblColumn3.setGravity(View.TEXT_ALIGNMENT_CENTER);
                        lblColumn3.setText(df.format(price));
                        lblColumn3.setPadding(10, 10, 10, 10);
                        lblColumn3.setBackgroundColor(Color.WHITE);
-                       lblColumn3.setTextSize(10);
+                       lblColumn3.setTextSize(13);
                        tableRow.addView(lblColumn3);
 
                        TextView lblColumn4 = new TextView(this);
                        lblColumn4.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                       lblColumn4.setText(df.format(quantity));
+                       lblColumn4.setText(dfInt.format(quantity));
                        lblColumn4.setPadding(10, 10, 10, 10);
                        lblColumn4.setBackgroundColor(Color.WHITE);
-                       lblColumn4.setTextSize(10);
+                       lblColumn4.setTextSize(13);
                        tableRow.addView(lblColumn4);
 
                        TextView lblColumn5 = new TextView(this);
@@ -646,7 +716,7 @@ public class ShoppingCart extends AppCompatActivity {
                        lblColumn5.setText(df.format(discount) + "%");
                        lblColumn5.setPadding(10, 10, 10, 10);
                        lblColumn5.setBackgroundColor(Color.WHITE);
-                       lblColumn5.setTextSize(10);
+                       lblColumn5.setTextSize(13);
                        tableRow.addView(lblColumn5);
 
                        TextView lblColumn6 = new TextView(this);
@@ -654,7 +724,7 @@ public class ShoppingCart extends AppCompatActivity {
                        lblColumn6.setText(df.format(total));
                        lblColumn6.setPadding(10, 10, 10, 10);
                        lblColumn6.setBackgroundColor(Color.WHITE);
-                       lblColumn6.setTextSize(10);
+                       lblColumn6.setTextSize(13);
                        tableRow.addView(lblColumn6);
 
                        final TextView lblColumn7 = new TextView(this);
@@ -662,7 +732,7 @@ public class ShoppingCart extends AppCompatActivity {
                        lblColumn7.setText("Remove");
                        lblColumn7.setPadding(10, 10, 10, 10);
                        lblColumn7.setTextColor(Color.RED);
-                       lblColumn7.setTextSize(10);
+                       lblColumn7.setTextSize(13);
                        lblColumn7.setBackgroundColor(Color.WHITE);
                        lblColumn7.setTag(id);
 
@@ -680,8 +750,12 @@ public class ShoppingCart extends AppCompatActivity {
                            }
                        });
                        tableRow.addView(lblColumn7);
-
                        tableLayout.addView(tableRow);
+                       View viewLine = new View(this);
+                       LinearLayout.LayoutParams layoutParamsLine = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
+                       viewLine.setLayoutParams(layoutParamsLine);
+                       viewLine.setBackgroundColor(Color.GRAY);
+                       tableLayout.addView(viewLine);
                    }
                }
             layout.addView(tableLayout);
@@ -787,15 +861,26 @@ public class ShoppingCart extends AppCompatActivity {
                 }
             });
 
+
+            final TextView lblTotalItems= new TextView(this);
+            lblTotalItems.setText("Total Items: 0");
+
+            lblTotalItems.setLayoutParams(layoutParamsLblError);
+            lblTotalItems.setTextColor(Color.RED);
+            lblTotalItems.setTag("lblTotalItems");
+            lblTotalItems.setTextSize(20);
+
+
             final TextView lblSubTotal = new TextView(this);
             lblSubTotal.setText("0.00");
 
             lblSubTotal.setLayoutParams(layoutParamsLblError);
-            lblSubTotal.setTextColor(Color.RED);
+            lblSubTotal.setTextColor(Color.rgb(52, 168, 83));
             lblSubTotal.setTag("lblSubTotal");
             lblSubTotal.setTextSize(20);
 
             layoutPay.addView(cmbDiscountType);
+            layoutPay.addView(lblTotalItems);
             layoutPay.addView(lblSubTotal);
             layoutPay.addView(btnPay);
             layoutPay.setOrientation(LinearLayout.VERTICAL);
@@ -803,6 +888,23 @@ public class ShoppingCart extends AppCompatActivity {
             layout.addView(layoutPay);
             computeTotal();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        int totalCart = myDb.countItems();
+        MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
+        nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            //preventing default implementation previous to android.os.Build.VERSION_CODES.ECLAIR
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     public String cutWord(String value){
@@ -840,7 +942,7 @@ public class ShoppingCart extends AppCompatActivity {
 
         final double getSubTotal = myDb.getSubTotal() - (myDb.getSubTotal() * (discountType / 100));
         TextView lblSubtotal = new TextView(ShoppingCart.this);
-        lblSubtotal.setText("Total: " + df.format(getSubTotal));
+        lblSubtotal.setText("Amount Payable: " + df.format(getSubTotal));
         lblSubtotal.setTextSize(20);
         lblSubtotal.setGravity(View.TEXT_ALIGNMENT_CENTER);
 
@@ -950,13 +1052,22 @@ public class ShoppingCart extends AppCompatActivity {
         cmbTenderType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                if(cmbTenderType.getSelectedItemPosition() == cmbTenderType.getSelectedItem().toString().indexOf("CASH")){
-                    txttendered.setText("0.00");
+                if(0 == cmbTenderType.getSelectedItem().toString().indexOf("CASH")){
+                    txttendered.setText("");
                     txttendered.setEnabled(true);
                     txtCustomer.setText("");
                     txtCustomer.setEnabled(false);
-                }else{
-                    txttendered.setText("0.00");
+                    txttendered.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(txttendered, InputMethodManager.SHOW_IMPLICIT);
+                }else if(0 == cmbTenderType.getSelectedItem().toString().indexOf("Agent AR Sales")){
+                    txttendered.setText("");
+                    txttendered.setEnabled(false);
+                    txtCustomer.setText("");
+                    txtCustomer.setEnabled(false);
+                }
+                else{
+                    txttendered.setText("");
                     txttendered.setEnabled(false);
                     txtCustomer.setText("");
                     txtCustomer.setEnabled(true);
@@ -1053,7 +1164,7 @@ public class ShoppingCart extends AppCompatActivity {
                                     String tendertype = cmbTenderType.getSelectedItem().toString();
                                     if (cmbTenderType.getAdapter() == null) {
                                         toastMsg("Please select Service Type", 0);
-                                    } else if (customerName.isEmpty() && cmbTenderType.getSelectedItemPosition() > 0) {
+                                    } else if (customerName.isEmpty() && cmbTenderType.getSelectedItem().toString() == "AR Sales") {
                                         toastMsg("Name field is required", 0);
                                     } else {
                                         AlertDialog.Builder dialogConfirmation = new AlertDialog.Builder(ShoppingCart.this);
@@ -1146,6 +1257,7 @@ public class ShoppingCart extends AppCompatActivity {
     public void computeTotal(){
         View root = getWindow().getDecorView().getRootView();
         TextView lblsubtotal =root.findViewWithTag("lblSubTotal");
+        TextView lblTotalQuantity =root.findViewWithTag("lblTotalItems");
         Spinner cmbDiscount =root.findViewWithTag("cmbDiscountType");
         double discountType = 0.00;
         if(cmbDiscount.getSelectedItemPosition() != 0){
@@ -1155,10 +1267,11 @@ public class ShoppingCart extends AppCompatActivity {
 
         double getSubTotal = myDb.getSubTotal() - (myDb.getSubTotal() * (discountType / 100));
         if(getSubTotal > 0){
-            lblsubtotal.setText("Total: " + df.format(getSubTotal));
+            lblsubtotal.setText(Html.fromHtml("<font color='#606665'>" + "Amount Payable: " + "</font>₱"+  df.format(getSubTotal)));
         }else{
-            lblsubtotal.setText("Total: 0.00");
+            lblsubtotal.setText(Html.fromHtml("<font color='#606665'>" + "Amount Payable: " + "</font>") + "₱0.00");
         }
+        lblTotalQuantity.setText(Html.fromHtml("<font color='#606665'>" + "Total Items: " + "</font>"+ dfInt.format(myDb.geTotalItems())));
     }
 
     public void closeKeyboard(View v){

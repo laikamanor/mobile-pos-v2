@@ -81,6 +81,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return result;
     }
 
+    public Double geTotalItems(){
+        double resultSubTotal = 0.00;
+        SQLiteDatabase db = this.getReadableDatabase();
+        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT IFNULL(COUNT(itemname),0) FROM " + TABLE_NAME + ";", null);
+        if(result.moveToFirst()){
+            do{
+                resultSubTotal = Double.parseDouble(result.getString(0));
+            }
+            while (result.moveToNext());
+        }
+        return resultSubTotal;
+    }
+
     public Double getSubTotal(){
         double resultSubTotal = 0.00;
         SQLiteDatabase db = this.getReadableDatabase();

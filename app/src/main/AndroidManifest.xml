@@ -30,6 +30,8 @@
         <activity android:name=".APITransfer" />
         <activity android:name=".Users" />
         <activity android:name=".ItemReceivable" />
+        <activity android:name=".API_SalesLogs">
+        </activity>
         <activity android:name=".SalesInventory_Received" />
         <activity android:name=".SalesInventory_AvailableItems" />
         <activity android:name=".UpdateActualEndingBalance" />
@@ -47,6 +49,8 @@
         <activity android:name=".ItemInfo" />
         <activity android:name=".CreateUsers" />
         <activity android:name=".AvailableItems" />
+        <activity android:name=".API_InventoryConfirmation" />
+        <activity android:name=".CutOff" />
         <activity android:name=".SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

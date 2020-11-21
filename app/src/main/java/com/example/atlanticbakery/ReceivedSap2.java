@@ -729,8 +729,9 @@ public class ReceivedSap2 extends AppCompatActivity {
                                         lblColumn5.setOnClickListener(new View.OnClickListener() {
                                             @Override
                                             public void onClick(View view) {
-                                                int deletedItem = myDb3.deleteData(Integer.toString(id));
-                                                if (deletedItem <= 0) {
+//                                                int deletedItem = myDb3.deleteData(Integer.toString(id));
+                                                boolean isDeleted = myDb3.deleteData(Integer.toString(id));
+                                                if (!isDeleted) {
                                                     Toast.makeText(ReceivedSap2.this, "Item not remove", Toast.LENGTH_SHORT).show();
                                                 } else {
                                                     Toast.makeText(ReceivedSap2.this, "Item removed", Toast.LENGTH_SHORT).show();
