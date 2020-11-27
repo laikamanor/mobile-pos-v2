@@ -6,6 +6,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.text.Editable;
 import android.text.Html;
 import android.text.TextWatcher;
@@ -20,6 +22,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -53,6 +56,10 @@ public class API_ItemInfo extends AppCompatActivity {
     ui_class uic = new ui_class();
 
     Menu menu;
+    long mLastClickTime;
+
+    static boolean isSubmit = false;
+    ProgressBar progressBar;
     @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +78,8 @@ public class API_ItemInfo extends AppCompatActivity {
         txtQuantity = findViewById(R.id.txtQuantity);
         btnAddCart = findViewById(R.id.btnAddCart);
         btnBack = findViewById(R.id.btnBack);
+        progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.GONE);
         deliveredQuantity = getIntent().getDoubleExtra("deliveredQuantity", 0);
 
         myDb = new DatabaseHelper(this);
@@ -199,6 +208,14 @@ public class API_ItemInfo extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case  R.id.nav_invLogs:
+                        result = true;
+                        intent = new Intent(getBaseContext(), API_SalesLogs.class);
+                        intent.putExtra("title", "Inventory Logs");
+                        intent.putExtra("hiddenTitle", "API Inventory Logs");
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
             }
@@ -215,50 +232,65 @@ public class API_ItemInfo extends AppCompatActivity {
         });
 
         btnAddCart.setOnClickListener(view -> {
+            if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+                return;
+            }
+            mLastClickTime = SystemClock.elapsedRealtime();
+            progressBar.setVisibility(View.VISIBLE);
+            btnAddCart.setEnabled(false);
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
 //            int qty = (txtQuantity.getText().toString().isEmpty() ? 0 : Integer.parseInt(txtQuantity.getText().toString()));
-            if ((txtQuantity.getText().toString().isEmpty()) && (hidden_title.equals("API Menu Items") || hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API System Transfer Item") || hidden_title.equals("API Item Request"))) {
-                Toast.makeText(getBaseContext(), "Input atleast 1 quantity", Toast.LENGTH_SHORT).show();
-                txtQuantity.requestFocus();
+                    if ((txtQuantity.getText().toString().isEmpty()) && (hidden_title.equals("API Menu Items") || hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API System Transfer Item") || hidden_title.equals("API Item Request"))) {
+                        Toast.makeText(getBaseContext(), "Input atleast 1 quantity", Toast.LENGTH_SHORT).show();
+                        txtQuantity.requestFocus();
 //            }else if (qty <= 0) {
 //                Toast.makeText(getBaseContext(), "Input atleast 1 quantity", Toast.LENGTH_SHORT).show();
-            } else {
-                double quantity = Double.parseDouble(txtQuantity.getText().toString());
-                int int_quantity = Integer.parseInt(txtQuantity.getText().toString());
+                    } else {
+                        double quantity = (txtQuantity.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtQuantity.getText().toString()));
+                        int int_quantity =  (txtQuantity.getText().toString().isEmpty() ? 0 : Integer.parseInt(txtQuantity.getText().toString()));
 //                double double_quantity = getIntent().getDoubleExtra("quantity",0.0);
-                double double_quantity = getIntent().getDoubleExtra("quantity",0.0);
-                boolean isInserted = false;
-                if(hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request")){
-                    isInserted = myDb4.insertData(itemName, quantity, title, 1);
-                }else if(hidden_title.equals("API Received from SAP")){
-                    int id = getIntent().getIntExtra("id",0);
-                    isInserted = myDb3.updateSelected(Integer.toString(id),1, quantity);
-                }else if(hidden_title.equals("API System Transfer Item")){
-                    int id = getIntent().getIntExtra("id",0);
-                    isInserted = myDb3.updateSelected(Integer.toString(id),1, quantity);
-                }
-                else if(hidden_title.equals("API Inventory Count") || hidden_title.equals("API Pull Out Count")){
-                    isInserted = myDb3.insertData("", "", itemName, double_quantity, int_quantity, 0, "", 0,hidden_title,1);
-                }
-                else if(hidden_title.equals("API Menu Items")){
-                    double discountPercent = (txtDiscount.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtDiscount.getText().toString()));
-                    double price = getIntent().getDoubleExtra("price",0.00);
-                    int isFree = (checkFree.isChecked() ? 1 : 0);
-                    double totalPrice = (txtTotalPrice.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtTotalPrice.getText().toString()));
-                    isInserted = myDb.insertData(quantity, discountPercent, price, isFree, totalPrice, itemName, "Main Inventory");
-                }
-                if (isInserted) {
-                    Toast.makeText(getBaseContext(), "Item Added", Toast.LENGTH_SHORT).show();
-                    closeKeyboard();
+                        boolean isInserted = false;
+                        if(hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request")){
+                            isInserted = myDb4.insertData(itemName, quantity, title, 1);
+                        }else if(hidden_title.equals("API Received from SAP")){
+                            int id = getIntent().getIntExtra("id",0);
+                            isInserted = myDb3.updateSelected(Integer.toString(id),1, quantity);
+                        }else if(hidden_title.equals("API System Transfer Item")){
+                            int id = getIntent().getIntExtra("id",0);
+                            isInserted = myDb3.updateSelected(Integer.toString(id),1, quantity);
+                        }
+                        else if(hidden_title.equals("API Inventory Count") || hidden_title.equals("API Pull Out Count")){
+                            double double_quantity =  getIntent().getDoubleExtra("quantity",0.0);
+                            isInserted = myDb3.insertData("", "", itemName, double_quantity, int_quantity, 0, "", 0,hidden_title,1);
+                        }
+                        else if(hidden_title.equals("API Menu Items")){
+                            double discountPercent = (txtDiscount.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtDiscount.getText().toString()));
+                            double price = getIntent().getDoubleExtra("price",0.00);
+                            int isFree = (checkFree.isChecked() ? 1 : 0);
+                            double totalPrice = (txtTotalPrice.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtTotalPrice.getText().toString()));
+                            isInserted = myDb.insertData(quantity, discountPercent, price, isFree, totalPrice, itemName, "Main Inventory");
+                        }
+                        if (isInserted) {
+                            isSubmit = true;
+                            Toast.makeText(getBaseContext(), "Item Added", Toast.LENGTH_SHORT).show();
+                            closeKeyboard();
 //                    Intent intent;
 //                    intent = new Intent(getBaseContext(), APIReceived.class);
 //                    intent.putExtra("title", title);
 //                    intent.putExtra("hiddenTitle", hidden_title);
 //                    startActivity(intent);
-                    finish();
-                } else {
-                    Toast.makeText(getBaseContext(), "Item Not Added", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else {
+                            Toast.makeText(getBaseContext(), "Item Not Added", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    progressBar.setVisibility(View.VISIBLE);
+                    btnAddCart.setEnabled(true);
                 }
-            }
+            },500);
         });
 
         txtQuantity.addTextChangedListener(new TextWatcher() {
@@ -318,27 +350,27 @@ public class API_ItemInfo extends AppCompatActivity {
             }
         });
 
-        txtDiscount.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-                if (i == EditorInfo.IME_ACTION_DONE) {
-                    btnAddCart.callOnClick();
-                    return true;
-                }
-                return false;
-            }
-        });
-
-        txtTotalPrice.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-                if (i == EditorInfo.IME_ACTION_DONE) {
-                    btnAddCart.callOnClick();
-                    return true;
-                }
-                return false;
-            }
-        });
+//        txtDiscount.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+//            @Override
+//            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+//                if (i == EditorInfo.IME_ACTION_DONE) {
+//                    btnAddCart.callOnClick();
+//                    return true;
+//                }
+//                return false;
+//            }
+//        });
+//
+//        txtTotalPrice.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+//            @Override
+//            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+//                if (i == EditorInfo.IME_ACTION_DONE) {
+//                    btnAddCart.callOnClick();
+//                    return true;
+//                }
+//                return false;
+//            }
+//        });
 
         txtDiscount.addTextChangedListener(new TextWatcher() {
             @Override
@@ -493,9 +525,12 @@ public class API_ItemInfo extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onResume() {
         super.onResume();
+
+        isSubmit = false;
 
 //        if(this.getWindow().getDecorView().getRootView().isShown()){
 //
@@ -521,7 +556,7 @@ public class API_ItemInfo extends AppCompatActivity {
                 if(Integer.parseInt(isManager) > 0){
                     lblReceivedQuantity.setVisibility(View.VISIBLE);
                     lblVariance.setVisibility(View.GONE);
-                    lblReceivedQuantity.setText("Available: " + getIntent().getDoubleExtra("quantity",0) + "\n" + "Sales: " + getIntent().getIntExtra("store_quantity",0) + "\n" + "Auditor: " + getIntent().getIntExtra("auditor_quantity",0));
+                    lblReceivedQuantity.setText("Sales: " + getIntent().getIntExtra("store_quantity",0) + "\n" + "Auditor: " + getIntent().getIntExtra("auditor_quantity",0));
 //                    lblVariance.setText("Variance: " + getIntent().getIntExtra("variance_quantity",0));
                 }else{
                     lblReceivedQuantity.setVisibility(View.GONE);

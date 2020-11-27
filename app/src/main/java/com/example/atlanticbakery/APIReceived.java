@@ -45,6 +45,8 @@ import com.google.android.material.navigation.NavigationView;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.Console;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -238,6 +240,14 @@ public class APIReceived extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                     break;
+                case  R.id.nav_invLogs:
+                    result = true;
+                    intent = new Intent(getBaseContext(), API_SalesLogs.class);
+                    intent.putExtra("title", "Inventory Logs");
+                    intent.putExtra("hiddenTitle", "API Inventory Logs");
+                    startActivity(intent);
+                    finish();
+                    break;
             }
             return result;
         });
@@ -283,8 +293,8 @@ public class APIReceived extends AppCompatActivity {
             lblSelectedType.setVisibility(View.GONE);
             spinner.setVisibility(View.GONE);
             loadSelectedSAPNumberItems();
-        }
-        else if (myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API Received from SAP")) {
+
+        }else if (myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API Received from SAP")) {
             List<String> items = Arrays.asList("IT", "PO");
             ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -294,7 +304,8 @@ public class APIReceived extends AppCompatActivity {
             lblSelectedType.setVisibility(View.VISIBLE);
             spinner.setVisibility(View.VISIBLE);
             getItems(0);
-        } else if (myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API System Transfer Item")) {
+        }
+        else if (myDb3.countItems(hidden_title) <= 0 && hidden_title.equals("API System Transfer Item")) {
             lblFromBranch.setVisibility(View.GONE);
             lblSapNumber.setVisibility(View.GONE);
             lblSelectedType.setVisibility(View.GONE);
@@ -496,12 +507,12 @@ public class APIReceived extends AppCompatActivity {
                     txtItemLeft.setTextColor(Color.parseColor("#34A853"));
 
                     if(isSelected){
-                        linearLayout.setBackgroundColor(Color.RED);
-                        txtItemName.setTextColor(Color.WHITE);
-                        txtItemLeft.setTextColor(Color.WHITE);
+                        linearLayout.setBackgroundColor(Color.rgb(252, 28, 28));
+                        txtItemName.setTextColor(Color.rgb(250, 250, 250));
+                        txtItemLeft.setTextColor(Color.rgb(250, 250, 250));
                     }else{
-                        linearLayout.setBackgroundColor(Color.WHITE);
-                        txtItemName.setTextColor(Color.BLACK);
+                        linearLayout.setBackgroundColor(Color.rgb(250, 250, 250));
+                        txtItemName.setTextColor(Color.rgb(28, 28, 28));
                         txtItemLeft.setTextColor(Color.parseColor("#34A853"));
                     }
                     cardView.addView(linearLayout);
@@ -510,6 +521,7 @@ public class APIReceived extends AppCompatActivity {
                 }
 //                txtSearch.setAdapter(fillItems(globalList));
             }
+            cursor.close();
             progressBar.setVisibility(View.GONE);
         },500);
         btnDone.setOnClickListener(view -> navigateDone());
@@ -729,8 +741,10 @@ public class APIReceived extends AppCompatActivity {
                     } else if (hidden_title.equals("API System Transfer Item")) {
                         appendURL = "/api/inv/trfr/forrec";
                     } else if (hidden_title.equals("API Received from SAP") && spinner.getSelectedItemPosition() == 0) {
+//                        globalJsonObject = new JSONObject();
                         appendURL = "/api/sapb1/getit";
                     } else if (hidden_title.equals("API Received from SAP") && spinner.getSelectedItemPosition() == 1) {
+//                        globalJsonObject = new JSONObject();
                         appendURL = "/api/sapb1/getpo";
                     } else if (hidden_title.equals("API Inventory Count")) {
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -749,7 +763,7 @@ public class APIReceived extends AppCompatActivity {
                     String URL = IPaddress + appendURL;
                     okhttp3.Request request = new okhttp3.Request.Builder()
                             .url(URL)
-                            .method("get", null)
+                            .method("GET", null)
                             .addHeader("Authorization", "Bearer " + token)
                             .addHeader("Content-Type", "application/json")
                             .build();
@@ -759,7 +773,8 @@ public class APIReceived extends AppCompatActivity {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    e.printStackTrace();
+                                    Toast.makeText(getBaseContext(), "Error Connection \n" + e.getMessage(), Toast.LENGTH_SHORT).show();
                                 }
                             });
                         }
@@ -781,13 +796,13 @@ public class APIReceived extends AppCompatActivity {
                         }
                     });
                 }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        progressBar.setVisibility(View.GONE);
-                    }
-                });
-            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run () {
+                    progressBar.setVisibility(View.GONE);
+                }
+            });
+        }
         };
         Thread thread = new Thread(runnable);
         thread.start();
@@ -805,18 +820,27 @@ public class APIReceived extends AppCompatActivity {
 
     public void appendData( String sResult) {
         try {
-            JSONObject jsonObjectReponse;
+            JSONObject jsonObjectResponse = new JSONObject();
             List<String> listItems = new ArrayList<String>();
-//            if (!globalJsonObject.toString().equals("{}")) {
-//                jsonObjectReponse = globalJsonObject;
+            jsonObjectResponse = new JSONObject(sResult);
+//            if (!globalJsonObject.toString().equals("{}") && !API_ItemInfo.isSubmit) {
+//                jsonObjectResponse = globalJsonObject;
 //            } else {
-//                jsonObjectReponse = new JSONObject(sResult);
-////                globalJsonObject = jsonObjectReponse;
+////                jsonObjectReponse = new JSONObject(sResult);
+//                globalJsonObject = new JSONObject(sResult);
+//                jsonObjectResponse = new JSONObject(sResult);
 //            }
-            jsonObjectReponse = new JSONObject(sResult);
+//            jsonObjectReponse = new JSONObject(sResult);
 //            if (response.isSuccessful()) {
-            if (jsonObjectReponse.getBoolean("success")) {
-                JSONArray jsonArray = jsonObjectReponse.getJSONArray("data");
+//            JSONObject finalJsonObjectResponse = jsonObjectResponse;
+//            runOnUiThread(new Runnable() {
+//                public void run() {
+//                    Toast.makeText(getBaseContext(), finalJsonObjectResponse.toString(), Toast.LENGTH_SHORT).show();
+//                }
+//            });
+
+            if (jsonObjectResponse.getBoolean("success")) {
+                JSONArray jsonArray = jsonObjectResponse.getJSONArray("data");
                 runOnUiThread(new Runnable() {
                     @SuppressLint({"ResourceType", "SetTextI18n"})
                     @Override
@@ -897,7 +921,7 @@ public class APIReceived extends AppCompatActivity {
                 });
             }
              else {
-                String msg = jsonObjectReponse.getString("message");
+                String msg = jsonObjectResponse.getString("message");
                 if (msg.equals("Token is invalid")) {
                     final AlertDialog.Builder builder = new AlertDialog.Builder(APIReceived.this);
                     builder.setCancelable(false);
@@ -930,7 +954,13 @@ public class APIReceived extends AppCompatActivity {
                 }
             });
         } catch (JSONException ex) {
-            ex.printStackTrace();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getBaseContext(), "Front-end Error: \n" + ex.getMessage(), Toast.LENGTH_SHORT).show();
+                    ex.printStackTrace();
+                }
+            });
         }
     }
 
@@ -947,6 +977,7 @@ public class APIReceived extends AppCompatActivity {
             cardView.setVisibility(View.VISIBLE);
             gridLayout.addView(cardView);
             final LinearLayout linearLayout = new LinearLayout(getBaseContext());
+        linearLayout.setBackgroundColor(Color.rgb(255,255,255));
             LinearLayout.LayoutParams layoutParamsLinear = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 5f);
             linearLayout.setLayoutParams(layoutParamsLinear);
             linearLayout.setTag(item);
@@ -1004,6 +1035,13 @@ public class APIReceived extends AppCompatActivity {
                         anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity,store_quantity,auditor_quantity,variance_quantity);
                     }
                 }
+                else if (hidden_title.equals("API Pull Out Count")) {
+                    if (myDb3.checkItem(item, hidden_title)) {
+                        Toast.makeText(getBaseContext(), "This item is selected", Toast.LENGTH_SHORT).show();
+                    } else {
+                        anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity,store_quantity,auditor_quantity,variance_quantity);
+                    }
+                }
                 else {
                     anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier,stockQuantity,store_quantity,auditor_quantity,variance_quantity);
                 }
@@ -1018,6 +1056,7 @@ public class APIReceived extends AppCompatActivity {
 
             TextView txtItemName = new TextView(getBaseContext());
             txtItemName.setText(item);
+            txtItemName.setTextColor(Color.rgb(0,0,0));
             txtItemName.setLayoutParams(layoutParams);
             txtItemName.setTextSize(13);
             txtItemName.setVisibility(View.VISIBLE);
@@ -1026,12 +1065,13 @@ public class APIReceived extends AppCompatActivity {
             if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Received Item") || hidden_title.equals("API Item Request") || hidden_title.equals("API Inventory Count") || hidden_title.equals("API Pull Out Count")) {
                 TextView txtItemLeft = new TextView(getBaseContext());
                 txtItemLeft.setLayoutParams(layoutParamsItemLeft);
+                txtItemLeft.setTextColor(Color.rgb(0,0,0));
                 txtItemLeft.setTextSize(10);
                 txtItemLeft.setVisibility(View.VISIBLE);
                 if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item")) {
                     txtItemLeft.setText(df.format(stockQuantity) + " available");
                     if (stockQuantity == 0) {
-                        txtItemLeft.setTextColor(Color.RED);
+                        txtItemLeft.setTextColor(Color.rgb(252,28,28));
                     } else if (stockQuantity <= 10) {
                         txtItemLeft.setTextColor(Color.rgb(247, 154, 22));
                     } else if (stockQuantity > 11) {
@@ -1044,7 +1084,7 @@ public class APIReceived extends AppCompatActivity {
                 if(Integer.parseInt(isManager) > 0 && hidden_title.equals("API Inventory Count")){
                     txtItemLeft.setText(df.format(variance_quantity) + " variance");
                     if(variance_quantity < 0){
-                        txtItemLeft.setTextColor(Color.RED);
+                        txtItemLeft.setTextColor(Color.rgb(252,28,28));
                     }else{
                         txtItemLeft.setTextColor(Color.rgb(6, 188, 212));
                     }
@@ -1052,47 +1092,47 @@ public class APIReceived extends AppCompatActivity {
                 if(Integer.parseInt(isManager) > 0 && hidden_title.equals("API Pull Out Count")){
                     txtItemLeft.setText(df.format(variance_quantity) + " variance");
                     if(variance_quantity < 0){
-                        txtItemLeft.setTextColor(Color.RED);
+                        txtItemLeft.setTextColor(Color.rgb(252,28,28));
                     }else{
                         txtItemLeft.setTextColor(Color.rgb(6, 188, 212));
                     }
                 }
 
                 if(stockQuantity <= 0  && hidden_title.equals("API Inventory Count")){
-                    linearLayout.setBackgroundColor(Color.GRAY);
-                    txtItemName.setTextColor(Color.WHITE);
-                    txtItemLeft.setTextColor(Color.WHITE);
+                    linearLayout.setBackgroundColor(Color.rgb(94, 94, 94));
+                    txtItemName.setTextColor(Color.rgb(255,255,255));
+                    txtItemLeft.setTextColor(Color.rgb(255,255,255));
                 }
                 if(stockQuantity <= 0  && hidden_title.equals("API Pull Out Count") && Integer.parseInt(isManager) <= 0){
-                    linearLayout.setBackgroundColor(Color.GRAY);
-                    txtItemName.setTextColor(Color.WHITE);
-                    txtItemLeft.setTextColor(Color.WHITE);
+                    linearLayout.setBackgroundColor(Color.rgb(94, 94, 94));
+                    txtItemName.setTextColor(Color.rgb(255,255,255));
+                    txtItemLeft.setTextColor(Color.rgb(255,255,255));
                 }
 
                 if (myDb4.checkItem(item, title) && hidden_title.equals("API Received Item")) {
-                    linearLayout.setBackgroundColor(Color.RED);
-                    txtItemName.setTextColor(Color.WHITE);
-                    txtItemLeft.setTextColor(Color.WHITE);
+                    linearLayout.setBackgroundColor(Color.rgb(252,28,28));
+                    txtItemName.setTextColor(Color.rgb(255,255,255));
+                    txtItemLeft.setTextColor(Color.rgb(255,255,255));
                 } else if (hidden_title.equals("API Transfer Item") && myDb4.checkItem(item, title)) {
-                    linearLayout.setBackgroundColor(Color.RED);
-                    txtItemName.setTextColor(Color.WHITE);
-                    txtItemLeft.setTextColor(Color.WHITE);
+                    linearLayout.setBackgroundColor(Color.rgb(252,28,28));
+                    txtItemName.setTextColor(Color.rgb(255,255,255));
+                    txtItemLeft.setTextColor(Color.rgb(255,255,255));
                 } else if (hidden_title.equals("API Item Request") && myDb4.checkItem(item, title)) {
-                    linearLayout.setBackgroundColor(Color.RED);
-                    txtItemName.setTextColor(Color.WHITE);
-                    txtItemLeft.setTextColor(Color.WHITE);
+                    linearLayout.setBackgroundColor(Color.rgb(252,28,28));
+                    txtItemName.setTextColor(Color.rgb(255,255,255));
+                    txtItemLeft.setTextColor(Color.rgb(252,28,28));
                 } else if (hidden_title.equals("API Menu Items") && myDb.checkItem(item)) {
-                    linearLayout.setBackgroundColor(Color.RED);
-                    txtItemName.setTextColor(Color.WHITE);
-                    txtItemLeft.setTextColor(Color.WHITE);
+                    linearLayout.setBackgroundColor(Color.rgb(252,28,28));
+                    txtItemName.setTextColor(Color.rgb(255,255,255));
+                    txtItemLeft.setTextColor(Color.rgb(255,255,255));
                 }else if(hidden_title.equals("API Inventory Count") && myDb3.checkItem(item, hidden_title)){
-                    linearLayout.setBackgroundColor(Color.RED);
-                    txtItemName.setTextColor(Color.WHITE);
-                    txtItemLeft.setTextColor(Color.WHITE);
+                    linearLayout.setBackgroundColor(Color.rgb(252,28,28));
+                    txtItemName.setTextColor(Color.rgb(255,255,255));
+                    txtItemLeft.setTextColor(Color.rgb(255,255,255));
                 }else if(hidden_title.equals("API Pull Out Count") && myDb3.checkItem(item, hidden_title)){
-                    linearLayout.setBackgroundColor(Color.RED);
-                    txtItemName.setTextColor(Color.WHITE);
-                    txtItemLeft.setTextColor(Color.WHITE);
+                    linearLayout.setBackgroundColor(Color.rgb(252,28,28));
+                    txtItemName.setTextColor(Color.rgb(255,255,255));
+                    txtItemLeft.setTextColor(Color.rgb(255,255,255));
                 }
 
                 linearLayout.addView(txtItemLeft);

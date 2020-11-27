@@ -51,22 +51,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public Cursor getAllData(){
+        Cursor cursor;
         SQLiteDatabase db = this.getWritableDatabase();
-        return db.rawQuery("SELECT * FROM " + TABLE_NAME, null);
+        cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME, null);
+        return cursor;
     }
 
-    public Double getPrice(Integer id){
-        double resultPrice = 0.00;
-        SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT price FROM " + TABLE_NAME + " WHERE id=" + id + ";", null);
-        if(result.moveToFirst()){
-            do{
-                resultPrice = Double.parseDouble(result.getString(0));
-            }
-            while (result.moveToNext());
-        }
-        return resultPrice;
-    }
 
     public boolean checkItem(String itemName){
         boolean result = false;
@@ -107,22 +97,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return resultSubTotal;
     }
 
-    public Double getSubTotalBefore(){
-        double resultSubTotal = 0.00;
-        SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT SUM(quantity * price) [subtotal] FROM " + TABLE_NAME + ";", null);
-        if(result.moveToFirst()){
-            do{
-                resultSubTotal = Double.parseDouble(result.getString(0));
-            }
-            while (result.moveToNext());
-        }
-        return resultSubTotal;
-    }
 
-    public  Integer deleteData(String id){
+    public Integer deleteData(String id){
+        int result;
         SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete(TABLE_NAME, "id = ?", new  String[] {id});
+        result = db.delete(TABLE_NAME, "id = ?", new  String[] {id});
+        return result;
     }
 
     public Integer countItems(){
@@ -142,21 +122,5 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DELETE FROM " + TABLE_NAME);
         db.execSQL("VACUUM");
-    }
-
-    public Cursor getItemandQuantity(){
-        SQLiteDatabase db = this.getWritableDatabase();
-        return db.rawQuery("SELECT itemname,quantity FROM " + TABLE_NAME, null);
-    }
-
-    public boolean checkForTableExists(){
-        SQLiteDatabase db = this.getWritableDatabase();
-        String sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='"+ TABLE_NAME +"'";
-        Cursor mCursor = db.rawQuery(sql, null);
-        if (mCursor.getCount() > 0) {
-            return true;
-        }
-        mCursor.close();
-        return false;
     }
 }

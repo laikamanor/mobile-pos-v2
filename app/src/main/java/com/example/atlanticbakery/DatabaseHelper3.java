@@ -59,7 +59,7 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
     }
 
     public Cursor getAllData(String fromModule){
-        Cursor cursor = null;
+        Cursor cursor;
         SQLiteDatabase db = this.getWritableDatabase();
         cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE fromModule='" + fromModule +"';", null);
         return  cursor;
@@ -89,30 +89,12 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
         return true;
     }
 
-//    public Integer deleteItem(String id){
-//        SQLiteDatabase db = this.getWritableDatabase();
-//        int result =  db.delete(TABLE_NAME, "id = ?", new  String[] {id});
-//        return  result;
-//    }
-
     public void truncateTable(){
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DELETE FROM " + TABLE_NAME);
         db.execSQL("VACUUM");
     }
 
-    public boolean checkItemExist(String itemName,Integer sapNumber){
-        boolean result = false;
-        SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE item_name= ? AND sap_number=" + sapNumber + ";",new String[]{itemName});
-        if(cursor.moveToFirst()){
-            do{
-                result = true;
-            }
-            while (cursor.moveToNext());
-        }
-        return result;
-    }
 
     public boolean checkItem(String itemName,String fromModule){
         boolean result = false;
@@ -124,7 +106,6 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
             }
             while (cursor.moveToNext());
         }
-        cursor.close();
         return result;
     }
 

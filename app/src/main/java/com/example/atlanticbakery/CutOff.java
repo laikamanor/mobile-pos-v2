@@ -184,6 +184,14 @@ public class CutOff extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case  R.id.nav_invLogs:
+                        result = true;
+                        intent = new Intent(getBaseContext(), API_SalesLogs.class);
+                        intent.putExtra("title", "Inventory Logs");
+                        intent.putExtra("hiddenTitle", "API Inventory Logs");
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
             }
@@ -284,7 +292,7 @@ public class CutOff extends AppCompatActivity {
                                         .url(IPaddress + "/api/whse/get_all?whsecode=" + whseCode)
                                         .addHeader("Authorization", "Bearer " + token)
                                         .addHeader("Content-Type", "application/json")
-                                        .method("get", null)
+                                        .method("GET", null)
                                         .build();
                                 client.newCall(request).enqueue(new Callback() {
                                     @Override
@@ -416,7 +424,7 @@ public class CutOff extends AppCompatActivity {
                                                         .url(IPaddress + "/api/whse/get_all?whsecode=" + whseCode)
                                                         .addHeader("Authorization", "Bearer " + token)
                                                         .addHeader("Content-Type", "application/json")
-                                                        .method("get", null)
+                                                        .method("GET", null)
                                                         .build();
                                                 client.newCall(request).enqueue(new Callback() {
                                                     @Override
@@ -470,7 +478,7 @@ public class CutOff extends AppCompatActivity {
 
                                                                                                 okhttp3.Request request = new okhttp3.Request.Builder()
                                                                                                         .url(URL2)
-                                                                                                        .method("put", body)
+                                                                                                        .method("PUT", body)
                                                                                                         .addHeader("Authorization", "Bearer " + token)
                                                                                                         .addHeader("Content-Type", "application/json")
                                                                                                         .build();

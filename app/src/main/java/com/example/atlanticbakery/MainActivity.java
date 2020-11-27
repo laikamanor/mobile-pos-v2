@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Html;
 import android.util.Base64;
+import android.util.Log;
 import android.view.KeyEvent;
 import  android.view.View;
 import android.widget.Button;
@@ -20,11 +21,11 @@ import  android.widget.Toast;
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 
 import org.json.JSONArray;
@@ -36,6 +37,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import  java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +46,7 @@ import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
     DatabaseHelper myDb = new DatabaseHelper(this);
@@ -53,7 +56,8 @@ public class MainActivity extends AppCompatActivity {
     DatabaseHelper5 myDb5;
 
     int userid,isManager = 0;
-    String fullName="",whse = "";
+    boolean isManagerB = false;
+    String fullName="",whse = "",resultToken = "";
     //Declaring layout button,editTexts and progress bar
     Button login;
     EditText username, password;
@@ -61,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
 
     long mLastClickTime = 0;
     user_class uc = new user_class();
-    private RequestQueue mQueue;
 
     private OkHttpClient client;
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -71,8 +74,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + getString(R.string.app_name) + "</font>"));
-
-        mQueue = Volley.newRequestQueue(this);
 
         myDb2 = new DatabaseHelper2(this);
         myDb3 = new DatabaseHelper3(this);
@@ -101,28 +102,17 @@ public class MainActivity extends AppCompatActivity {
 
 //                CheckLogin checkLogin = new CheckLogin();
 //                checkLogin.execute("");
-                apiLogin();
+//                apiLogin();
+                returnResult();
             }
         });
     }
 
     public void apiLogin() {
-        Handler handler = new Handler();
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                synchronized (this) {
-                    try {
-                        wait(10);
-                    } catch (InterruptedException ex) {
-                    }
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            String us = username.getText().toString();
-                            String ps = password.getText().toString();
-                            try {
-                                // create your json here
+        String us = username.getText().toString();
+        String ps = password.getText().toString();
+        try {
+            // create your json here
 //                                JSONObject jsonObject = new JSONObject();
 //                                try {
 //                                    jsonObject.put("username", us);
@@ -134,93 +124,81 @@ public class MainActivity extends AppCompatActivity {
 //
 //                                RequestBody body = RequestBody.create(JSON, jsonObject.toString());
 
-                                SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-                                String IPaddress = sharedPreferences2.getString("IPAddress", "");
-                                System.out.println(IPaddress + "/api/auth/login?username="+ us + "&password=" + ps);
-                                okhttp3.Request request = new okhttp3.Request.Builder()
-                                        .url(IPaddress + "/api/auth/login?username="+ us + "&password=" + ps)
-                                        .method("get", null)
-                                        .build();
-                                client.newCall(request).enqueue(new Callback() {
-                                    @Override
-                                    public void onFailure(Call call, IOException e) {
-                                        runOnUiThread(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-                                            }
-                                        });
-                                    }
-
-                                    @Override
-                                    public void onResponse(Call call, okhttp3.Response response) throws IOException {
-                                        MainActivity.this.runOnUiThread(new Runnable() {
-                                            public void run() {
-                                                Handler handler = new Handler();
-                                                LoadingDialog loadingDialog = new LoadingDialog(MainActivity.this);
-                                                loadingDialog.startLoadingDialog();
-                                                Runnable runnable = new Runnable() {
-                                                    @Override
-                                                    public void run() {
-                                                        synchronized (this) {
-                                                            try {
-                                                                wait(10);
-                                                            } catch (InterruptedException ignored) {
-                                                            }
-                                                            handler.post(() -> {
-                                                                try {
-                                                                    assert response.body() != null;
-                                                                    String result = response.body().string();
-                                                                    JSONObject jsonObject1 = new JSONObject(result);
-                                                                    if (response.isSuccessful()) {
-                                                                        Toast.makeText(getBaseContext(), jsonObject1.getString("message"), Toast.LENGTH_SHORT).show();
-                                                                        if (jsonObject1.getBoolean("success")) {
-                                                                            JSONObject jsonObjectData = jsonObject1.getJSONObject("data");
-                                                                            userid = jsonObjectData.getInt("id");
-                                                                            String resultToken = jsonObject1.getString("token");
-                                                                            fullName = jsonObjectData.getString("fullname");
-                                                                            whse = jsonObjectData.getString("whse");
-                                                                            boolean isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
-                                                                            isManager = (isManagerB ? 1 : 0);
-                                                                            System.out.println(whse);
-                                                                            saveToken(resultToken);
-                                                                            saveLoggedIn();
-                                                                            openAPIMainMenu();
-                                                                            myDb.truncateTable();
-                                                                            myDb2.truncateTable();
-                                                                            myDb3.truncateTable();
-                                                                            myDb4.truncateTable();
-                                                                            myDb5.truncateTable();
-                                                                        }
-                                                                    }else{
-                                                                        Toast.makeText(getBaseContext(), jsonObject1.getString("message"), Toast.LENGTH_SHORT).show();
-                                                                    }
-                                                                } catch (Exception ex) {
-                                                                    ex.printStackTrace();
-                                                                }
-                                                            });
-                                                        }
-                                                        runOnUiThread(loadingDialog::dismissDialog);
-
-                                                    }
-                                                };
-                                                Thread thread = new Thread(runnable);
-                                                thread.start();
-                                            }
-                                        });
-                                    }
-                                });
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
+            SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+            String IPaddress = sharedPreferences2.getString("IPAddress", "");
+            okhttp3.Request request = new okhttp3.Request.Builder()
+                    .url(IPaddress + "/api/auth/login?username="+ us + "&password=" + ps)
+                    .method("GET", null)
+                    .build();
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            e.printStackTrace();
+                            Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
                 }
 
-            }
-        };
-        Thread thread = new Thread(runnable);
-        thread.start();
+                @Override
+                public void onResponse(Call call, okhttp3.Response response) throws IOException {
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        public void run() {
+                            Handler handler = new Handler();
+                            Runnable runnable = new Runnable() {
+                                @Override
+                                public void run() {
+                                    synchronized (this) {
+                                        try {
+                                            wait(10);
+                                        } catch (InterruptedException ignored) {
+                                        }
+                                        handler.post(() -> {
+                                            try {
+                                                assert response.body() != null;
+                                                String result = response.body().string();
+                                                JSONObject jsonObject1 = new JSONObject(result);
+                                                if (response.isSuccessful()) {
+                                                    Toast.makeText(getBaseContext(), jsonObject1.getString("message"), Toast.LENGTH_SHORT).show();
+                                                    if (jsonObject1.getBoolean("success")) {
+                                                        JSONObject jsonObjectData = jsonObject1.getJSONObject("data");
+                                                        userid = jsonObjectData.getInt("id");
+                                                        String resultToken = jsonObject1.getString("token");
+                                                        fullName = jsonObjectData.getString("fullname");
+                                                        whse = jsonObjectData.getString("whse");
+                                                        boolean isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
+                                                        isManager = (isManagerB ? 1 : 0);
+                                                        saveToken(resultToken);
+                                                        saveLoggedIn();
+                                                        openAPIMainMenu();
+                                                        myDb.truncateTable();
+                                                        myDb2.truncateTable();
+                                                        myDb3.truncateTable();
+                                                        myDb4.truncateTable();
+                                                        myDb5.truncateTable();
+                                                    }
+                                                }else{
+                                                    Toast.makeText(getBaseContext(), jsonObject1.getString("message"), Toast.LENGTH_SHORT).show();
+                                                }
+                                            } catch (Exception ex) {
+                                                ex.printStackTrace();
+                                            }
+                                        });
+                                    }
+                                }
+                            };
+                            Thread thread = new Thread(runnable);
+                            thread.start();
+                        }
+                    });
+                }
+            });
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -232,16 +210,84 @@ public class MainActivity extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 
-    @SuppressLint("StaticFieldLeak")
-    public class CheckLogin extends AsyncTask<String, String, String> {
-        String z = "";
-        Boolean isSuccess = false;
+    public void returnResult() {
         String us = username.getText().toString();
         String ps = password.getText().toString();
-//        String zxc = tokenURL + "username=" + us + "&password=" + ps;
 
+        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+        String IPaddress = sharedPreferences2.getString("IPAddress", "");
+        okhttp3.Request request = new okhttp3.Request.Builder()
+                .url(IPaddress + "/api/auth/login?username=" + us + "&password=" + ps)
+                .method("GET", null)
+                .build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+               formatResponse(e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String answer = response.body().string();
+                formatResponse(answer);
+            }
+        });
+    }
+
+    public void formatResponse(String temp){
+        if(!temp.isEmpty() && temp.substring(0,1).equals("{")){
+            try{
+                JSONObject jsonObject1 = new JSONObject(temp);
+                String msg = jsonObject1.getString("message");
+                if(jsonObject1.getBoolean("success")){
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    JSONObject jsonObjectData = jsonObject1.getJSONObject("data");
+                    userid = jsonObjectData.getInt("id");
+                    resultToken = jsonObject1.getString("token");
+                    fullName = jsonObjectData.getString("fullname");
+                    whse = jsonObjectData.getString("whse");
+                    isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
+                    isManager = (isManagerB ? 1 : 0);
+                    saveToken(resultToken);
+                    saveLoggedIn();
+                    openAPIMainMenu();
+                    myDb.truncateTable();
+                    myDb2.truncateTable();
+                    myDb3.truncateTable();
+                    myDb4.truncateTable();
+                    myDb5.truncateTable();
+                }else{
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getBaseContext(), "Error: \n" + msg, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }catch (Exception ex){
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }else{
+            Runnable r = () -> {
+                Toast.makeText(getBaseContext(), temp, Toast.LENGTH_SHORT).show();
+            };
+        }
+    }
+
+    @SuppressLint("StaticFieldLeak")
+    public class CheckLogin extends AsyncTask<String, String, String> {
         final LoadingDialog loadingDialog = new LoadingDialog(MainActivity.this);
-
+        final String[] z = {""};
 
         @Override
         protected void onPreExecute() {
@@ -250,42 +296,26 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected String doInBackground(String... params) {
-            Integer resultUserID = uc.checkUsernamePassword(MainActivity.this,"username", us, ps);
-            if (us.trim().equals("") || ps.trim().equals("")) {
-                z = "Please enter Username and Password";
-            }else if(resultUserID > 0){
-                isSuccess = true;
-                z = "Login Success";
-                userid = resultUserID;
-            }else{
-                z = "Invalid Credentials";
-            }
-            return z;
+            String us = username.getText().toString();
+            String ps = password.getText().toString();
+
+            return z[0];
         }
 
         @Override
         protected void onPostExecute(final String s) {
             Handler handler = new Handler();
             Runnable r = () -> {
-                if(isSuccess){
-                    openMainMenu();
-                    saveLoggedIn();
-                    myDb.truncateTable();
-                    myDb2.truncateTable();
-                    myDb3.truncateTable();
-                    myDb4.truncateTable();
-                    myDb5.truncateTable();
-                    Toast.makeText(getBaseContext(), z, Toast.LENGTH_SHORT).show();
-                }
+//                Toast.makeText(getBaseContext(), z[0], Toast.LENGTH_SHORT).show();
                 loadingDialog.dismissDialog();
             };
-            handler.postDelayed(r, 500);
+            handler.postDelayed(r, 200);
         }
     }
 
     public  void saveLoggedIn(){
         String susername = username.getText().toString();
-        String spassword = Base64.encodeToString(password.getText().toString() .getBytes(),0);
+        String spassword = password.getText().toString();
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN",MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("username",susername).apply();

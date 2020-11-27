@@ -37,7 +37,7 @@ import java.util.Objects;
 
  public class CancelRecTrans extends AppCompatActivity {
     long mLastClickTime = 0;
-    inventory_class ic = new inventory_class();
+//    inventory_class ic = new inventory_class();
     connection_class cc = new connection_class();
     receivedsap_class recsap = new receivedsap_class();
     ui_class uic = new ui_class();
@@ -334,7 +334,7 @@ import java.util.Objects;
         toggle.syncState();
 
         txtSearch = findViewById(R.id.txtSearch);
-        txtSearch.setAdapter(ic.fillAdapter(this, ic.returnTransactionNumbers(this,"")));
+//        txtSearch.setAdapter(ic.fillAdapter(this, ic.returnTransactionNumbers(this,"")));
 
         loadTransactions("");
         Button btnSearch = findViewById(R.id.btnSearch);
@@ -394,8 +394,8 @@ import java.util.Objects;
         final LinearLayout layoutItems = findViewById(R.id.layoutItems);
         linearTransactions.removeAllViews();
         layoutItems.removeAllViews();
-        List<String> result;
-        result = ic.returnTransactionNumbers(this,transactionNumber);
+        List<String> result=null;
+//        result = ic.returnTransactionNumbers(this,transactionNumber);
         int totalTransactions = 0;
         for (String temp : result) {
             totalTransactions += 1;
@@ -449,7 +449,7 @@ import java.util.Objects;
                     mLastClickTime = SystemClock.elapsedRealtime();
 
                     String errorMsg = "You can't cancel this transaction because the item(s) below of ending balance is less than the Received quantity: \n \n";
-                    errorMsg += ic.checkStock(CancelRecTrans.this, currentTransactionNumber);
+//                    errorMsg += ic.checkStock(CancelRecTrans.this, currentTransactionNumber);
                     if(!errorMsg.equals("You can't cancel this transaction because the item(s) below of ending balance is less than the Received quantity: \n \n")){
 
                         AlertDialog.Builder myDialogError = new AlertDialog.Builder(CancelRecTrans.this);
@@ -472,7 +472,7 @@ import java.util.Objects;
                         myDialog.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                ic.cancelRecTrans(CancelRecTrans.this, currentTransactionNumber);
+//                                ic.cancelRecTrans(CancelRecTrans.this, currentTransactionNumber);
                                 layoutItems.removeAllViews();
                                 loadTransactions("");
                                 TextView txtHeader = findViewById(R.id.txtHeader);

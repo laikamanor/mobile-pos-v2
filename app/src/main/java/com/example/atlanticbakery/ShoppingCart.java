@@ -181,22 +181,6 @@ public class ShoppingCart extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
-                    case R.id.nav_cutOff:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        intent = new Intent(getBaseContext(), CutOff.class);
-                        intent.putExtra("title", "Cut Off");
-                        intent.putExtra("hiddenTitle", "API Cut Off");
-                        startActivity(intent);
-                        break;
-                    case  R.id.nav_pullOutCount:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Pull Out Request");
-                        intent.putExtra("hiddenTitle", "API Pull Out Count");
-                        startActivity(intent);
-                        finish();
-                        break;
                     case  R.id.nav_InventoryCount:
                         result = true;
                         intent = new Intent(getBaseContext(), APIReceived.class);
@@ -212,6 +196,38 @@ public class ShoppingCart extends AppCompatActivity {
                         intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
                         startActivity(intent);
                         finish();
+                        break;
+                    case R.id.nav_shoppingCart:
+                        result = true;
+                        intent = new Intent(getBaseContext(), ShoppingCart.class);
+                        intent.putExtra("title", "Shopping Cart");
+                        intent.putExtra("hiddenTitle", "API Shopping Cart");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case  R.id.nav_pullOutCount:
+                        result = true;
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Pull Out Request");
+                        intent.putExtra("hiddenTitle", "API Pull Out Count");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case  R.id.nav_invLogs:
+                        result = true;
+                        intent = new Intent(getBaseContext(), API_SalesLogs.class);
+                        intent.putExtra("title", "Inventory Logs");
+                        intent.putExtra("hiddenTitle", "API Inventory Logs");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_cutOff:
+                        result = true;
+                        drawerLayout.closeDrawer(Gravity.START, false);
+                        intent = new Intent(getBaseContext(), CutOff.class);
+                        intent.putExtra("title", "Cut Off");
+                        intent.putExtra("hiddenTitle", "API Cut Off");
+                        startActivity(intent);
                         break;
                 }
                 return result;
@@ -1456,7 +1472,7 @@ public class ShoppingCart extends AppCompatActivity {
             RequestBody body = RequestBody.create(JSON, jsonObject.toString());
             okhttp3.Request request = new okhttp3.Request.Builder()
                     .url(IPaddress + "/api/sales/new")
-                    .method("post", body)
+                    .method("POST", body)
                     .addHeader("Authorization", "Bearer " + token)
                     .addHeader("Content-Type", "application/json")
                     .build();

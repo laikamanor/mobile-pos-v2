@@ -19,7 +19,6 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="75sp"
         android:layout_marginLeft="30sp"
-        android:background="@drawable/custom_input"
         android:drawablePadding="12dp"
         android:hint="Username"
         android:layout_marginStart="30dp"
@@ -27,6 +26,8 @@
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
         />
+
+    <!--        android:background="@drawable/custom_input"-->
 
     <EditText
         android:id="@+id/editText2"
@@ -41,12 +42,11 @@
         android:layout_marginTop="24sp"
         android:ems="10"
         android:hint="Password"
-        android:background="@drawable/custom_input"
         android:inputType="textPassword"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
         />
-
+    <!--        android:background="@drawable/custom_input"-->
     <Button
         android:id="@+id/button"
         android:layout_width="347dp"
@@ -58,12 +58,12 @@
         android:layout_marginStart="33dp"
         android:layout_marginEnd="33dp"
         android:layout_marginRight="33dp"
-        android:background="@drawable/custom_button"
         android:fontFamily="sans-serif"
         android:lineSpacingExtra="8sp"
         android:text="Log In"
         android:textColor="@android:color/white"
+        android:background="@color/colorPrimary"
         android:textSize="20dp"
         android:typeface="normal" />
-
+    <!--        android:background="@drawable/custom_button"-->
 </RelativeLayout>

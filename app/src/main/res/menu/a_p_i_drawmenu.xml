@@ -67,6 +67,17 @@
             </menu>
         </group>
     </item>
+
+    <item android:title="Logs">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_invLogs"
+                    android:title="Logs" />
+            </menu>
+        </group>
+    </item>
+
     <item android:title="Item Request">
         <group android:checkableBehavior="single">
             <menu>

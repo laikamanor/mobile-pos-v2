@@ -10,7 +10,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import androidx.annotation.Nullable;
 
 public class DatabaseHelper2 extends SQLiteOpenHelper {
-//    tblreceived
+    //    tblreceived
     public static final String DATABASE_NAME = "AKPOS.db";
     public static final String TABLE_NAME = "tblreceived";
     public  static  final String COL_1 = "id";
@@ -46,25 +46,30 @@ public class DatabaseHelper2 extends SQLiteOpenHelper {
     }
 
     public Cursor getAllData(String type){
+        Cursor cursor;
         SQLiteDatabase db = this.getWritableDatabase();
-        return db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE type='" + type + "';", null);
+        cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE type='" + type + "';", null);
+        return cursor;
     }
 
     public  Integer deleteData(String id){
+        int result;
         SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete(TABLE_NAME, "id = ?", new  String[] {id});
+        result = db.delete(TABLE_NAME, "id = ?", new  String[] {id});
+        return result;
     }
 
     public void truncateTable(){
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DELETE FROM " + TABLE_NAME);
         db.execSQL("VACUUM");
+        db.close();
     }
 
     public Integer countItems(String type){
         int resultPrice = 0;
         SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT COUNT(id) FROM " + TABLE_NAME + " WHERE type='" + type + "';", null);
+        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT COUNT( id) FROM " + TABLE_NAME + " WHERE type='" + type + "';", null);
         if(result.moveToFirst()){
             do{
                 resultPrice = Integer.parseInt(result.getString(0));
@@ -74,16 +79,4 @@ public class DatabaseHelper2 extends SQLiteOpenHelper {
         return resultPrice;
     }
 
-    public boolean checkItem(String itemName,String title){
-        boolean result = false;
-        SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE itemname = ? AND type='" + title + "';", new String[]{itemName});
-        if(cursor.moveToFirst()){
-            do{
-                result = true;
-            }
-            while (cursor.moveToNext());
-        }
-        return result;
-    }
 }

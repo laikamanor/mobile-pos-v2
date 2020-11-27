@@ -1,28 +1,23 @@
 package com.example.atlanticbakery;
 
 import android.annotation.SuppressLint;
-import android.app.DatePickerDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Html;
 import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.DatePicker;
+import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.Spinner;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,11 +34,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
 import java.util.Objects;
 
 import okhttp3.Call;
@@ -51,7 +43,7 @@ import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 
-public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog.OnDateSetListener {
+public class API_SalesLogsItems extends AppCompatActivity {
     prefs_class pc = new prefs_class();
     ui_class uic = new ui_class();
     private DrawerLayout drawerLayout;
@@ -59,42 +51,24 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
     NavigationView navigationView;
     DatabaseHelper myDb;
 
+    DecimalFormat df = new DecimalFormat("#,###");
+
     private OkHttpClient client;
     Menu menu;
-    ListView listView;
-    String title,hidden_title;
-    Spinner cmbType;
+    TableLayout tableLayout;
+    Button btnBack;
 
-    Button btnPickDate;
-    TextView lblDate;
-    CheckBox checkSAP;
+    String title, hidden_title;
+    TextView txtReference,txtHeader;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_a_p_i_sales_logs);
+        setContentView(R.layout.activity_a_p_i_sales_logs_items);
 
-        cmbType = findViewById(R.id.cmbType);
-        lblDate= findViewById(R.id.txtDate);
-        checkSAP = findViewById(R.id.checkSAP);
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        String currentDateandTime = sdf.format(new Date());
-        lblDate.setText(currentDateandTime);
-
-        checkSAP.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                returnResult(cmbType.getSelectedItem().toString());
-            }
-        });
-
-        btnPickDate = findViewById(R.id.btnPickDate);
-        btnPickDate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                showDate();
-            }
-        });
+        tableLayout = findViewById(R.id.table_main);
+        btnBack = findViewById(R.id.btnBack);
+        txtReference = findViewById(R.id.txtReference);
+        txtHeader = findViewById(R.id.txtHeader);
 
         myDb = new DatabaseHelper(this);
         navigationView = findViewById(R.id.nav);
@@ -107,17 +81,21 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
         toggle.syncState();
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        title = getIntent().getStringExtra("title");
+        hidden_title = getIntent().getStringExtra("hiddenTitle");
+        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
+
+        txtReference = findViewById(R.id.txtReference);
+        String reference = getIntent().getStringExtra("reference");
+        txtReference.setText(reference);
+
+
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
         String fullName = Objects.requireNonNull(sharedPreferences.getString("fullname", ""));
 
         menu = navigationView.getMenu();
         MenuItem nav_shoppingCart = menu.findItem(R.id.usernameLogin);
         nav_shoppingCart.setTitle("Signed In " + fullName);
-
-        title = getIntent().getStringExtra("title");
-        hidden_title = getIntent().getStringExtra("hiddenTitle");
-        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
-
 
         int totalCart = myDb.countItems();
         MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
@@ -234,75 +212,55 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
                 return result;
             }
         });
-        listView = findViewById(R.id.listView);
 
-        ArrayList<String> types = new ArrayList<>();
-        types.add("Received Transactions");
-        types.add("Transfer Transactions");
-        types.add("Sales Transactions");
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, types);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        cmbType.setAdapter(adapter);
-        cmbType.setSelection(0);
-        cmbType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                if(i == 0){
-                    returnResult("Received Transactions");
-                }else if(i == 1){
-                    returnResult("Transfer Transactions");
-                }else if(i == 2){
-                    returnResult("Sales Transactions");
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-
+            public void onClick(View view) {
+                finish();
             }
         });
+        String typeTrans = getIntent().getStringExtra("type");
+        if(typeTrans.equals("Sales Transactions")){
+            txtHeader.setVisibility(View.VISIBLE);
+        }else{
+            txtHeader.setVisibility(View.GONE);
+        }
 
+        returnResult();
     }
 
-    public void showDate(){
-        DatePickerDialog datePickerDialog = new DatePickerDialog(this, (DatePickerDialog.OnDateSetListener) this, Calendar.getInstance().get(Calendar.YEAR),
-                Calendar.getInstance().get(Calendar.MONTH), Calendar.getInstance().get(Calendar.DAY_OF_MONTH));
-        datePickerDialog.show();
-    }
+    public void returnResult() {
+        tableLayout.removeAllViews();
+        TableRow tableColumn = new TableRow(API_SalesLogsItems.this);
+        String[] columns;
+        String typeTrans = getIntent().getStringExtra("type");
+        if(typeTrans.equals("Received Transactions")) {
+            columns = new String[]{"Item", "Qty.", "Actual Qty.", "Variance"};
+        }else if(typeTrans.equals("Transfer Transactions")){
+            columns = new String[]{"Item", "Qty."};
+        }else{
+            columns = new String[]{"Item", "Qty.", "Price", "Gross", "Disc. %", "Disc. Amt.", "Total"};
+        }
+        for (String s : columns) {
+            TextView lblColumn1 = new TextView(API_SalesLogsItems.this);
+            lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+            lblColumn1.setText(s);
+            lblColumn1.setPadding(10, 0, 10, 0);
+            tableColumn.addView(lblColumn1);
+        }
+        tableLayout.addView(tableColumn);
 
-    @Override
-    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-        lblDate.setText(year + "-" + (month + 1) + "-" + dayOfMonth);
-        returnResult(cmbType.getSelectedItem().toString());
-    }
 
-    public void returnResult(String type) {
         SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
         String IPaddress = sharedPreferences2.getString("IPAddress", "");
 
         SharedPreferences sharedPreferences0 = getSharedPreferences("TOKEN", MODE_PRIVATE);
         String token = sharedPreferences0.getString("token", "");
 
-        SharedPreferences sharedPreferences3 = getSharedPreferences("LOGIN", MODE_PRIVATE);
-        String userID = sharedPreferences3.getString("userid", "");
-        String sUserID = userID.isEmpty() ? "" : "&created_by=" + userID;
+        String URL = getIntent().getStringExtra("URL");
 
-        String sSAPNumber = checkSAP.isChecked() ? "&sap_number=1" : "&sap_number=";
-
-        String recURL = "/api/inv/recv/get_all?transdate=" + lblDate.getText().toString() + sSAPNumber + sUserID,
-                transURL = "/api/inv/trfr/getall?transdate=" + lblDate.getText().toString() + sSAPNumber + sUserID,
-                salesURL = "/api/sales/get_all?transdate=" + lblDate.getText().toString() + sSAPNumber + sUserID,
-                resultURL = "";
-        if(type.equals("Received Transactions")){
-            resultURL = recURL;
-        }else if(type.equals("Transfer Transactions")){
-            resultURL = transURL;
-        }else{
-            resultURL = salesURL;
-        }
-        System.out.println(resultURL);
         okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(IPaddress + resultURL)
+                .url(IPaddress + URL)
                 .method("GET", null)
                 .addHeader("Authorization", "Bearer " + token)
                 .addHeader("Content-Type", "application/json")
@@ -322,58 +280,153 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
     }
 
     public void formatResponse(String temp){
+
+
         if(!temp.isEmpty() && temp.substring(0,1).equals("{")){
             try{
+                String typeTrans = getIntent().getStringExtra("type");
                 JSONObject jsonObject1 = new JSONObject(temp);
                 if(jsonObject1.getBoolean("success")){
-                    JSONArray jsonArrayData = jsonObject1.getJSONArray("data");
-                    ArrayList<String> myReference = new ArrayList<String>();
-                    ArrayList<String> myID = new ArrayList<String>();
-                    int count =0;
-                    for (int i = 0; i < jsonArrayData.length(); i++) {
-                        JSONObject jsonObjectData = jsonArrayData.getJSONObject(i);
-                        myReference.add(jsonObjectData.getString("reference"));
-                        myID.add(String.valueOf(jsonObjectData.getInt("id")));
-                        count+= 1;
+                    JSONObject jsonObject = jsonObject1.getJSONObject("data");
+
+                    if(typeTrans.equals("Sales Transactions")) {
+                        String headerFormat = "";
+                        headerFormat = "Customer Code: " + jsonObject.getString("cust_code") + "\n" +
+                                "Trans. Type: " + jsonObject.getString("transtype") + "\n" +
+                                "Gross: " + jsonObject.getDouble("gross") + "\n" +
+                                "Discount Amount: " + jsonObject.getDouble("disc_amount") + "\n" +
+                                "Document Total: " + jsonObject.getDouble("doctotal") + "\n" +
+                                "Applied Amount: " + jsonObject.getDouble("appliedamt") + "\n" +
+                                "Tender Amount: " + jsonObject.getDouble("tenderamt") + "\n" +
+                                "Amount Due: " + jsonObject.getDouble("amount_due") + "\n";
+                        String finalHeaderFormat = headerFormat;
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                txtHeader.setText(finalHeaderFormat);
+                            }
+                        });
+
                     }
-                    MyAdapter adapter = new MyAdapter(this, myReference, myID);;
-                    runOnUiThread(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            listView.setAdapter(adapter);
-                            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                                @Override
-                                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            TextView textView = view.findViewById(R.id.txtIDs);
-                                            TextView textView1 = view.findViewById(R.id.txtReference);
-                                            Intent intent;
-                                            intent = new Intent(getBaseContext(), API_SalesLogsItems.class);
-                                            intent.putExtra("reference", "Reference: " + textView1.getText().toString());
+                    String srow;
+                    if(typeTrans.equals("Received Transactions")){
+                        srow = "recrow";
+                    }else if(typeTrans.equals("Transfer Transactions")){
+                        srow = "transrow";
+                    }
+                    else{
+                        srow = "salesrow";
+                    }
+                    JSONArray jsonArrayRecRow = jsonObject.getJSONArray(srow);
+                    for (int i = 0; i < jsonArrayRecRow.length(); i++) {
+                        JSONObject jsonObjectRecRow = jsonArrayRecRow.getJSONObject(i);
 
-                                            String URL;
-                                            if(cmbType.getSelectedItem().toString() == "Received Transactions"){
-                                                URL = "/api/inv/recv/details/" + textView.getText().toString();
-                                            }else if(cmbType.getSelectedItem().toString() == "Transfer Transactions"){
-                                                URL = "/api/inv/trfr/getdetails/" + textView.getText().toString();
-                                            }else{
-                                                URL = "/api/sales/details/" + textView.getText().toString();
-                                            }
+                        final TableRow tableRow = new TableRow(getBaseContext());
+                        tableRow.setBackgroundColor(Color.WHITE);
+                        LinearLayout linearLayoutItem = new LinearLayout(this);
+                        linearLayoutItem.setPadding(10, 10, 10, 10);
+                        linearLayoutItem.setOrientation(LinearLayout.VERTICAL);
+                        linearLayoutItem.setBackgroundColor(Color.WHITE);
+                        linearLayoutItem.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                        tableRow.addView(linearLayoutItem);
 
-                                            intent.putExtra("URL", URL);
-                                            intent.putExtra("title", "Inventory Logs");
-                                            intent.putExtra("hiddenTitle", "API Inventory Logs");
-                                            intent.putExtra("type", cmbType.getSelectedItem().toString());
-                                            startActivity(intent);
-                                        }
-                                    });
-                                }
-                            });
+                        LinearLayout.LayoutParams layoutParamsItem = new LinearLayout.LayoutParams(200, LinearLayout.LayoutParams.WRAP_CONTENT);
+                        TextView lblColumn1 = new TextView(this);
+                        lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                        lblColumn1.setLayoutParams(layoutParamsItem);
+//                       String v = cutWord(item);
+                        lblColumn1.setText(jsonObjectRecRow.getString("item_code"));
+                        lblColumn1.setTextSize(13);
+                        lblColumn1.setBackgroundColor(Color.WHITE);
+                        linearLayoutItem.addView(lblColumn1);
+
+                        TextView lblColumn2 = new TextView(getBaseContext());
+                        lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                        lblColumn2.setText(df.format(jsonObjectRecRow.getDouble("quantity")));
+                        lblColumn2.setTextSize(13);
+                        lblColumn2.setBackgroundColor(Color.WHITE);
+                        lblColumn2.setPadding(10, 10, 10, 10);
+                        tableRow.addView(lblColumn2);
+
+                        TextView lblColumn3 = new TextView(getBaseContext());
+                        lblColumn3.setGravity(View.TEXT_ALIGNMENT_CENTER);
+
+                        double col3 = 0.00, col4 = 0.00,col5 = 0.00, col6 = 0.00, col7 = 0.00;
+                        if(typeTrans.equals("Received Transactions")) {
+                            col3 = jsonObjectRecRow.getDouble("actualrec");
+                            col4 = jsonObjectRecRow.getDouble("quantity") - col3;
+                        }else if(typeTrans.equals("Sales Transactions")){
+                            col3 = jsonObjectRecRow.getDouble("unit_price");
+                            col4 = jsonObjectRecRow.getDouble("gross");
+                            col5 = jsonObjectRecRow.getDouble("disc_amount");
+                            col6 = jsonObjectRecRow.getDouble("discprcnt");
+                            col7 = jsonObjectRecRow.getDouble("linetotal");
                         }
-                    });
+
+                        if(typeTrans.equals("Received Transactions") || typeTrans.equals("Sales Transactions")){
+                            lblColumn3.setText(df.format(col3));
+                            lblColumn3.setTextSize(13);
+                            lblColumn3.setBackgroundColor(Color.WHITE);
+                            lblColumn3.setPadding(10, 10, 10, 10);
+                            tableRow.addView(lblColumn3);
+
+                            TextView lblColumn4 = new TextView(getBaseContext());
+                            lblColumn4.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                            lblColumn4.setText(df.format(col4));
+                            lblColumn4.setTextSize(13);
+                            lblColumn4.setBackgroundColor(Color.WHITE);
+                            lblColumn4.setPadding(10, 10, 10, 10);
+
+                            if(typeTrans.equals("Received Transactions")) {
+                                if(col4 == 0.00){
+//                                    lblColumn4.setTextColor(Color.BLACK);
+                                }
+                                if (col4 > 0) {
+                                    lblColumn4.setTextColor(Color.BLUE);
+                                } else if (col4 < 0) {
+                                    lblColumn4.setTextColor(Color.RED);
+                                }
+                            }
+                            tableRow.addView(lblColumn4);
+                        }
+
+                        if(typeTrans.equals("Sales Transactions")){
+                            TextView lblColumn4 = new TextView(getBaseContext());
+                            lblColumn4.setText(df.format(col5));
+                            lblColumn4.setTextSize(13);
+                            lblColumn4.setBackgroundColor(Color.WHITE);
+                            lblColumn4.setPadding(10, 10, 10, 10);
+                            tableRow.addView(lblColumn4);
+
+                            TextView lblColumn5 = new TextView(getBaseContext());
+                            lblColumn5.setText(df.format(col6));
+                            lblColumn5.setTextSize(13);
+                            lblColumn5.setBackgroundColor(Color.WHITE);
+                            lblColumn5.setPadding(10, 10, 10, 10);
+                            tableRow.addView(lblColumn5);
+
+                            TextView lblColumn6 = new TextView(getBaseContext());
+                            lblColumn6.setText(df.format(col7));
+                            lblColumn6.setTextSize(13);
+                            lblColumn6.setBackgroundColor(Color.WHITE);
+                            lblColumn6.setPadding(10, 10, 10, 10);
+                            tableRow.addView(lblColumn6);
+                        }
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                tableLayout.addView(tableRow);
+                                View viewLine = new View(getBaseContext());
+                                LinearLayout.LayoutParams layoutParamsLine = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
+                                viewLine.setLayoutParams(layoutParamsLine);
+                                viewLine.setBackgroundColor(Color.GRAY);
+                                tableLayout.addView(viewLine);
+                            }
+                        });
+
+                    }
                 }else{
                     String msg = jsonObject1.getString("message");
                     runOnUiThread(new Runnable() {
@@ -399,34 +452,6 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
         }
     }
 
-    class MyAdapter extends ArrayAdapter<String> {
-        Context rContext;
-        ArrayList<String> myReference;
-        ArrayList<String> myIds;
-
-        MyAdapter(Context c, ArrayList<String> reference, ArrayList<String> id) {
-            super(c, R.layout.custom_list_view_sales_logs, R.id.txtReference, reference);
-            this.rContext = c;
-            this.myReference = reference;
-            this.myIds = id;
-        }
-
-        @NonNull
-        @Override
-        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-            LayoutInflater layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            View row = layoutInflater.inflate(R.layout.custom_list_view_sales_logs, parent, false);
-            TextView textView1 = row.findViewById(R.id.txtReference);
-            TextView textView2 = row.findViewById(R.id.txtIDs);
-
-            textView1.setText(myReference.get(position));
-            textView2.setText(myIds.get(position));
-            textView2.setVisibility(View.INVISIBLE);
-
-            return row;
-        }
-    }
-
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -443,9 +468,9 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        pc.loggedOut(API_SalesLogs.this);
-                        pc.removeToken(API_SalesLogs.this);
-                        startActivity(uic.goTo(API_SalesLogs.this, MainActivity.class));
+                        pc.loggedOut(API_SalesLogsItems.this);
+                        pc.removeToken(API_SalesLogsItems.this);
+                        startActivity(uic.goTo(API_SalesLogsItems.this, MainActivity.class));
                         finish();
                     }
                 })

@@ -49,25 +49,29 @@ public class DatabaseHelper4 extends SQLiteOpenHelper {
         return result;
     }
 
-    public  Integer deleteType(String type){
+    public Integer deleteType(String type){
+        int result;
         SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete(TABLE_NAME, "type = ?", new  String[] {type});
+        result = db.delete(TABLE_NAME, "type = ?", new  String[] {type});
+        return result;
     }
 
     public  Integer deleteData(String id){
+        int result;
         SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete(TABLE_NAME, "id = ?", new  String[] {id});
+        result = db.delete(TABLE_NAME, "id = ?", new  String[] {id});
+        return result;
     }
 
     public Cursor getAllData(String type){
-        Cursor cursor = null;
+        Cursor cursor;
         SQLiteDatabase db = this.getWritableDatabase();
         cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE type='" + type + "';", null);
-        return  cursor;
+        return cursor;
     }
 
     public Cursor getAllWhereItem(String type,String itemName){
-        Cursor cursor = null;
+        Cursor cursor;
         SQLiteDatabase db = this.getWritableDatabase();
         cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE type='" + type + "' AND itemname='" +itemName + "';", null);
         return  cursor;

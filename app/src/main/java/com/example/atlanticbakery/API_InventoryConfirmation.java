@@ -217,6 +217,14 @@ public class API_InventoryConfirmation extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case  R.id.nav_invLogs:
+                        result = true;
+                        intent = new Intent(getBaseContext(), API_SalesLogs.class);
+                        intent.putExtra("title", "Inventory Logs");
+                        intent.putExtra("hiddenTitle", "API Inventory Logs");
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
             }
@@ -258,7 +266,7 @@ public class API_InventoryConfirmation extends AppCompatActivity {
                     cmbWarehouses.setLayoutParams(layoutParamsCmbWarehouses);
                     okhttp3.Request request = new okhttp3.Request.Builder()
                             .url(IPaddress + "/api/whse/get_all")
-                            .method("get", null)
+                            .method("GET", null)
                             .addHeader("Authorization", "Bearer " + token)
                             .addHeader("Content-Type", "application/json")
                             .build();
@@ -410,139 +418,141 @@ public class API_InventoryConfirmation extends AppCompatActivity {
                         }
                         mLastClickTime = SystemClock.elapsedRealtime();
 
-                        if(poDestination[0].equals("Select Warehouse")){
-                            Toast.makeText(getBaseContext(), "Please select Pull Out Destination", Toast.LENGTH_SHORT).show();
-                        }else{
-                            AlertDialog.Builder builder = new AlertDialog.Builder(API_InventoryConfirmation.this);
-                            builder.setMessage("Are you sure want to submit?")
-                                    .setCancelable(false)
-                                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
-                                            String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+                        try{
+                            if(poDestination[0].equals("Select Warehouse")){
+                                Toast.makeText(getBaseContext(), "Please select Pull Out Destination", Toast.LENGTH_SHORT).show();
+                            }else{
+                                AlertDialog.Builder builder = new AlertDialog.Builder(API_InventoryConfirmation.this);
+                                builder.setMessage("Are you sure want to submit?")
+                                        .setCancelable(false)
+                                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                String poD = poDestination[0];
+                                                int sap_number = itr[0];
+                                                SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+                                                String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
 
-                                            SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-                                            String IPaddress = sharedPreferences2.getString("IPAddress", "");
+                                                SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+                                                String IPaddress = sharedPreferences2.getString("IPAddress", "");
 
 
-                                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
-                                            String currentDateandTime = sdf.format(new Date());
+                                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
+                                                String currentDateandTime = sdf.format(new Date());
 
-                                            String URL = IPaddress + "/api/inv/count/confirm?transdate=" + currentDateandTime;
+                                                String URL = IPaddress + "/api/inv/count/confirm?transdate=" + currentDateandTime;
 
-                                            JSONObject jsonObject = new JSONObject();
-                                            try {
-                                                jsonObject.put("transdate", currentDateandTime);
-                                                jsonObject.put("confirm", true);
-                                                if(itr[0] <= 0){
-                                                    jsonObject.put("po_sap", null);
-                                                }else{
-                                                    jsonObject.put("po_sap", itr[0]);
-                                                }
-                                                if(poDestination[0].equals("Select Warehouse")){
-                                                    jsonObject.put("po_whse", null);
-                                                }else{
-                                                    jsonObject.put("po_whse", poDestination[0]);
-                                                }
-                                            } catch (JSONException e) {
-                                                Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                e.printStackTrace();
-                                            }
-                                            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-                                            System.out.println("body: " + jsonObject);
-                                            RequestBody body = RequestBody.create(JSON, jsonObject.toString());
-                                            okhttp3.Request request = new okhttp3.Request.Builder()
-                                                    .url(URL)
-                                                    .method("put", body)
-                                                    .addHeader("Authorization", "Bearer " + token)
-                                                    .addHeader("Content-Type", "application/json")
-                                                    .build();
-                                            client.newCall(request).enqueue(new Callback() {
-                                                @Override
-                                                public void onFailure(Call call, IOException e) {
-                                                    runOnUiThread(new Runnable() {
-                                                        @Override
-                                                        public void run() {
-                                                            Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
+                                                JSONObject zxxz = new JSONObject();
+                                                try {
+                                                    zxxz.put("transdate", currentDateandTime);
+                                                    zxxz.put("confirm", true);
+                                                    if(sap_number == 0){
+                                                        zxxz.put("po_sap",JSONObject.NULL);
+                                                    }else{
+                                                        zxxz.put("po_sap",sap_number);
+                                                    }
+                                                    zxxz.put("po_whse", poD);
+                                                } catch (JSONException e) {
+                                                    e.printStackTrace();
                                                 }
 
-                                                @Override
-                                                public void onResponse(Call call, okhttp3.Response response) {
-                                                    try {
-                                                        String sResult = response.body().string();
-                                                        JSONObject jsonObjectReponse = new JSONObject(sResult);
-                                                        if (jsonObjectReponse.getBoolean("success")) {
-                                                            runOnUiThread(new Runnable() {
-                                                                @SuppressLint({"ResourceType", "SetTextI18n"})
-                                                                @Override
-                                                                public void run() {
-                                                                    try {
-                                                                        Toast.makeText(getBaseContext(), jsonObjectReponse.getString("message"), Toast.LENGTH_SHORT).show();
-//                                                    Toast.makeText(getBaseContext(),"OK", Toast.LENGTH_SHORT).show();
-                                                                        loadData();
-                                                                    } catch (Exception ex) {
-                                                                        runOnUiThread(new Runnable() {
-                                                                            @Override
-                                                                            public void run() {
-                                                                                ex.printStackTrace();
-                                                                                Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_SHORT).show();
-                                                                            }
-                                                                        });
-                                                                    }
-                                                                }
-                                                            });
-                                                        }
-                                                        else {
-                                                            String msg = jsonObjectReponse.getString("message");
-                                                            if (msg.equals("Token is invalid")) {
-                                                                final AlertDialog.Builder builder = new AlertDialog.Builder(API_InventoryConfirmation.this);
-                                                                builder.setCancelable(false);
-                                                                builder.setMessage("Your session is expired. Please login again.");
-                                                                builder.setPositiveButton("OK", (dialog, which) -> {
-                                                                    if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
-                                                                        return;
-                                                                    }
-                                                                    mLastClickTime = SystemClock.elapsedRealtime();
-                                                                    pc.loggedOut(API_InventoryConfirmation.this);
-                                                                    pc.removeToken(API_InventoryConfirmation.this);
-                                                                    startActivity(uic.goTo(API_InventoryConfirmation.this, MainActivity.class));
-                                                                    finish();
-                                                                    dialog.dismiss();
-                                                                });
-                                                                builder.show();
-                                                            } else {
-                                                                runOnUiThread(new Runnable() {
-                                                                    @Override
-                                                                    public void run() {
-                                                                        Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
-                                                                    }
-                                                                });
-                                                            }
-                                                        }
-                                                    } catch (Exception ex) {
-                                                        ex.printStackTrace();
+                                                MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+                                                System.out.println("body: " + zxxz);
+                                                RequestBody body = RequestBody.create(JSON, zxxz.toString());
+                                                okhttp3.Request request = new okhttp3.Request.Builder()
+                                                        .url(URL)
+                                                        .method("PUT", body)
+                                                        .addHeader("Authorization", "Bearer " + token)
+                                                        .addHeader("Content-Type", "application/json")
+                                                        .build();
+                                                client.newCall(request).enqueue(new Callback() {
+                                                    @Override
+                                                    public void onFailure(Call call, IOException e) {
                                                         runOnUiThread(new Runnable() {
                                                             @Override
                                                             public void run() {
-                                                                Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+                                                                Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
                                                             }
                                                         });
                                                     }
-                                                }
-                                            });
-                                        }
-                                    })
-                                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            dialog.cancel();
-                                        }
-                                    });
-                            AlertDialog alertDialog = builder.create();
-                            alertDialog.show();
+
+                                                    @Override
+                                                    public void onResponse(Call call, okhttp3.Response response) {
+                                                        try {
+                                                            String sResult = response.body().string();
+                                                            JSONObject jsonObjectReponse = new JSONObject(sResult);
+                                                            if (jsonObjectReponse.getBoolean("success")) {
+                                                                runOnUiThread(new Runnable() {
+                                                                    @SuppressLint({"ResourceType", "SetTextI18n"})
+                                                                    @Override
+                                                                    public void run() {
+                                                                        try {
+                                                                            Toast.makeText(getBaseContext(), jsonObjectReponse.getString("message"), Toast.LENGTH_SHORT).show();
+//                                                    Toast.makeText(getBaseContext(),"OK", Toast.LENGTH_SHORT).show();
+                                                                            loadData();
+                                                                        } catch (Exception ex) {
+                                                                            runOnUiThread(new Runnable() {
+                                                                                @Override
+                                                                                public void run() {
+                                                                                    ex.printStackTrace();
+                                                                                    Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_SHORT).show();
+                                                                                }
+                                                                            });
+                                                                        }
+                                                                    }
+                                                                });
+                                                            }
+                                                            else {
+                                                                String msg = jsonObjectReponse.getString("message");
+                                                                if (msg.equals("Token is invalid")) {
+                                                                    final AlertDialog.Builder builder = new AlertDialog.Builder(API_InventoryConfirmation.this);
+                                                                    builder.setCancelable(false);
+                                                                    builder.setMessage("Your session is expired. Please login again.");
+                                                                    builder.setPositiveButton("OK", (dialog, which) -> {
+                                                                        if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+                                                                            return;
+                                                                        }
+                                                                        mLastClickTime = SystemClock.elapsedRealtime();
+                                                                        pc.loggedOut(API_InventoryConfirmation.this);
+                                                                        pc.removeToken(API_InventoryConfirmation.this);
+                                                                        startActivity(uic.goTo(API_InventoryConfirmation.this, MainActivity.class));
+                                                                        finish();
+                                                                        dialog.dismiss();
+                                                                    });
+                                                                    builder.show();
+                                                                } else {
+                                                                    runOnUiThread(new Runnable() {
+                                                                        @Override
+                                                                        public void run() {
+                                                                            Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
+                                                                        }
+                                                                    });
+                                                                }
+                                                            }
+                                                        } catch (Exception ex) {
+                                                            ex.printStackTrace();
+                                                            runOnUiThread(new Runnable() {
+                                                                @Override
+                                                                public void run() {
+                                                                    Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+                                                                }
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        })
+                                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                dialog.cancel();
+                                            }
+                                        });
+                                AlertDialog alertDialog = builder.create();
+                                alertDialog.show();
+                            }
+                        }catch (Exception ex){
+                            Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -596,7 +606,7 @@ public class API_InventoryConfirmation extends AppCompatActivity {
         String URL = IPaddress + "/api/inv/count/confirm?transdate=" + currentDate;
         okhttp3.Request request = new okhttp3.Request.Builder()
                 .url(URL)
-                .method("get", null)
+                .method("GET", null)
                 .addHeader("Authorization", "Bearer " + token)
                 .addHeader("Content-Type", "application/json")
                 .build();

@@ -55,7 +55,7 @@ public class AvailableItems extends AppCompatActivity {
 
     ui_class uic = new ui_class();
     user_class uc = new user_class();
-    inventory_class ic = new inventory_class();
+//    inventory_class ic = new inventory_class();
     connection_class cc = new connection_class();
     prefs_class pc = new prefs_class();
     access_class acccesc = new access_class();
@@ -332,7 +332,7 @@ public class AvailableItems extends AppCompatActivity {
                 if (title.equals("AC Store Count List Items") || title.equals("AC Auditor Count List Items") || title.equals("AC Final Count List Items") || title.equals("PO Store Count List Items") || title.equals("PO Auditor Count List Items") || title.equals("PO Final Count List Items")) {
                     loadActualEndingBalance(search);
                 } else {
-                    loadData(search);
+               //     loadData(search);
                 }
             }
         });
@@ -455,11 +455,11 @@ public class AvailableItems extends AppCompatActivity {
                                 Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                             } else {
                                 myDialog.dismiss();
-                                loadData("");
+                            //    loadData("");
                             }
                         } else {
                             myDialog.dismiss();
-                            loadData("");
+                         //   loadData("");
                         }
                     }
                 });
@@ -515,7 +515,7 @@ public class AvailableItems extends AppCompatActivity {
                                 Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
                             } else {
                                 myDialog.dismiss();
-                                loadData("");
+                              //  loadData("");
                             }
                         }
                     });
@@ -523,7 +523,7 @@ public class AvailableItems extends AppCompatActivity {
                     if (inventory_type == null) {
                         inventory_type = "Main Inventory";
                     }
-                    loadData("");
+//                    loadData("");
                 }
             }
         }
@@ -564,277 +564,277 @@ public class AvailableItems extends AppCompatActivity {
     }
 
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    @SuppressLint("SetTextI18n")
-    public void loadData(final String value) {
-        Handler handler = new Handler();
-        progressBar.setVisibility(View.VISIBLE);
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                synchronized (this) {
-                    try {
-                        wait(10);
-
-                    } catch (InterruptedException ex) {
-
-                    }
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            String query = "";
-                            String latestInventoryDate = ic.returnLatestInventoryDate(AvailableItems.this);
-                            switch (title) {
-                                case "Received from SAP":
-                                    query = "SELECT DISTINCT ISNULL(a.Dscription,0) [item],SUM(a.Quantity) [quantity] FROM vSAP_IT a OUTER APPLY(SELECT DISTINCT ISNULL(b.sap_number,0) [sap_number] FROM tblproduction b WHERE b.sap_number != a.DocNum AND b.sap_number !='To Follow' AND b.status='Completed') x WHERE x.sap_number IS NOT NULL AND a.DocNum=" + Integer.parseInt(value) + " AND CAST(DocDate AS date)>='10/09/2020' GROUP BY a.Dscription";
-//                query = "SELECT DISTINCT ISNULL(a.DocNum,0) [item],SUM(a.Quantity) [quantity] FROM [192.168.30.6].[AKPOS].[dbo].[vSAP_IT] a OUTER APPLY(SELECT DISTINCT ISNULL(b.sap_number,0) [sap_number] FROM tblproduction b WHERE b.sap_number != a.DocNum AND b.sap_number !='To Follow' AND b.status='Completed' AND CAST(b.date AS date)=a.DocDate) x WHERE CAST(a.DocDate AS date)=(select cast(getdate() as date)) AND x.sap_number IS NOT NULL " + (value.matches("") ? "" : " AND a.DocNum=" + Integer.parseInt(value)) + " GROUP BY a.DocNum";
-                                    break;
-                                case "Manual Received from Production":
-                                case "Manual Received from Other Branch":
-                                case "Manual Received from Direct Supplier":
-                                    query = "SELECT a.itemname [item],c.endbal [quantity] FROM funcLoadInventoryItems('" + latestInventoryDate + "','" + value + "','All') a INNER JOIN tblitems b  ON a.itemname = b.itemname INNER JOIN tblinvitems c ON c.itemname = a.itemname WHERE c.invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) ORDER BY c.endbal DESC,a.itemname ASC";
-                                    break;
-                                case "Manual Transfer Out":
-                                case "Transfer to Sales":
-                                    query = "SELECT a.itemname [item],c.endbal [quantity] FROM funcLoadStockItems('" + latestInventoryDate + "','" + value + "','All') a INNER JOIN tblitems b ON a.itemname = b.itemname INNER JOIN tblinvitems c ON c.itemname = a.itemname WHERE c.invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC);";
-                                    break;
-                                case "Menu Items":
-                                    query = "SELECT a.itemname [item],a.endbal [quantity],b.price FROM tblinvitems a INNER JOIN tblitems b ON a.itemname = b.itemname WHERE invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND b.status = 1 AND a.status = 1 AND a.itemname LIKE '%" + value + "%' ORDER BY 2 DESC, 1 ASC";
-                                    break;
-                                case "Item Receivable":
-                                    query = "SELECT a.transaction_number [item],COUNT(a.quantity) [quantity] FROM tblproduction a WHERE a.transfer_from= CASE WHEN a.type2 ='Transfer from Sales' THEN CASE WHEN 'Manager' = (SELECT workgroup FROM tblusers WHERE systemid=" + userID + ") THEN a.transfer_from ELSE (SELECT username FROM tblusers WHERE systemid=" + userID + ") END ELSE (SELECT username FROM tblusers WHERE systemid=" + userID + ") END AND a.status='Pending' AND a.type2 IN ('Transfer to Sales','Transfer from Sales') AND a.transaction_number LIKE '%" + value + "%' GROUP BY a.transaction_number,a.type2,a.transaction_number;";
-                                    break;
-                            }
-                            GridLayout gridLayout = findViewById(R.id.grid);
-                            gridLayout.removeAllViews();
-                            try {
-                                con = cc.connectionClass(AvailableItems.this);
-                                if (con == null) {
-                                    Toast.makeText(getBaseContext(), "loadData() Check Your Internet Access", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    if (inventory_type != null && inventory_type.equals("Own Inventory") && title.equals("Menu Items")) {
-                                        query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
-                                                "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.status='Completed' AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
-                                    } else if (transfer_type != null & inventory_type != null && transfer_type.equals("Transfer from Sales") && inventory_type.equals("Own Inventory")) {
-                                        query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
-                                                "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from AND b.status IN ('Completed','Pending')xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.status='Completed' AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
-                                    }
-                                    List<String> items = new ArrayList<>();
-                                    Statement stmt = con.createStatement();
-                                    ResultSet rs = stmt.executeQuery(query);
-                                    while (rs.next()) {
-                                        String item = rs.getString("item");
-                                        final Double quantity = rs.getDouble("quantity");
-
-                                        CardView cardView = new CardView(AvailableItems.this);
-                                        LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
-                                        layoutParamsCv.setMargins(20, 10, 10, 10);
-                                        cardView.setLayoutParams(layoutParamsCv);
-                                        cardView.setRadius(12);
-                                        cardView.setCardElevation(5);
-
-                                        cardView.setVisibility(View.VISIBLE);
-                                        gridLayout.addView(cardView);
-                                        final LinearLayout linearLayout = new LinearLayout(AvailableItems.this);
-                                        LinearLayout.LayoutParams layoutParamsLinear = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 5f);
-                                        linearLayout.setLayoutParams(layoutParamsLinear);
-                                        linearLayout.setTag(item);
-
-                                        final String finalItem = item;
-                                        final String finalTransactionNumber = item;
-                                        double price = (title.equals("Menu Items") ?  rs.getDouble("price") : 0);
-                                        linearLayout.setOnClickListener(new View.OnClickListener() {
-                                            @Override
-                                            public void onClick(View view) {
-                                                Handler handler = new Handler();
-                                                LoadingDialog loadingDialog = new LoadingDialog(AvailableItems.this);
-                                                loadingDialog.startLoadingDialog();
-                                                Runnable runnable = new Runnable() {
-                                                    @Override
-                                                    public void run() {
-                                                        synchronized (this) {
-                                                            try {
-                                                                wait(50);
-                                                            } catch (InterruptedException ex) {
-
-                                                            }
-                                                            handler.post(new Runnable() {
-                                                                @Override
-                                                                public void run() {
-//                                                boolean checkStock = itemc.checkItemNameStock(AvailableItems.this, finalItem, quantity);
-                                                                    boolean hasHaving = (transfer_type != null && transfer_type.equals("Transfer from Sales"));
-//                                                double OwnStockQuantity = rc.checkOwnInventoryStock(AvailableItems.this, "Transfer to Sales", userID, finalItem, hasHaving);
-                                                                    String type = (title.equals("Auditor Count List Items")) ? "Auditor Count" : "Store Count";
-                                                                    if (inventory_type.equals("Main Inventory") && rc.checkStock(AvailableItems.this, finalItem) <= 0 && title.equals("Menu Items")) {
-                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
-                                                                    } else if (title.equals("Manual Transfer Out") && transfer_type == "Transfer to Other Branch" && rc.checkStock(AvailableItems.this, finalItem) <= 0) {
-                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
-                                                                    } else if (title.equals("Auditor Count List Items") && myDb4.checkItem(finalItem, type)) {
-                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
-                                                                    } else if (title.equals("Store Count List Items") && myDb4.checkItem(finalItem, type)) {
-                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
-                                                                    } else if (!title.equals("Menu Items") && myDb2.checkItem(finalItem, title)) {
-                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
-                                                                    } else if (rc.checkOwnInventoryStock(AvailableItems.this, "Transfer to Sales", userID, finalItem, hasHaving) <= 0 && title.equals("Menu Items") && inventory_type.equals("Own Inventory")) {
-                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
-                                                                    } else if (transfer_type != null && transfer_type.equals("Transfer from Sales") && rc.checkOwnInventoryStock(AvailableItems.this, "Transfer to Sales", userID, finalItem, hasHaving) <= 0) {
-                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
-                                                                    } else if (!title.equals("Item Receivable")) {
-                                                                        Intent intent;
-                                                                        intent = new Intent(getBaseContext(), ItemInfo.class);
-                                                                        intent.putExtra("title", title);
-                                                                        intent.putExtra("itemname", finalItem);
-                                                                        intent.putExtra("sapNumber", value);
-                                                                        intent.putExtra("quantity", Double.toString(quantity));
-                                                                        intent.putExtra("fromBranch", "");
-                                                                        intent.putExtra("inventory_type", inventory_type);
-                                                                        intent.putExtra("transfer_type", transfer_type);
-                                                                        intent.putExtra("price", price);
-                                                                        startActivity(intent);
-                                                                    } else {
-                                                                        Intent intent;
-                                                                        intent = new Intent(getBaseContext(), ItemReceivable.class);
-                                                                        intent.putExtra("transaction_number", finalTransactionNumber);
-                                                                        intent.putExtra("title", title);
-                                                                        startActivity(intent);
-                                                                    }
-                                                                }
-                                                            });
-                                                        }
-                                                        runOnUiThread(new Runnable() {
-                                                            @Override
-                                                            public void run() {
-                                                                loadingDialog.dismissDialog();
-                                                            }
-                                                        });
-                                                    }
-                                                };
-                                                Thread thread = new Thread(runnable);
-                                                thread.start();
-                                            }
-
-                                        });
-
-                                        linearLayout.setOrientation(LinearLayout.VERTICAL);
-                                        linearLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                                        linearLayout.setVisibility(View.VISIBLE);
-                                        cardView.addView(linearLayout);
-
-                                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                                        layoutParams.setMargins(20, 0, 20, 0);
-                                        LinearLayout.LayoutParams layoutParamsItemLeft = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                                        layoutParamsItemLeft.setMargins(20, -50, 0, 10);
-
-                                        TextView txtItemName = new TextView(AvailableItems.this);
-                                        String cutWord = (title.equals("Item Receivable")) ? item : cutWord(item);
-                                        txtItemName.setText(cutWord);
-                                        txtItemName.setLayoutParams(layoutParams);
-                                        txtItemName.setTextSize(13);
-                                        txtItemName.setVisibility(View.VISIBLE);
-                                        linearLayout.addView(txtItemName);
-
-                                        if (title.matches("Menu Items") || title.equals("Item Receivable")) {
-                                            TextView txtItemLeft = new TextView(AvailableItems.this);
-                                            txtItemLeft.setLayoutParams(layoutParamsItemLeft);
-                                            txtItemLeft.setTextSize(10);
-                                            String txtFormat = (title.equals("Menu Items")) ? " available" : " items";
-                                            if (quantity == 0.0 && title.matches("Menu Items")) {
-                                                txtItemLeft.setText(df.format(quantity) + txtFormat);
-                                                txtItemLeft.setTextColor(Color.RED);
-                                            } else if (quantity <= 10 && title.matches("Menu Items")) {
-                                                txtItemLeft.setText(df.format(quantity) + txtFormat);
-                                                txtItemLeft.setTextColor(Color.rgb(247, 154, 22));
-                                            } else {
-                                                txtItemLeft.setText(df.format(quantity) + txtFormat);
-                                                txtItemLeft.setTextColor(Color.rgb(30, 203, 6));
-                                            }
-                                            txtItemLeft.setVisibility(View.VISIBLE);
-                                            linearLayout.addView(txtItemLeft);
-
-                                            if (myDb.checkItem(item)) {
-                                                linearLayout.setBackgroundColor(Color.RED);
-                                                txtItemName.setTextColor(Color.WHITE);
-                                            } else {
-                                                linearLayout.setBackgroundColor(Color.WHITE);
-                                                txtItemName.setTextColor(Color.BLACK);
-                                            }
-                                        } else if (!title.equals("Menu Items") && myDb2.checkItem(item, title)) {
-                                            linearLayout.setBackgroundColor(Color.RED);
-                                            txtItemName.setTextColor(Color.WHITE);
-                                        } else if (transfer_type != null && transfer_type.equals("Transfer to Sales")) {
-                                            TextView txtItemLeft = new TextView(AvailableItems.this);
-                                            txtItemLeft.setLayoutParams(layoutParamsItemLeft);
-                                            txtItemLeft.setTextSize(10);
-                                            txtItemLeft.setText(df.format(quantity) + " available");
-                                            txtItemLeft.setTextColor(Color.rgb(247, 154, 22));
-                                            txtItemLeft.setVisibility(View.VISIBLE);
-                                            txtItemLeft.setTextColor(Color.BLACK);
-                                            linearLayout.addView(txtItemLeft);
-                                        } else if (transfer_type != null && transfer_type.equals("Transfer from Sales")) {
-                                            TextView txtItemLeft = new TextView(AvailableItems.this);
-                                            txtItemLeft.setLayoutParams(layoutParamsItemLeft);
-                                            txtItemLeft.setTextSize(10);
-                                            txtItemLeft.setTextColor(Color.BLACK);
-                                            txtItemLeft.setText(df.format(quantity) + " available");
-                                            txtItemLeft.setTextColor(Color.rgb(247, 154, 22));
-                                            txtItemLeft.setVisibility(View.VISIBLE);
-                                            linearLayout.addView(txtItemLeft);
-                                        } else {
-                                            linearLayout.setBackgroundColor(Color.WHITE);
-                                            txtItemName.setTextColor(Color.BLACK);
-                                        }
-                                        items.add(item);
-                                    }
-
-                                    txtSearch.setAdapter(fillItems(items));
-
-                                    final Button btnDone = findViewById(R.id.btnDone);
-                                    btnDone.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View view) {
-                                            if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
-                                                return;
-                                            }
-                                            mLastClickTime = SystemClock.elapsedRealtime();
-
-                                            int count;
-                                            if (title.equals("Menu Items")) {
-                                                count = myDb.countItems();
-                                            } else {
-                                                count = myDb2.countItems(title);
-                                            }
-                                            if (count <= 0) {
-                                                Toast.makeText(AvailableItems.this, "No selected item", Toast.LENGTH_SHORT).show();
-                                            } else {
-                                                navigateDone(title);
-                                            }
-                                        }
-                                    });
-
-                                    if (gridLayout.getChildCount() <= 0) {
-                                        Toast.makeText(getBaseContext(), "No Item Found", Toast.LENGTH_SHORT).show();
-                                    }
-
-                                }
-                            } catch (Exception ex) {
-                                Toast.makeText(AvailableItems.this, "loadData() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    });
-                }
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        progressBar.setVisibility(View.GONE);
-                    }
-                });
-
-            }
-        };
-        Thread thread = new Thread(runnable);
-        thread.start();
-    }
+//    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+//    @SuppressLint("SetTextI18n")
+//    public void loadData(final String value) {
+//        Handler handler = new Handler();
+//        progressBar.setVisibility(View.VISIBLE);
+//        Runnable runnable = new Runnable() {
+//            @Override
+//            public void run() {
+//                synchronized (this) {
+//                    try {
+//                        wait(10);
+//
+//                    } catch (InterruptedException ex) {
+//
+//                    }
+//                    handler.post(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            String query = "";
+//                            String latestInventoryDate = ic.returnLatestInventoryDate(AvailableItems.this);
+//                            switch (title) {
+//                                case "Received from SAP":
+//                                    query = "SELECT DISTINCT ISNULL(a.Dscription,0) [item],SUM(a.Quantity) [quantity] FROM vSAP_IT a OUTER APPLY(SELECT DISTINCT ISNULL(b.sap_number,0) [sap_number] FROM tblproduction b WHERE b.sap_number != a.DocNum AND b.sap_number !='To Follow' AND b.status='Completed') x WHERE x.sap_number IS NOT NULL AND a.DocNum=" + Integer.parseInt(value) + " AND CAST(DocDate AS date)>='10/09/2020' GROUP BY a.Dscription";
+////                query = "SELECT DISTINCT ISNULL(a.DocNum,0) [item],SUM(a.Quantity) [quantity] FROM [192.168.30.6].[AKPOS].[dbo].[vSAP_IT] a OUTER APPLY(SELECT DISTINCT ISNULL(b.sap_number,0) [sap_number] FROM tblproduction b WHERE b.sap_number != a.DocNum AND b.sap_number !='To Follow' AND b.status='Completed' AND CAST(b.date AS date)=a.DocDate) x WHERE CAST(a.DocDate AS date)=(select cast(getdate() as date)) AND x.sap_number IS NOT NULL " + (value.matches("") ? "" : " AND a.DocNum=" + Integer.parseInt(value)) + " GROUP BY a.DocNum";
+//                                    break;
+//                                case "Manual Received from Production":
+//                                case "Manual Received from Other Branch":
+//                                case "Manual Received from Direct Supplier":
+//                                    query = "SELECT a.itemname [item],c.endbal [quantity] FROM funcLoadInventoryItems('" + latestInventoryDate + "','" + value + "','All') a INNER JOIN tblitems b  ON a.itemname = b.itemname INNER JOIN tblinvitems c ON c.itemname = a.itemname WHERE c.invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) ORDER BY c.endbal DESC,a.itemname ASC";
+//                                    break;
+//                                case "Manual Transfer Out":
+//                                case "Transfer to Sales":
+//                                    query = "SELECT a.itemname [item],c.endbal [quantity] FROM funcLoadStockItems('" + latestInventoryDate + "','" + value + "','All') a INNER JOIN tblitems b ON a.itemname = b.itemname INNER JOIN tblinvitems c ON c.itemname = a.itemname WHERE c.invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC);";
+//                                    break;
+//                                case "Menu Items":
+//                                    query = "SELECT a.itemname [item],a.endbal [quantity],b.price FROM tblinvitems a INNER JOIN tblitems b ON a.itemname = b.itemname WHERE invnum=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND b.status = 1 AND a.status = 1 AND a.itemname LIKE '%" + value + "%' ORDER BY 2 DESC, 1 ASC";
+//                                    break;
+//                                case "Item Receivable":
+//                                    query = "SELECT a.transaction_number [item],COUNT(a.quantity) [quantity] FROM tblproduction a WHERE a.transfer_from= CASE WHEN a.type2 ='Transfer from Sales' THEN CASE WHEN 'Manager' = (SELECT workgroup FROM tblusers WHERE systemid=" + userID + ") THEN a.transfer_from ELSE (SELECT username FROM tblusers WHERE systemid=" + userID + ") END ELSE (SELECT username FROM tblusers WHERE systemid=" + userID + ") END AND a.status='Pending' AND a.type2 IN ('Transfer to Sales','Transfer from Sales') AND a.transaction_number LIKE '%" + value + "%' GROUP BY a.transaction_number,a.type2,a.transaction_number;";
+//                                    break;
+//                            }
+//                            GridLayout gridLayout = findViewById(R.id.grid);
+//                            gridLayout.removeAllViews();
+//                            try {
+//                                con = cc.connectionClass(AvailableItems.this);
+//                                if (con == null) {
+//                                    Toast.makeText(getBaseContext(), "loadData() Check Your Internet Access", Toast.LENGTH_SHORT).show();
+//                                } else {
+//                                    if (inventory_type != null && inventory_type.equals("Own Inventory") && title.equals("Menu Items")) {
+//                                        query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
+//                                                "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from)xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.status='Completed' AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
+//                                    } else if (transfer_type != null & inventory_type != null && transfer_type.equals("Transfer from Sales") && inventory_type.equals("Own Inventory")) {
+//                                        query = "SELECT a.item_name [item], SUM(a.quantity) - (ISNULL(x.qty,0) + ISNULL(xx.transferFromSales,0)) [quantity] FROM tblproduction a OUTER APPLY(SELECT c.itemname,SUM(c.qty) [qty] FROM tbltransaction2 b INNER JOIN tblorder2 c ON c.ordernum = b.ordernum AND CAST(b.datecreated As date)=CAST(c.datecreated AS date) WHERE CAST(b.datecreated AS date)=(SELECT TOP 1 CAST(datecreated AS date) FROM tblinvsum ORDER BY invsumid DESC) AND a.item_name = c.itemname AND b.status2 IN ('Unpaid','Paid') AND b.inventory_type='Own Inventory' AND b.createdby=(SELECT username FROM tblusers WHERE systemid=" + userID + ") GROUP BY c.itemname)x OUTER APPLY(SELECT SUM(b.quantity)[transferFromSales] FROM tblproduction b WHERE b.item_name = a.item_name AND b.inv_id = a.inv_id\n" +
+//                                                "AND b.type2='Transfer from Sales' AND b.transfer_from = a.transfer_from AND b.status IN ('Completed','Pending')xx WHERE a.inv_id=(SELECT TOP 1 invnum FROM tblinvsum ORDER BY invsumid DESC) AND a.type2='Transfer to Sales' AND a.transfer_from=(SELECT username FROM tblusers WHERE systemid=" + userID + ") AND a.status='Completed' AND a.item_name LIKE '%" + value + "%' GROUP BY a.item_name,x.qty,xx.transferFromSales ORDER BY 2 DESC,1 ASC";
+//                                    }
+//                                    List<String> items = new ArrayList<>();
+//                                    Statement stmt = con.createStatement();
+//                                    ResultSet rs = stmt.executeQuery(query);
+//                                    while (rs.next()) {
+//                                        String item = rs.getString("item");
+//                                        final Double quantity = rs.getDouble("quantity");
+//
+//                                        CardView cardView = new CardView(AvailableItems.this);
+//                                        LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
+//                                        layoutParamsCv.setMargins(20, 10, 10, 10);
+//                                        cardView.setLayoutParams(layoutParamsCv);
+//                                        cardView.setRadius(12);
+//                                        cardView.setCardElevation(5);
+//
+//                                        cardView.setVisibility(View.VISIBLE);
+//                                        gridLayout.addView(cardView);
+//                                        final LinearLayout linearLayout = new LinearLayout(AvailableItems.this);
+//                                        LinearLayout.LayoutParams layoutParamsLinear = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 5f);
+//                                        linearLayout.setLayoutParams(layoutParamsLinear);
+//                                        linearLayout.setTag(item);
+//
+//                                        final String finalItem = item;
+//                                        final String finalTransactionNumber = item;
+//                                        double price = (title.equals("Menu Items") ?  rs.getDouble("price") : 0);
+//                                        linearLayout.setOnClickListener(new View.OnClickListener() {
+//                                            @Override
+//                                            public void onClick(View view) {
+//                                                Handler handler = new Handler();
+//                                                LoadingDialog loadingDialog = new LoadingDialog(AvailableItems.this);
+//                                                loadingDialog.startLoadingDialog();
+//                                                Runnable runnable = new Runnable() {
+//                                                    @Override
+//                                                    public void run() {
+//                                                        synchronized (this) {
+//                                                            try {
+//                                                                wait(50);
+//                                                            } catch (InterruptedException ex) {
+//
+//                                                            }
+//                                                            handler.post(new Runnable() {
+//                                                                @Override
+//                                                                public void run() {
+////                                                boolean checkStock = itemc.checkItemNameStock(AvailableItems.this, finalItem, quantity);
+//                                                                    boolean hasHaving = (transfer_type != null && transfer_type.equals("Transfer from Sales"));
+////                                                double OwnStockQuantity = rc.checkOwnInventoryStock(AvailableItems.this, "Transfer to Sales", userID, finalItem, hasHaving);
+//                                                                    String type = (title.equals("Auditor Count List Items")) ? "Auditor Count" : "Store Count";
+//                                                                    if (inventory_type.equals("Main Inventory") && rc.checkStock(AvailableItems.this, finalItem) <= 0 && title.equals("Menu Items")) {
+//                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
+//                                                                    } else if (title.equals("Manual Transfer Out") && transfer_type == "Transfer to Other Branch" && rc.checkStock(AvailableItems.this, finalItem) <= 0) {
+//                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
+//                                                                    } else if (title.equals("Auditor Count List Items") && myDb4.checkItem(finalItem, type)) {
+//                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
+//                                                                    } else if (title.equals("Store Count List Items") && myDb4.checkItem(finalItem, type)) {
+//                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
+//                                                                    } else if (!title.equals("Menu Items") && myDb2.checkItem(finalItem, title)) {
+//                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is already exist in Selected Items", Toast.LENGTH_SHORT).show();
+//                                                                    } else if (rc.checkOwnInventoryStock(AvailableItems.this, "Transfer to Sales", userID, finalItem, hasHaving) <= 0 && title.equals("Menu Items") && inventory_type.equals("Own Inventory")) {
+//                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
+//                                                                    } else if (transfer_type != null && transfer_type.equals("Transfer from Sales") && rc.checkOwnInventoryStock(AvailableItems.this, "Transfer to Sales", userID, finalItem, hasHaving) <= 0) {
+//                                                                        Toast.makeText(AvailableItems.this, "'" + finalItem + "' is not available", Toast.LENGTH_SHORT).show();
+//                                                                    } else if (!title.equals("Item Receivable")) {
+//                                                                        Intent intent;
+//                                                                        intent = new Intent(getBaseContext(), ItemInfo.class);
+//                                                                        intent.putExtra("title", title);
+//                                                                        intent.putExtra("itemname", finalItem);
+//                                                                        intent.putExtra("sapNumber", value);
+//                                                                        intent.putExtra("quantity", Double.toString(quantity));
+//                                                                        intent.putExtra("fromBranch", "");
+//                                                                        intent.putExtra("inventory_type", inventory_type);
+//                                                                        intent.putExtra("transfer_type", transfer_type);
+//                                                                        intent.putExtra("price", price);
+//                                                                        startActivity(intent);
+//                                                                    } else {
+//                                                                        Intent intent;
+//                                                                        intent = new Intent(getBaseContext(), ItemReceivable.class);
+//                                                                        intent.putExtra("transaction_number", finalTransactionNumber);
+//                                                                        intent.putExtra("title", title);
+//                                                                        startActivity(intent);
+//                                                                    }
+//                                                                }
+//                                                            });
+//                                                        }
+//                                                        runOnUiThread(new Runnable() {
+//                                                            @Override
+//                                                            public void run() {
+//                                                                loadingDialog.dismissDialog();
+//                                                            }
+//                                                        });
+//                                                    }
+//                                                };
+//                                                Thread thread = new Thread(runnable);
+//                                                thread.start();
+//                                            }
+//
+//                                        });
+//
+//                                        linearLayout.setOrientation(LinearLayout.VERTICAL);
+//                                        linearLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
+//                                        linearLayout.setVisibility(View.VISIBLE);
+//                                        cardView.addView(linearLayout);
+//
+//                                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+//                                        layoutParams.setMargins(20, 0, 20, 0);
+//                                        LinearLayout.LayoutParams layoutParamsItemLeft = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+//                                        layoutParamsItemLeft.setMargins(20, -50, 0, 10);
+//
+//                                        TextView txtItemName = new TextView(AvailableItems.this);
+//                                        String cutWord = (title.equals("Item Receivable")) ? item : cutWord(item);
+//                                        txtItemName.setText(cutWord);
+//                                        txtItemName.setLayoutParams(layoutParams);
+//                                        txtItemName.setTextSize(13);
+//                                        txtItemName.setVisibility(View.VISIBLE);
+//                                        linearLayout.addView(txtItemName);
+//
+//                                        if (title.matches("Menu Items") || title.equals("Item Receivable")) {
+//                                            TextView txtItemLeft = new TextView(AvailableItems.this);
+//                                            txtItemLeft.setLayoutParams(layoutParamsItemLeft);
+//                                            txtItemLeft.setTextSize(10);
+//                                            String txtFormat = (title.equals("Menu Items")) ? " available" : " items";
+//                                            if (quantity == 0.0 && title.matches("Menu Items")) {
+//                                                txtItemLeft.setText(df.format(quantity) + txtFormat);
+//                                                txtItemLeft.setTextColor(Color.RED);
+//                                            } else if (quantity <= 10 && title.matches("Menu Items")) {
+//                                                txtItemLeft.setText(df.format(quantity) + txtFormat);
+//                                                txtItemLeft.setTextColor(Color.rgb(247, 154, 22));
+//                                            } else {
+//                                                txtItemLeft.setText(df.format(quantity) + txtFormat);
+//                                                txtItemLeft.setTextColor(Color.rgb(30, 203, 6));
+//                                            }
+//                                            txtItemLeft.setVisibility(View.VISIBLE);
+//                                            linearLayout.addView(txtItemLeft);
+//
+//                                            if (myDb.checkItem(item)) {
+//                                                linearLayout.setBackgroundColor(Color.RED);
+//                                                txtItemName.setTextColor(Color.WHITE);
+//                                            } else {
+//                                                linearLayout.setBackgroundColor(Color.WHITE);
+//                                                txtItemName.setTextColor(Color.BLACK);
+//                                            }
+//                                        } else if (!title.equals("Menu Items") && myDb2.checkItem(item, title)) {
+//                                            linearLayout.setBackgroundColor(Color.RED);
+//                                            txtItemName.setTextColor(Color.WHITE);
+//                                        } else if (transfer_type != null && transfer_type.equals("Transfer to Sales")) {
+//                                            TextView txtItemLeft = new TextView(AvailableItems.this);
+//                                            txtItemLeft.setLayoutParams(layoutParamsItemLeft);
+//                                            txtItemLeft.setTextSize(10);
+//                                            txtItemLeft.setText(df.format(quantity) + " available");
+//                                            txtItemLeft.setTextColor(Color.rgb(247, 154, 22));
+//                                            txtItemLeft.setVisibility(View.VISIBLE);
+//                                            txtItemLeft.setTextColor(Color.BLACK);
+//                                            linearLayout.addView(txtItemLeft);
+//                                        } else if (transfer_type != null && transfer_type.equals("Transfer from Sales")) {
+//                                            TextView txtItemLeft = new TextView(AvailableItems.this);
+//                                            txtItemLeft.setLayoutParams(layoutParamsItemLeft);
+//                                            txtItemLeft.setTextSize(10);
+//                                            txtItemLeft.setTextColor(Color.BLACK);
+//                                            txtItemLeft.setText(df.format(quantity) + " available");
+//                                            txtItemLeft.setTextColor(Color.rgb(247, 154, 22));
+//                                            txtItemLeft.setVisibility(View.VISIBLE);
+//                                            linearLayout.addView(txtItemLeft);
+//                                        } else {
+//                                            linearLayout.setBackgroundColor(Color.WHITE);
+//                                            txtItemName.setTextColor(Color.BLACK);
+//                                        }
+//                                        items.add(item);
+//                                    }
+//
+//                                    txtSearch.setAdapter(fillItems(items));
+//
+//                                    final Button btnDone = findViewById(R.id.btnDone);
+//                                    btnDone.setOnClickListener(new View.OnClickListener() {
+//                                        @Override
+//                                        public void onClick(View view) {
+//                                            if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+//                                                return;
+//                                            }
+//                                            mLastClickTime = SystemClock.elapsedRealtime();
+//
+//                                            int count;
+//                                            if (title.equals("Menu Items")) {
+//                                                count = myDb.countItems();
+//                                            } else {
+//                                                count = myDb2.countItems(title);
+//                                            }
+//                                            if (count <= 0) {
+//                                                Toast.makeText(AvailableItems.this, "No selected item", Toast.LENGTH_SHORT).show();
+//                                            } else {
+//                                                navigateDone(title);
+//                                            }
+//                                        }
+//                                    });
+//
+//                                    if (gridLayout.getChildCount() <= 0) {
+//                                        Toast.makeText(getBaseContext(), "No Item Found", Toast.LENGTH_SHORT).show();
+//                                    }
+//
+//                                }
+//                            } catch (Exception ex) {
+//                                Toast.makeText(AvailableItems.this, "loadData() " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+//                            }
+//                        }
+//                    });
+//                }
+//                runOnUiThread(new Runnable() {
+//
+//                    @Override
+//                    public void run() {
+//                        progressBar.setVisibility(View.GONE);
+//                    }
+//                });
+//
+//            }
+//        };
+//        Thread thread = new Thread(runnable);
+//        thread.start();
+//    }
 
 
     @SuppressLint("SetTextI18n")
@@ -1032,8 +1032,6 @@ public class AvailableItems extends AppCompatActivity {
 
     public void navigateDone(final String title) {
         Handler handler = new Handler();
-        LoadingDialog loadingDialog = new LoadingDialog(AvailableItems.this);
-        loadingDialog.startLoadingDialog();
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -1087,12 +1085,6 @@ public class AvailableItems extends AppCompatActivity {
                         }
                     });
                 }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        loadingDialog.dismissDialog();
-                    }
-                });
             }
         };
         Thread thread = new Thread(runnable);

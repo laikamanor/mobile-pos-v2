@@ -167,8 +167,18 @@ public class API_Nav extends AppCompatActivity {
                         intent.putExtra("title", "Pull Out Request");
                         intent.putExtra("hiddenTitle", "API Pull Out Count");
                         startActivity(intent);
+                        startActivity(intent);
                         finish();
                         break;
+                    case  R.id.nav_invLogs:
+                        result = true;
+                        intent = new Intent(getBaseContext(), API_SalesLogs.class);
+                        intent.putExtra("title", "Inventory Logs");
+                        intent.putExtra("hiddenTitle", "API Inventory Logs");
+                        startActivity(intent);
+                        finish();
+                        break;
+
                 }
                 return result;
             }
