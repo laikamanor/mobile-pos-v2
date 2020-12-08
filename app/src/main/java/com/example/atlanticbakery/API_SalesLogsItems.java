@@ -5,7 +5,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.text.Html;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -16,6 +18,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -35,8 +38,12 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.TimeZone;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -60,6 +67,8 @@ public class API_SalesLogsItems extends AppCompatActivity {
 
     String title, hidden_title;
     TextView txtReference,txtHeader;
+    ProgressBar progressBar;
+    Long mLastClickTime;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +78,8 @@ public class API_SalesLogsItems extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
         txtReference = findViewById(R.id.txtReference);
         txtHeader = findViewById(R.id.txtHeader);
+        progressBar = findViewById(R.id.progressBar4);
+        progressBar.setVisibility(View.GONE);
 
         myDb = new DatabaseHelper(this);
         navigationView = findViewById(R.id.nav);
@@ -208,6 +219,14 @@ public class API_SalesLogsItems extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_uploadOffline:
+                        result = true;
+                        intent = new Intent(getBaseContext(), OfflineList.class);
+                        intent.putExtra("title", "Offline Pending Transactions");
+                        intent.putExtra("hiddenTitle", "API Offline List");
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
             }
@@ -220,16 +239,16 @@ public class API_SalesLogsItems extends AppCompatActivity {
             }
         });
         String typeTrans = getIntent().getStringExtra("type");
-        if(typeTrans.equals("Sales Transactions")){
+        if(typeTrans.equals("Sales Transactions") || typeTrans.equals("Received Transactions") || typeTrans.equals("Transfer Transactions")){
             txtHeader.setVisibility(View.VISIBLE);
         }else{
             txtHeader.setVisibility(View.GONE);
         }
 
-        returnResult();
+        loadData();
     }
 
-    public void returnResult() {
+    public void loadData() {
         tableLayout.removeAllViews();
         TableRow tableColumn = new TableRow(API_SalesLogsItems.this);
         String[] columns;
@@ -246,42 +265,77 @@ public class API_SalesLogsItems extends AppCompatActivity {
             lblColumn1.setGravity(View.TEXT_ALIGNMENT_CENTER);
             lblColumn1.setText(s);
             lblColumn1.setPadding(10, 0, 10, 0);
+            lblColumn1.setTextSize(20);
+            lblColumn1.setTextColor(Color.BLACK);
             tableColumn.addView(lblColumn1);
         }
         tableLayout.addView(tableColumn);
 
+        MyData myData = new MyData();
+        myData.execute();
 
-        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-        String IPaddress = sharedPreferences2.getString("IPAddress", "");
-
-        SharedPreferences sharedPreferences0 = getSharedPreferences("TOKEN", MODE_PRIVATE);
-        String token = sharedPreferences0.getString("token", "");
-
-        String URL = getIntent().getStringExtra("URL");
-
-        okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(IPaddress + URL)
-                .method("GET", null)
-                .addHeader("Authorization", "Bearer " + token)
-                .addHeader("Content-Type", "application/json")
-                .build();
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                formatResponse(e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                String answer = response.body().string();
-                formatResponse(answer);
-            }
-        });
     }
 
+    private class MyData extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected void onPreExecute() {
+            progressBar.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                client = new OkHttpClient();
+                SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+                String IPAddress = sharedPreferences2.getString("IPAddress", "");
+
+                SharedPreferences sharedPreferences0 = getSharedPreferences("TOKEN", MODE_PRIVATE);
+                String token = sharedPreferences0.getString("token", "");
+
+                String URL = getIntent().getStringExtra("URL");
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(IPAddress +  URL)
+                        .method("GET", null)
+                        .addHeader("Authorization", "Bearer " + token)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                Response response = null;
+
+                response = client.newCall(request).execute();
+                return response.body().string();
+            } catch (Exception ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressBar.setVisibility(View.GONE);
+                    }
+                });
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            try {
+                if(s != null) {
+                    progressBar.setVisibility(View.GONE);
+                    String answer = s;
+                    formatResponse(answer);
+                }
+            } catch (Exception ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressBar.setVisibility(View.GONE);
+                    }
+                });
+            }
+        }
+    }
+
+
     public void formatResponse(String temp){
-
-
         if(!temp.isEmpty() && temp.substring(0,1).equals("{")){
             try{
                 String typeTrans = getIntent().getStringExtra("type");
@@ -289,8 +343,8 @@ public class API_SalesLogsItems extends AppCompatActivity {
                 if(jsonObject1.getBoolean("success")){
                     JSONObject jsonObject = jsonObject1.getJSONObject("data");
 
+                    String headerFormat = "";
                     if(typeTrans.equals("Sales Transactions")) {
-                        String headerFormat = "";
                         headerFormat = "Customer Code: " + jsonObject.getString("cust_code") + "\n" +
                                 "Trans. Type: " + jsonObject.getString("transtype") + "\n" +
                                 "Gross: " + jsonObject.getDouble("gross") + "\n" +
@@ -299,15 +353,20 @@ public class API_SalesLogsItems extends AppCompatActivity {
                                 "Applied Amount: " + jsonObject.getDouble("appliedamt") + "\n" +
                                 "Tender Amount: " + jsonObject.getDouble("tenderamt") + "\n" +
                                 "Amount Due: " + jsonObject.getDouble("amount_due") + "\n";
-                        String finalHeaderFormat = headerFormat;
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                txtHeader.setText(finalHeaderFormat);
-                            }
-                        });
-
+                    }else if(typeTrans.equals("Received Transactions") || typeTrans.equals("Transfer Transactions")) {
+                        String docStatus = jsonObject.getString("docstatus"),
+                                docStatusDecode = docStatus.equals("O") ? "Open" : docStatus.equals("C") ? "Closed" : "Cancelled";
+                        headerFormat = "Transaction Date: " + jsonObject.getString("transdate").replace("T", " ") + "\n" +
+                                "Remarks: " + jsonObject.getString("remarks") + "\n" +
+                                "Document Status: " + docStatusDecode+ "\n";
                     }
+                    String finalHeaderFormat1 = headerFormat;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            txtHeader.setText(finalHeaderFormat1);
+                        }
+                    });
 
                     String srow;
                     if(typeTrans.equals("Received Transactions")){
@@ -337,14 +396,16 @@ public class API_SalesLogsItems extends AppCompatActivity {
                         lblColumn1.setLayoutParams(layoutParamsItem);
 //                       String v = cutWord(item);
                         lblColumn1.setText(jsonObjectRecRow.getString("item_code"));
-                        lblColumn1.setTextSize(13);
+                        lblColumn1.setTextSize(15);
+                        lblColumn1.setTextColor(Color.BLACK);
                         lblColumn1.setBackgroundColor(Color.WHITE);
                         linearLayoutItem.addView(lblColumn1);
 
                         TextView lblColumn2 = new TextView(getBaseContext());
                         lblColumn2.setGravity(View.TEXT_ALIGNMENT_CENTER);
                         lblColumn2.setText(df.format(jsonObjectRecRow.getDouble("quantity")));
-                        lblColumn2.setTextSize(13);
+                        lblColumn2.setTextSize(15);
+                        lblColumn2.setTextColor(Color.BLACK);
                         lblColumn2.setBackgroundColor(Color.WHITE);
                         lblColumn2.setPadding(10, 10, 10, 10);
                         tableRow.addView(lblColumn2);
@@ -366,15 +427,17 @@ public class API_SalesLogsItems extends AppCompatActivity {
 
                         if(typeTrans.equals("Received Transactions") || typeTrans.equals("Sales Transactions")){
                             lblColumn3.setText(df.format(col3));
-                            lblColumn3.setTextSize(13);
                             lblColumn3.setBackgroundColor(Color.WHITE);
                             lblColumn3.setPadding(10, 10, 10, 10);
+                            lblColumn3.setTextSize(15);
+                            lblColumn3.setTextColor(Color.BLACK);
                             tableRow.addView(lblColumn3);
 
                             TextView lblColumn4 = new TextView(getBaseContext());
                             lblColumn4.setGravity(View.TEXT_ALIGNMENT_CENTER);
                             lblColumn4.setText(df.format(col4));
-                            lblColumn4.setTextSize(13);
+                            lblColumn4.setTextSize(15);
+                            lblColumn4.setTextColor(Color.BLACK);
                             lblColumn4.setBackgroundColor(Color.WHITE);
                             lblColumn4.setPadding(10, 10, 10, 10);
 
@@ -394,21 +457,24 @@ public class API_SalesLogsItems extends AppCompatActivity {
                         if(typeTrans.equals("Sales Transactions")){
                             TextView lblColumn4 = new TextView(getBaseContext());
                             lblColumn4.setText(df.format(col5));
-                            lblColumn4.setTextSize(13);
+                            lblColumn4.setTextSize(15);
+                            lblColumn4.setTextColor(Color.BLACK);
                             lblColumn4.setBackgroundColor(Color.WHITE);
                             lblColumn4.setPadding(10, 10, 10, 10);
                             tableRow.addView(lblColumn4);
 
                             TextView lblColumn5 = new TextView(getBaseContext());
                             lblColumn5.setText(df.format(col6));
-                            lblColumn5.setTextSize(13);
+                            lblColumn5.setTextSize(15);
+                            lblColumn5.setTextColor(Color.BLACK);
                             lblColumn5.setBackgroundColor(Color.WHITE);
                             lblColumn5.setPadding(10, 10, 10, 10);
                             tableRow.addView(lblColumn5);
 
                             TextView lblColumn6 = new TextView(getBaseContext());
                             lblColumn6.setText(df.format(col7));
-                            lblColumn6.setTextSize(13);
+                            lblColumn6.setTextSize(15);
+                            lblColumn6.setTextColor(Color.BLACK);
                             lblColumn6.setBackgroundColor(Color.WHITE);
                             lblColumn6.setPadding(10, 10, 10, 10);
                             tableRow.addView(lblColumn6);

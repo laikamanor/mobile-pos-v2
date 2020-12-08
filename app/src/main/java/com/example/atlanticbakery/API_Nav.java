@@ -10,12 +10,20 @@ import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
+import android.text.Html;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationView;
@@ -25,6 +33,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,6 +44,7 @@ import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class API_Nav extends AppCompatActivity {
     prefs_class pc = new prefs_class();
@@ -44,6 +56,8 @@ public class API_Nav extends AppCompatActivity {
 
     private OkHttpClient client;
     Menu menu;
+    ProgressBar progressBar;
+    TextView txtQuotes;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,6 +67,10 @@ public class API_Nav extends AppCompatActivity {
         drawerLayout = findViewById(R.id.navDrawer);
         toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
 
+        txtQuotes = findViewById(R.id.txtQuotes);
+        txtQuotes.setTypeface(null, Typeface.ITALIC);
+        progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.GONE);
         client = new OkHttpClient();
 
         drawerLayout.addDrawerListener(toggle);
@@ -178,11 +196,104 @@ public class API_Nav extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
-
+                    case R.id.nav_uploadOffline:
+                        result = true;
+                        intent = new Intent(getBaseContext(), OfflineList.class);
+                        intent.putExtra("title", "Offline Pending Transactions");
+                        intent.putExtra("hiddenTitle", "API Offline List");
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
             }
         });
+//        MyMotivationalQuotes myMotivationalQuotes = new MyMotivationalQuotes();
+//        myMotivationalQuotes.execute();
+    }
+
+
+    private class MyMotivationalQuotes extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected void onPreExecute() {
+            progressBar.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                String currentDate = sdf.format(new Date());
+                client = new OkHttpClient();
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url("\n" +
+                                "http://newsapi.org/v2/top-headlines?country=ph&from=" + currentDate + "  &apiKey=58abe79dfa914553859bb3d2f7f38029")
+                        .method("GET", null)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                Response response = null;
+
+                response = client.newCall(request).execute();
+                return response.body().string();
+            } catch (Exception ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        txtQuotes.setText(ex.getMessage());
+                        progressBar.setVisibility(View.GONE);
+                    }
+                });
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            try {
+                if(s != null) {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                    String currentDate = sdf.format(new Date());
+                    progressBar.setVisibility(View.GONE);
+                    System.out.println("what?" + s);
+                    JSONObject jsonObject = new JSONObject(s);
+                    JSONArray jsonArray;
+                    jsonArray = jsonObject.getJSONArray("articles");
+                    String news = "<big><b>NEWS FOR TODAY!</b></big><br><br><br>";
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject jsonObjectSource = jsonArray.getJSONObject(i);
+                        news += "<b>" + jsonObjectSource.getString("title") + "</b><br><br>-" +
+                                  jsonObjectSource.getString("description") + "<br><br><br>";
+                    }
+                    txtQuotes.setText(Html.fromHtml(news));
+                }
+            } catch (Exception ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("TWO: " + ex.getMessage());
+                        txtQuotes.setText(ex.getMessage());
+                        progressBar.setVisibility(View.GONE);
+                    }
+                });
+            }
+        }
+    }
+
+    public void showMessage(String title, String message){
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setCancelable(true);
+        builder.setTitle(title);
+        builder.setMessage(message);
+
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        builder.show();
     }
 
     @Override

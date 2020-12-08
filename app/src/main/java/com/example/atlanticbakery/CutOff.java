@@ -4,8 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.text.Html;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -53,6 +55,8 @@ public class CutOff extends AppCompatActivity {
 
     String title,hidden_title;
     private long backPressedTime;
+    long mLastClickTime;
+    DatabaseHelper7 myDb7;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +64,7 @@ public class CutOff extends AppCompatActivity {
         client = new OkHttpClient();
 
         myDb = new DatabaseHelper(this);
+        myDb7 = new DatabaseHelper7(this);
 
         navigationView = findViewById(R.id.nav);
         drawerLayout = findViewById(R.id.navDrawer);
@@ -192,6 +197,14 @@ public class CutOff extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_uploadOffline:
+                        result = true;
+                        intent = new Intent(getBaseContext(), OfflineList.class);
+                        intent.putExtra("title", "Offline Pending Transactions");
+                        intent.putExtra("hiddenTitle", "API Offline List");
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
             }
@@ -210,6 +223,7 @@ public class CutOff extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
         uiCutOff();
     }
 
@@ -287,7 +301,7 @@ public class CutOff extends AppCompatActivity {
 
                                 SharedPreferences sharedPreferences3 = getSharedPreferences("CONFIG", MODE_PRIVATE);
                                 String IPaddress = sharedPreferences3.getString("IPAddress", "");
-                                System.out.println(IPaddress + "/api/whse/get_all?whsecode=" + whseCode);
+//                                System.out.println(IPaddress + "/api/whse/get_all?whsecode=" + whseCode);
                                 okhttp3.Request request = new okhttp3.Request.Builder()
                                         .url(IPaddress + "/api/whse/get_all?whsecode=" + whseCode)
                                         .addHeader("Authorization", "Bearer " + token)

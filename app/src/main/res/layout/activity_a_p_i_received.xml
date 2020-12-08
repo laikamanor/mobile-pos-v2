@@ -7,113 +7,157 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/navDrawer">
 
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-
-        <LinearLayout
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:id="@+id/linear">
-
-            <AutoCompleteTextView
-                android:id="@+id/txtSearch"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="textPersonName"
-                android:textColor="@android:color/black"
-                android:textSize="25sp"
-                android:layout_marginLeft="20dp"
-                android:layout_marginRight="20dp"
-                android:layout_marginBottom="10dp"
-                android:layout_marginTop="20dp"
-                android:hint="Search"/>
-
-            <Button
-                android:id="@+id/btnSearch"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Search"
-                android:layout_marginLeft="20dp"
-                android:layout_marginRight="20dp"
-                android:background="@color/colorPrimary"
-                android:textColor="@color/colorWhite"/>
-
-            <ProgressBar
-                android:id="@+id/progWait"
-                style="?android:attr/progressBarStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"/>
-
-            <TextView
-                android:id="@+id/lblSelectedType"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Type: "
-                android:layout_marginRight="20dp"
-                android:layout_marginLeft="20dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="5dp"
-                android:textSize="20sp"/>
-
-            <Spinner
-                android:id="@+id/spinner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="20dp"
-                android:layout_marginLeft="20dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="5dp"/>
-
-            <TextView
-                android:id="@+id/lblSapNumber"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="IT#: "
-                android:layout_marginRight="20dp"
-                android:layout_marginLeft="20dp"
-                android:layout_marginTop="20dp"
-                android:textSize="20sp"/>
-
-            <TextView
-                android:id="@+id/lblFromBranch"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Branch#: "
-                android:layout_marginRight="20dp"
-                android:layout_marginLeft="20dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp"
-                android:textSize="20sp"/>
+            android:layout_height="wrap_content">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:id="@+id/layout">
+                android:id="@+id/linear">
 
-                <ScrollView
+                <AutoCompleteTextView
+                    android:id="@+id/txtSearch"
                     android:layout_width="match_parent"
-                    android:layout_height="350dp"
-                    android:layout_marginTop="10dp">
+                    android:layout_height="wrap_content"
+                    android:ems="10"
+                    android:inputType="textPersonName"
+                    android:textColor="@android:color/black"
+                    android:textSize="25sp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp"
+                    android:layout_marginTop="10dp"
+                    android:hint="Search"/>
 
-                    <GridLayout
-                        android:id="@+id/grid"
+                <Button
+                    android:id="@+id/btnSearch"
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:text="Search"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp"
+                    android:background="@color/colorPrimary"
+                    android:textColor="@color/colorWhite"/>
+
+                <ProgressBar
+                    android:id="@+id/progWait"
+                    style="?android:attr/progressBarStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"/>
+
+                <TextView
+                    android:id="@+id/lblSelectedType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Type: "
+                    android:layout_marginRight="20dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="5dp"
+                    android:textSize="20sp"/>
+
+                <Spinner
+                    android:id="@+id/spinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="20dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="5dp"/>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <Button
+                    android:id="@+id/btnBack"
+                    android:layout_width="100dp"
+                    android:layout_height="30dp"
+                    android:layout_marginRight="20dp"
+                    android:layout_marginLeft="20dp"
+                        android:layout_marginTop="10dp"
+                    android:background="@color/colorPrimary"
+                    android:textColor="@color/colorWhite"
+                    android:text="Back" />
+
+                    <Button
+                        android:id="@+id/btnRefresh"
+                        android:layout_width="100dp"
+                        android:layout_height="30dp"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginRight="20dp"
+                        android:background="@color/colorBlue"
+                        android:text="Refresh"
+                        android:textColor="@color/colorWhite" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/lblSapNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="IT#: "
+                    android:layout_marginRight="20dp"
+                    android:layout_marginLeft="20dp"
+                    android:textSize="20sp"/>
+
+                <TextView
+                    android:id="@+id/lblFromBranch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Branch#: "
+                    android:layout_marginRight="20dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="5dp"
+                    android:textSize="20sp"/>
+
+                <TextView
+                    android:id="@+id/lblType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Type: "
+                    android:layout_marginRight="20dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="5dp"
+                    android:textSize="20sp"/>
+
+                <Spinner
+                    android:id="@+id/spinnerType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="20dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="5dp"/>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:id="@+id/layout">
+
+                    <ScrollView
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_margin="10dp"
-                        android:columnCount="3"
-                        android:columnOrderPreserved="false"
-                        android:rowCount="4"
-                        android:background="@color/colorGray"/>
-                </ScrollView>
+                        android:layout_height="300dp"
+                        android:layout_marginTop="10dp">
 
+                        <GridLayout
+                            android:id="@+id/grid"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_margin="10dp"
+                            android:columnCount="3"
+                            android:columnOrderPreserved="false"
+                            android:rowCount="4"
+                            android:background="@color/colorGray"/>
+                    </ScrollView>
+                </LinearLayout>
                 <Button
                     android:id="@+id/btnDone"
                     android:layout_width="match_parent"
@@ -126,8 +170,9 @@
                     android:textSize="20sp"
                     android:text="DONE" />
             </LinearLayout>
-        </LinearLayout>
-    </ScrollView>
+        </ScrollView>
+
+
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav"

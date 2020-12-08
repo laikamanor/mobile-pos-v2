@@ -60,40 +60,46 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public boolean checkItem(String itemName){
         boolean result = false;
+        Cursor cursor;
         SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE itemname= ?;", new String[]{itemName});
+        cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE itemname= ?;", new String[]{itemName});
         if(cursor.moveToFirst()){
             do{
                 result = true;
             }
             while (cursor.moveToNext());
         }
+        cursor.close();
         return result;
     }
 
     public Double geTotalItems(){
         double resultSubTotal = 0.00;
+        Cursor cursor;
         SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT IFNULL(COUNT(itemname),0) FROM " + TABLE_NAME + ";", null);
-        if(result.moveToFirst()){
+        cursor = db.rawQuery("SELECT IFNULL(COUNT(itemname),0) FROM " + TABLE_NAME + ";", null);
+        if(cursor.moveToFirst()){
             do{
-                resultSubTotal = Double.parseDouble(result.getString(0));
+                resultSubTotal = Double.parseDouble(cursor.getString(0));
             }
-            while (result.moveToNext());
+            while (cursor.moveToNext());
         }
+        cursor.close();
         return resultSubTotal;
     }
 
     public Double getSubTotal(){
         double resultSubTotal = 0.00;
+        Cursor cursor;
         SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT IFNULL(SUM(totalprice),0) FROM " + TABLE_NAME + ";", null);
-        if(result.moveToFirst()){
+        cursor = db.rawQuery("SELECT IFNULL(SUM(totalprice),0) FROM " + TABLE_NAME + ";", null);
+        if(cursor.moveToFirst()){
             do{
-                resultSubTotal = Double.parseDouble(result.getString(0));
+                resultSubTotal = Double.parseDouble(cursor.getString(0));
             }
-            while (result.moveToNext());
+            while (cursor.moveToNext());
         }
+        cursor.close();
         return resultSubTotal;
     }
 
@@ -107,14 +113,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public Integer countItems(){
         int resultPrice = 0;
+        Cursor cursor;
         SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor result = db.rawQuery("SELECT COUNT(id) FROM " + TABLE_NAME + ";", null);
-        if(result.moveToFirst()){
+        cursor = db.rawQuery("SELECT COUNT(id) FROM " + TABLE_NAME + ";", null);
+        if(cursor.moveToFirst()){
             do{
-                resultPrice = Integer.parseInt(result.getString(0));
+                resultPrice = Integer.parseInt(cursor.getString(0));
             }
-            while (result.moveToNext());
+            while (cursor.moveToNext());
         }
+        cursor.close();
         return resultPrice;
     }
 

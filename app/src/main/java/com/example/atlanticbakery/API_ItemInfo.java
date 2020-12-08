@@ -216,6 +216,14 @@ public class API_ItemInfo extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_uploadOffline:
+                        result = true;
+                        intent = new Intent(getBaseContext(), OfflineList.class);
+                        intent.putExtra("title", "Offline Pending Transactions");
+                        intent.putExtra("hiddenTitle", "API Offline List");
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
             }
@@ -246,6 +254,8 @@ public class API_ItemInfo extends AppCompatActivity {
                     if ((txtQuantity.getText().toString().isEmpty()) && (hidden_title.equals("API Menu Items") || hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API System Transfer Item") || hidden_title.equals("API Item Request"))) {
                         Toast.makeText(getBaseContext(), "Input atleast 1 quantity", Toast.LENGTH_SHORT).show();
                         txtQuantity.requestFocus();
+//                        progressBar.setVisibility(View.GONE);
+//                        btnAddCart.setEnabled(true);
 //            }else if (qty <= 0) {
 //                Toast.makeText(getBaseContext(), "Input atleast 1 quantity", Toast.LENGTH_SHORT).show();
                     } else {
@@ -287,7 +297,7 @@ public class API_ItemInfo extends AppCompatActivity {
                             Toast.makeText(getBaseContext(), "Item Not Added", Toast.LENGTH_SHORT).show();
                         }
                     }
-                    progressBar.setVisibility(View.VISIBLE);
+                    progressBar.setVisibility(View.GONE);
                     btnAddCart.setEnabled(true);
                 }
             },500);

@@ -50,6 +50,8 @@
         <activity android:name=".CreateUsers" />
 <!--        <activity android:name=".AvailableItems" />-->
         <activity android:name=".API_InventoryConfirmation" />
+        <activity android:name=".OfflineList" />
+        <activity android:name=".OfflineItems" />
         <activity android:name=".CutOff" />
         <activity android:name=".SplashScreen">
             <intent-filter>
@@ -67,6 +69,9 @@
         <activity android:name=".IPAddress" />
         <activity android:name=".Nav" />
         <activity android:name=".MainActivity" />
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false"/>
     </application>
 
 </manifest>

@@ -26,6 +26,7 @@ public class SplashScreen extends AppCompatActivity {
         myDb3 = new DatabaseHelper3(this);
         myDb4 = new DatabaseHelper4(this);
         myDb5 = new DatabaseHelper5(this);
+
         Objects.requireNonNull(getSupportActionBar()).hide();
 
         Handler handler = new Handler();

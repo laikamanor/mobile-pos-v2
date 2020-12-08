@@ -21,43 +21,11 @@
             android:layout_marginTop="50dp"
             android:layout_marginBottom="30dp"/>
 
-        <TextView
-            android:id="@+id/txtDate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="20dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginBottom="10dp"
-            android:textSize="13sp"
-            android:text="Date: 0000-00-00" />
-
-        <Button
-            android:id="@+id/btnPickDate"
-            android:layout_width="100dp"
-            android:layout_height="30dp"
-            android:layout_marginRight="20dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginBottom="10dp"
-            android:text="Pick Date"
-            android:background="@android:color/holo_blue_dark"
-            android:textColor="@android:color/white"/>
-
-        <CheckBox
-            android:id="@+id/checkSAP"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="20dp"
-            android:layout_marginLeft="20dp"
-            android:textSize="13sp"
-            android:text="All SAP" />
-
         <ProgressBar
-            android:id="@+id/progressBar"
+            android:id="@+id/progWait"
             style="?android:attr/progressBarStyle"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"/>
+            android:layout_height="wrap_content" />
 
         <ListView
             android:layout_width="wrap_content"
@@ -65,7 +33,24 @@
             android:layout_marginTop="30dp"
             android:layout_marginRight="20dp"
             android:layout_marginLeft="20dp"
-            android:id="@+id/listView"/>
+            android:id="@+id/listView">
+
+        </ListView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="30dp">
+
+            <Button
+                android:id="@+id/btnUpload"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/colorPrimary"
+                android:textColor="@android:color/white"
+                android:text="Upload" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

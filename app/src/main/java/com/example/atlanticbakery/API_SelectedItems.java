@@ -2,14 +2,13 @@ package com.example.atlanticbakery;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
-import android.content.DialogInterface;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Html;
 import android.text.InputType;
@@ -18,6 +17,9 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -53,12 +55,15 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.atomic.AtomicReference;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -69,6 +74,8 @@ import okhttp3.RequestBody;
 public class API_SelectedItems extends AppCompatActivity implements DatePickerDialog.OnDateSetListener {
     DatabaseHelper4 myDb4;
     DatabaseHelper3 myDb3;
+    DatabaseHelper7 myDb7;
+    DatabaseHelper8 myDb8;
     long mLastClickTime = 0;
     Button btnProceed,btnBack;
     DecimalFormat df = new DecimalFormat("#,###");
@@ -86,6 +93,9 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
     TextView lblSelectedDate;
 
     Menu menu;
+
+    String gBranch = "";
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @SuppressLint({"WrongConstant", "SetTextI18n"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,14 +103,21 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
         setContentView(R.layout.activity_a_p_i__selected_items);
 
         myDb = new DatabaseHelper(this);
+        myDb8 = new DatabaseHelper8(this);
         client = new OkHttpClient();
         myDb4 = new DatabaseHelper4(this);
         myDb3 = new DatabaseHelper3(this);
+        myDb7 = new DatabaseHelper7(this);
         btnProceed = findViewById(R.id.btnProceed);
         btnBack = findViewById(R.id.btnBack);
         title = getIntent().getStringExtra("title");
         hiddenTitle = getIntent().getStringExtra("hiddenTitle");
         mQueue = Volley.newRequestQueue(this);
+
+        if(hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Transfer Item") || hiddenTitle.equals("API Item Request")){
+            hmReturnBranches();
+            hmReturnBranches();
+        }
 
         Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
 
@@ -232,6 +249,14 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                     startActivity(intent);
                     finish();
                     break;
+                case R.id.nav_uploadOffline:
+                    result = true;
+                    intent = new Intent(getBaseContext(), OfflineList.class);
+                    intent.putExtra("title", "Offline Pending Transactions");
+                    intent.putExtra("hiddenTitle", "API Offline List");
+                    startActivity(intent);
+                    finish();
+                    break;
             }
             return result;
         });
@@ -246,40 +271,68 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
 
             Spinner cmbBranch = new Spinner(getBaseContext());
             EditText txtSAPNumber = new EditText(getBaseContext());
+            EditText txtSupplier = new EditText(getBaseContext());
             if(hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Transfer Item") || hiddenTitle.equals("API Item Request")){
-                TextView lblBranch = new TextView(getBaseContext());
-                lblBranch.setText((hiddenTitle.equals("API Received Item")) ? "*From Branch:" : "*To Warehouse:");
-                lblBranch.setTextSize(15);
-                lblBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                layout.addView(lblBranch);
+                LinearLayout.LayoutParams layoutParamsBranch = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                String type = getIntent().getStringExtra("type");
 
-                List<String> discounts = returnBranches();
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, discounts);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                cmbBranch.setAdapter(adapter);
-                layout.addView(cmbBranch);
+                if(hiddenTitle.equals("API Received Item") && type.equals("SAPPO")){
+                    TextView lblSupplier = new TextView(getBaseContext());
+                    lblSupplier.setText("*Supplier: ");
+                    lblSupplier.setTextColor(Color.rgb(0,0,0));
+                    lblSupplier.setTextSize(15);
+                    lblSupplier.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    lblSupplier.setLayoutParams(layoutParamsBranch);
+                    layout.addView(lblSupplier);
 
+                    txtSupplier.setTextSize(15);
+                    txtSupplier.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    txtSupplier.setLayoutParams(layoutParamsBranch);
+                    layout.addView(txtSupplier);
+                }else{
+                    TextView lblBranch = new TextView(getBaseContext());
+                    lblBranch.setText((hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Item Request")) ? "*From Warehouse:" : "*To Warehouse:");
+                    lblBranch.setTextColor(Color.rgb(0,0,0));
+                    lblBranch.setTextSize(15);
+                    lblBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    layout.addView(lblBranch);
+
+                    List<String> discounts = returnBranches();
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, discounts);
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    cmbBranch.setAdapter(adapter);
+                    layoutParamsBranch.setMargins(0,0,0,20);
+                    cmbBranch.setLayoutParams(layoutParamsBranch);
+                    layout.addView(cmbBranch);
+                }
 
                 if(hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Transfer Item")){
                     TextView lblSAPNumber = new TextView(getBaseContext());
                     lblSAPNumber.setText("SAP #:");
+                    lblSAPNumber.setTextColor(Color.rgb(0,0,0));
                     lblSAPNumber.setTextSize(15);
                     lblSAPNumber.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    lblSAPNumber.setLayoutParams(layoutParamsBranch);
                     layout.addView(lblSAPNumber);
 
                     txtSAPNumber.setTextSize(15);
                     txtSAPNumber.setGravity(View.TEXT_ALIGNMENT_CENTER);
                     txtSAPNumber.setInputType(InputType.TYPE_CLASS_NUMBER);
+                    txtSAPNumber.setLayoutParams(layoutParamsBranch);
                     layout.addView(txtSAPNumber);
                 }
             }
 
            if(hiddenTitle.equals("API Item Request")){
                Button btnPickDate = new Button(getBaseContext());
+               LinearLayout.LayoutParams layoutParamsBtnDate = new LinearLayout.LayoutParams(250,70);
+               layoutParamsBtnDate.setMargins(0,0,0,20);
                btnPickDate.setText("Pick Due Date");
+               btnPickDate.setLayoutParams(layoutParamsBtnDate);
                btnPickDate.setBackgroundResource(R.color.colorPrimary);
                btnPickDate.setTextColor(Color.WHITE);
                btnPickDate.setGravity(View.TEXT_ALIGNMENT_CENTER);
+               btnBack.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
 
                btnPickDate.setOnClickListener(new View.OnClickListener() {
                    @RequiresApi(api = Build.VERSION_CODES.N)
@@ -291,6 +344,10 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                layout.addView(btnPickDate);
 
                lblSelectedDate = new TextView(getBaseContext());
+               LinearLayout.LayoutParams layoutParamsLblSelectedDate = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+               layoutParamsLblSelectedDate.setMargins(0,0,0,20);
+               lblSelectedDate.setLayoutParams(layoutParamsLblSelectedDate);
+               lblSelectedDate.setTextColor(Color.rgb(0,0,0));
                lblSelectedDate.setText("N/A");
                lblSelectedDate.setTextSize(15);
                lblSelectedDate.setGravity(View.TEXT_ALIGNMENT_CENTER);
@@ -320,7 +377,8 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
 
             String finalSupplier = supplier;
             myDialog.setPositiveButton("Submit", (dialogInterface, i) -> {
-                if(cmbBranch.getSelectedItemPosition() <= 0 && hiddenTitle.equals("API Received Item")){
+                String type = getIntent().getStringExtra("type");
+                if(cmbBranch.getSelectedItemPosition() <= 0 && hiddenTitle.equals("API Received Item") && type.equals("SAPIT")){
                     Toast.makeText(getBaseContext(), "Please select from Warehouse", Toast.LENGTH_SHORT).show();
                 }else if(cmbBranch.getSelectedItemPosition() <= 0 && hiddenTitle.equals("API Transfer Item")){
                     Toast.makeText(getBaseContext(), "Please select to Warehouse", Toast.LENGTH_SHORT).show();
@@ -332,13 +390,24 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                     Toast.makeText(getBaseContext(), "Please select Due Date", Toast.LENGTH_SHORT).show();
                 }
                 else {
+                    String whseCode = "";
+
+                    if(hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Transfer Item") || hiddenTitle.equals("API Item Request")) {
+                        if (hiddenTitle.equals("API Received Item") && type.equals("SAPIT")) {
+                            whseCode = findWarehouseCode(cmbBranch.getSelectedItem().toString());
+                        }else if(!hiddenTitle.equals("API Received Item")){
+                            whseCode = findWarehouseCode(cmbBranch.getSelectedItem().toString());
+                        }
+                    }
+
                     if(hiddenTitle.equals("API Received Item")){
                         int sapNumber = (txtSAPNumber.getText().toString().isEmpty() ? 0 : Integer.parseInt(txtSAPNumber.getText().toString()));
-                        apiSaveManualReceived(cmbBranch.getSelectedItem().toString(), txtRemarks.getText().toString(), sapNumber);
+                        btnProceed.setEnabled(false);
+                        apiSaveManualReceived(whseCode, txtRemarks.getText().toString(), sapNumber,type,txtSupplier.getText().toString());
                     }else if(hiddenTitle.equals("API Transfer Item")){
-                        apiSaveTransferItem(cmbBranch.getSelectedItem().toString(), txtRemarks.getText().toString());
+                        apiSaveTransferItem(whseCode, txtRemarks.getText().toString());
                     }else if(hiddenTitle.equals("API Item Request")){
-                        apiItemRequest(txtRemarks.getText().toString(),cmbBranch.getSelectedItem().toString());
+                        apiItemRequest(txtRemarks.getText().toString(),whseCode);
                     }else if(hiddenTitle.equals("API Inventory Count") || hiddenTitle.equals("API Pull Out Count")){
                         apiSaveInventoryCount(txtRemarks.getText().toString());
                     }
@@ -414,7 +483,6 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
             String currentDateandTime = sdf.format(new Date());
 
-
             JSONObject objectHeaders = new JSONObject();
 //            objectHeaders.put("transtype", "TRFR");
             objectHeaders.put("sap_number", null);
@@ -451,9 +519,15 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
         SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
         String IPaddress = sharedPreferences2.getString("IPAddress", "");
 
+        String sURL = IPaddress + "/api/inv/trfr/new";
+        String method = "POST";
+        String bodyy = jsonObject.toString();
+        String fromModule = title;
+        String hiddenFromModule = hiddenTitle;
+
         okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(IPaddress + "/api/inv/trfr/new")
-                .method("POST", body)
+                .url(sURL)
+                .method(method, body)
                 .addHeader("Authorization", "Bearer " + token)
                 .addHeader("Content-Type", "application/json")
                 .build();
@@ -463,7 +537,22 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm", Locale.getDefault());
+                        String currentDate = sdf.format(new Date());
+                        boolean isInserted = myDb7.insertData(sURL,method, bodyy, fromModule, hiddenFromModule,currentDate);
+                        if(isInserted){
+                            Toast.makeText(getBaseContext(), "Error Connection \n" + e.getMessage() + "\n" + "The data is inserted to local database", Toast.LENGTH_SHORT).show();
+
+                            myDb4.truncateTable();
+                            Intent intent;
+                            intent = new Intent(getBaseContext(), API_SelectedItems.class);
+                            intent.putExtra("title", title);
+                            intent.putExtra("hiddenTitle", hiddenTitle);
+                            startActivity(intent);
+                            finish();
+                        }else{
+                            Toast.makeText(getBaseContext(), "Error Connection \n" + e.getMessage() + "\n" + "Your data is failed to insert in local database", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
             }
@@ -549,15 +638,20 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             e.printStackTrace();
         }
         MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-        System.out.println(jsonObject);
         RequestBody body = RequestBody.create(JSON, jsonObject.toString());
 
         SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
         String IPaddress = sharedPreferences2.getString("IPAddress", "");
 
+        String sURL = IPaddress + "/api/inv/item_request/new";
+        String method = "POST";
+        String bodyy = jsonObject.toString();
+        String fromModule = title;
+        String hiddenFromModule = hiddenTitle;
+
         okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(IPaddress + "/api/inv/item_request/new")
-                .method("POST", body)
+                .url(sURL)
+                .method(method, body)
                 .addHeader("Authorization", "Bearer " + token)
                 .addHeader("Content-Type", "application/json")
                 .build();
@@ -567,7 +661,22 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm", Locale.getDefault());
+                        String currentDate = sdf.format(new Date());
+                        boolean isInserted = myDb7.insertData(sURL,method, bodyy, fromModule, hiddenFromModule,currentDate);
+                        if(isInserted){
+                            Toast.makeText(getBaseContext(), "Error Connection \n" + e.getMessage() + "\n" + "The data is inserted to local database", Toast.LENGTH_SHORT).show();
+
+                            myDb4.truncateTable();
+                            Intent intent;
+                            intent = new Intent(getBaseContext(), API_SelectedItems.class);
+                            intent.putExtra("title", title);
+                            intent.putExtra("hiddenTitle", hiddenTitle);
+                            startActivity(intent);
+                            finish();
+                        }else{
+                            Toast.makeText(getBaseContext(), "Error Connection \n" + e.getMessage() + "\n" + "Your data is failed to insert in local database", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
             }
@@ -632,7 +741,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
     }
 
 
-    public void apiSaveManualReceived(String fromBranch,String remarks,Integer sapNumber){
+    public void apiSaveManualReceived(String fromBranch,String remarks,Integer sapNumber,String type2,String supplier){
         SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
         String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
         JSONObject jsonObject = new JSONObject();
@@ -644,11 +753,12 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             JSONObject objectHeaders = new JSONObject();
             objectHeaders.put("transtype", "MNL");
             objectHeaders.put("transfer_id", null);
-            objectHeaders.put("sap_number", (sapNumber <= 0 ? null: sapNumber));
+            objectHeaders.put("sap_number", (sapNumber <= 0 ? JSONObject.NULL: sapNumber));
             objectHeaders.put("transdate", currentDateandTime);
             objectHeaders.put("remarks", remarks);
             objectHeaders.put("reference2", null);
-            objectHeaders.put("supplier", null);
+            objectHeaders.put("supplier", supplier.isEmpty() ? JSONObject.NULL : supplier);
+            objectHeaders.put("type2", type2);
 
             jsonObject.put("header", objectHeaders);
 
@@ -671,15 +781,24 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 jsonObject.put("details", arrayDetails);
             }
         } catch (JSONException e) {
+            btnProceed.setEnabled(true);
             e.printStackTrace();
         }
         MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
+
         SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
         String IPaddress = sharedPreferences2.getString("IPAddress", "");
+
+        String sURL = IPaddress + "/api/inv/recv/new";
+        String method = "POST";
+        String bodyy = jsonObject.toString();
+        String fromModule = title;
+        String hiddenFromModule = hiddenTitle;
+
         RequestBody body = RequestBody.create(JSON, jsonObject.toString());
         okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(IPaddress + "/api/inv/recv/new")
+                .url(sURL)
                 .method("POST", body)
                 .addHeader("Authorization", "Bearer " + token)
                 .addHeader("Content-Type", "application/json")
@@ -687,7 +806,29 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                formatResponse(e.getMessage());
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm", Locale.getDefault());
+                        String currentDate = sdf.format(new Date());
+                        boolean isInserted = myDb7.insertData(sURL,method, bodyy, fromModule, hiddenFromModule,currentDate);
+                        if(isInserted){
+                            btnProceed.setEnabled(true);
+                            Toast.makeText(getBaseContext(), "Error Connection \n" + e.getMessage() + "\n" + "The data is inserted to local database", Toast.LENGTH_SHORT).show();
+
+                            myDb4.truncateTable();
+                            Intent intent;
+                            intent = new Intent(getBaseContext(), API_SelectedItems.class);
+                            intent.putExtra("title", title);
+                            intent.putExtra("hiddenTitle", hiddenTitle);
+                            startActivity(intent);
+                            finish();
+                        }else{
+                            btnProceed.setEnabled(true);
+                            Toast.makeText(getBaseContext(), "Error Connection \n" + e.getMessage() + "\n" + "Your data is failed to insert in local database", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
             }
 
             @Override
@@ -708,6 +849,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            btnProceed.setEnabled(true);
                             Toast.makeText(getBaseContext(), "Transaction Completed", Toast.LENGTH_SHORT).show();
                         }
                     });
@@ -718,6 +860,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                     startActivity(intent);
                     finish();
                 } else {
+                    btnProceed.setEnabled(true);
                     String msg = jj.getString("message");
                     if(msg.equals("Token is invalid")){
                         final AlertDialog.Builder builder = new AlertDialog.Builder(API_SelectedItems.this);
@@ -735,6 +878,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                btnProceed.setEnabled(true);
                                 Toast.makeText(getBaseContext(), "Error \n" +  msg, Toast.LENGTH_SHORT).show();
                             }
                         });
@@ -744,6 +888,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        btnProceed.setEnabled(true);
                         ex.printStackTrace();
                         Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
                     }
@@ -751,72 +896,116 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             }
         }else{
             Runnable r = () -> {
+                btnProceed.setEnabled(true);
                 Toast.makeText(getBaseContext(), temp, Toast.LENGTH_SHORT).show();
             };
         }
     }
 
+
+    public void hmReturnBranches(){
+        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+        String IPaddress = sharedPreferences2.getString("IPAddress", "");
+        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+        String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+        String URL = IPaddress + "/api/whse/get_all";
+        okhttp3.Request request = new okhttp3.Request.Builder()
+                .url(URL)
+                .method("GET", null)
+                .addHeader("Authorization", "Bearer " + token)
+                .addHeader("Content-Type", "application/json")
+                .build();
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try  {
+                    client = new OkHttpClient();
+                    client.newCall(request).enqueue(new Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    e.printStackTrace();
+//                                    Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                            Cursor cursor = myDb8.getAllData();
+                            while (cursor.moveToNext()){
+                                String module = cursor.getString(3);
+                                if(module.contains("Warehouse")){
+                                    System.out.println(cursor.getString(4));
+                                    gBranch = cursor.getString(4);
+                                }else{
+                                    System.out.println("ELSE: " + cursor.getString(4));
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onResponse(Call call, okhttp3.Response response) {
+                            try {
+//                                System.out.println(response.body().string());
+                                String sResult = response.body().string();
+                                gBranch = sResult;
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.start();
+    }
+
+    public String findWarehouseCode(String value){
+        try{
+            JSONObject jsonObjectResponse = new JSONObject(gBranch);
+            JSONArray jsonArray = jsonObjectResponse.getJSONArray("data");
+            for(int i = 0; i < jsonArray.length(); i++){
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+//                            String branch = jsonObject.getString("whsecode") + "," + jsonObject.getString("whsename");
+                if(value.contains(jsonObject.getString("whsename"))){
+                    return jsonObject.getString("whsecode");
+                }
+            }
+        }catch (Exception ex){
+            Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return "";
+    }
+
     public List<String> returnBranches(){
         List<String> result = new ArrayList<>();
         result.add("Select Warehouse");
-        try{
-            SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-            String IPaddress = sharedPreferences2.getString("IPAddress", "");
-            String URL = IPaddress + "/api/whse/get_all?transtype=TRFR";
-            final JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL, null, response -> {
-                try {
-                    boolean success = response.getBoolean("success");
-                    if (success) {
-                        JSONArray jsonArray = response.getJSONArray("data");
-                        for(int i = 0; i < jsonArray.length(); i++){
-                            JSONObject jsonObject = jsonArray.getJSONObject(i);
-                            String branch = jsonObject.getString("whsecode");
-                            result.add(branch);
-                        }
-                    } else {
-                        String msg = response.getString("message");
-                        if(msg.equals("Token is invalid")){
-                            final AlertDialog.Builder builder = new AlertDialog.Builder(API_SelectedItems.this);
-                            builder.setCancelable(false);
-                            builder.setMessage("Your session is expired. Please login again.");
-                            builder.setPositiveButton("OK", (dialog, which) -> {
-                                pc.loggedOut(API_SelectedItems.this);
-                                pc.removeToken(API_SelectedItems.this);
-                                startActivity(uic.goTo(API_SelectedItems.this, MainActivity.class));
-                                finish();
-                                dialog.dismiss();
-                            });
-                            builder.show();
-                        }else{
-                            Toast.makeText(getBaseContext(), "Error \n" +  msg, Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Toast.makeText(getBaseContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            }){
-                @Override
-                public Map<String, String> getHeaders() {
-                    SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
-                    String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
-                    Map<String, String> params = new HashMap<>();
-                    params.put("Content-Type", "application/json");
-                    params.put("Authorization", "Bearer " + token);
-                    return params;
-                }
-            };
-            mQueue.add(request);
-        }catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
+        System.out.println(gBranch);
+       try{
+           JSONObject jsonObjectResponse = new JSONObject(gBranch);
+           JSONArray jsonArray = jsonObjectResponse.getJSONArray("data");
+           for(int i = 0; i < jsonArray.length(); i++){
+               JSONObject jsonObject = jsonArray.getJSONObject(i);
+//                            String branch = jsonObject.getString("whsecode") + "," + jsonObject.getString("whsename");
+               String branch = jsonObject.getString("whsename");
+               result.add(branch);
+           }
+       }catch (Exception ex){
+           Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+       }
         return result;
     }
+
 
     @SuppressLint({"SetTextI18n", "RtlHardcoded"})
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -847,11 +1036,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                     return;
                 }
                 mLastClickTime = SystemClock.elapsedRealtime();
-                Intent intent;
-                intent = new Intent(getBaseContext(), APIReceived.class);
-                intent.putExtra("title", title);
-                intent.putExtra("hiddenTitle", hiddenTitle);
-                startActivity(intent);
+                finish();
             });
             btnProceed.setVisibility(View.GONE);
         } else {
@@ -965,12 +1150,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                                     Toast.makeText(API_SelectedItems.this, "Item not remove", Toast.LENGTH_SHORT).show();
                                 } else {
                                     Toast.makeText(API_SelectedItems.this, "Item removed", Toast.LENGTH_SHORT).show();
-                                    Intent intent;
-                                    intent = new Intent(getBaseContext(), API_SelectedItems.class);
-                                    intent.putExtra("title", title);
-                                    intent.putExtra("hiddenTitle", hiddenTitle);
-                                    startActivity(intent);
-                                    finish();
+                                   loadItems();
                                 }
 
 
@@ -1139,7 +1319,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                System.out.println(jsonObject);
+//                System.out.println(jsonObject);
                 MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
                 RequestBody body = RequestBody.create(JSON, jsonObject.toString());

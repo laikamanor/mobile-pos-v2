@@ -1,6 +1,7 @@
 package com.example.atlanticbakery;
 
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
@@ -17,6 +18,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.sql.Connection;
@@ -60,13 +62,30 @@ public class IPAddress extends AppCompatActivity {
         if(txtIPAddress.getText().toString().isEmpty()){
             Toast.makeText(getBaseContext(), "IP Address field is required", Toast.LENGTH_SHORT).show();
         }else{
-            SharedPreferences sharedPreferences = getSharedPreferences("CONFIG", MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString("IPAddress", txtIPAddress.getText().toString().trim()).apply();
 
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
-            finish();
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Are you sure want to submit?")
+                    .setCancelable(false)
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            SharedPreferences sharedPreferences = getSharedPreferences("CONFIG", MODE_PRIVATE);
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putString("IPAddress", "http://" + txtIPAddress.getText().toString().trim()).apply();
+
+                            Intent intent = new Intent(IPAddress.this, MainActivity.class);
+                            startActivity(intent);
+                            finish();
+                        }
+                    })
+                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    });
+            AlertDialog alertDialog = builder.create();
+            alertDialog.show();
         }
     }
 }

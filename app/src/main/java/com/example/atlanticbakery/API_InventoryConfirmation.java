@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,12 +18,10 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -36,7 +35,6 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.navigation.NavigationView;
@@ -78,10 +76,8 @@ public class API_InventoryConfirmation extends AppCompatActivity {
     DatabaseHelper myDb;
 
     Menu menu;
-
-    private long backPressedTime;
-
     double poCount = 0;
+    String gBranch = "";
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -225,10 +221,21 @@ public class API_InventoryConfirmation extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                         break;
+                    case R.id.nav_uploadOffline:
+                        result = true;
+                        intent = new Intent(getBaseContext(), OfflineList.class);
+                        intent.putExtra("title", "Offline Pending Transactions");
+                        intent.putExtra("hiddenTitle", "API Offline List");
+                        startActivity(intent);
+                        finish();
+                        break;
                 }
                 return result;
             }
         });
+
+        hmReturnBranches();
+        hmReturnBranches();
 
         btnProceed.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -264,106 +271,18 @@ public class API_InventoryConfirmation extends AppCompatActivity {
                     LinearLayout.LayoutParams layoutParamsCmbWarehouses = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
                     layoutParamsCmbWarehouses.setMargins(50,0,50,0);
                     cmbWarehouses.setLayoutParams(layoutParamsCmbWarehouses);
-                    okhttp3.Request request = new okhttp3.Request.Builder()
-                            .url(IPaddress + "/api/whse/get_all")
-                            .method("GET", null)
-                            .addHeader("Authorization", "Bearer " + token)
-                            .addHeader("Content-Type", "application/json")
-                            .build();
-                    client.newCall(request).enqueue(new Callback() {
-                        @Override
-                        public void onFailure(Call call, IOException e) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void onResponse(Call call, okhttp3.Response response) {
-                            try {
-                                String sResult = response.body().string();
-                                try {
-                                    JSONObject jsonObjectReponse;
-                                    jsonObjectReponse = new JSONObject(sResult);
-//            if (response.isSuccessful()) {
-                                    if (jsonObjectReponse.getBoolean("success")) {
-                                        JSONArray jsonArray = jsonObjectReponse.getJSONArray("data");
-                                        runOnUiThread(new Runnable() {
-                                            @SuppressLint({"ResourceType", "SetTextI18n"})
-                                            @Override
-                                            public void run() {
-                                                try {
-                                                    List<String> warehouses = new ArrayList<>();
-                                                    warehouses.add("Select Warehouse");
-                                                    for (int i = 0; i < jsonArray.length(); i++) {
-                                                        JSONObject jsonObject1 = jsonArray.getJSONObject(i);
-                                                        warehouses.add(jsonObject1.getString("whsecode"));
-                                                    }
-                                                    ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, warehouses);
-                                                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                                                    cmbWarehouses.setAdapter(adapter);
-                                                } catch (Exception ex) {
-                                                    runOnUiThread(new Runnable() {
-                                                        @Override
-                                                        public void run() {
-                                                            ex.printStackTrace();
-                                                            Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
-                                                }
-                                            }
-                                        });
-                                    }
-                                    else {
-                                        String msg = jsonObjectReponse.getString("message");
-                                        if (msg.equals("Token is invalid")) {
-                                            final AlertDialog.Builder builder = new AlertDialog.Builder(API_InventoryConfirmation.this);
-                                            builder.setCancelable(false);
-                                            builder.setMessage("Your session is expired. Please login again.");
-                                            builder.setPositiveButton("OK", (dialog, which) -> {
-                                                if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
-                                                    return;
-                                                }
-                                                mLastClickTime = SystemClock.elapsedRealtime();
-                                                pc.loggedOut(API_InventoryConfirmation.this);
-                                                pc.removeToken(API_InventoryConfirmation.this);
-                                                startActivity(uic.goTo(API_InventoryConfirmation.this, MainActivity.class));
-                                                finish();
-                                                dialog.dismiss();
-                                            });
-                                            builder.show();
-                                        } else {
-                                            runOnUiThread(new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
-                                        }
-                                    }
-                                } catch (JSONException ex) {
-                                    ex.printStackTrace();
-                                }
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                        }
-                    });
+                    List<String> warehouses = new ArrayList<>();
+                    warehouses.add("Select Warehouse");
+                    warehouses = returnBranches();
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(API_InventoryConfirmation.this, android.R.layout.simple_spinner_item, warehouses);
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    cmbWarehouses.setAdapter(adapter);
                     cmbWarehouses.setSelection(-1);
 
                     cmbWarehouses.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                         @Override
                         public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                            poDestination[0] = (cmbWarehouses.getSelectedItem().toString().isEmpty() ? "" : cmbWarehouses.getSelectedItem().toString());
+                            poDestination[0] = findWarehouseCode(cmbWarehouses.getSelectedItem().toString());
                         }
 
                         @Override
@@ -567,6 +486,98 @@ public class API_InventoryConfirmation extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadData();
+    }
+
+    public void hmReturnBranches(){
+        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+        String IPaddress = sharedPreferences2.getString("IPAddress", "");
+        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+        String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+        String URL = IPaddress + "/api/whse/get_all";
+        okhttp3.Request request = new okhttp3.Request.Builder()
+                .url(URL)
+                .method("GET", null)
+                .addHeader("Authorization", "Bearer " + token)
+                .addHeader("Content-Type", "application/json")
+                .build();
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try  {
+                    client = new OkHttpClient();
+                    client.newCall(request).enqueue(new Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    e.printStackTrace();
+                                    Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onResponse(Call call, okhttp3.Response response) {
+                            try {
+//                                System.out.println(response.body().string());
+                                String sResult = response.body().string();
+                                gBranch = sResult;
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.start();
+    }
+
+    public String findWarehouseCode(String value){
+        try{
+            JSONObject jsonObjectResponse = new JSONObject(gBranch);
+            JSONArray jsonArray = jsonObjectResponse.getJSONArray("data");
+            for(int i = 0; i < jsonArray.length(); i++){
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+//                            String branch = jsonObject.getString("whsecode") + "," + jsonObject.getString("whsename");
+                if(value.contains(jsonObject.getString("whsename"))){
+                    return jsonObject.getString("whsecode");
+                }
+            }
+        }catch (Exception ex){
+            Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return "";
+    }
+
+    public List<String> returnBranches(){
+        List<String> result = new ArrayList<>();
+        result.add("Select Warehouse");
+        System.out.println(gBranch);
+        try{
+            JSONObject jsonObjectResponse = new JSONObject(gBranch);
+            JSONArray jsonArray = jsonObjectResponse.getJSONArray("data");
+            for(int i = 0; i < jsonArray.length(); i++){
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+//                            String branch = jsonObject.getString("whsecode") + "," + jsonObject.getString("whsename");
+                String branch = jsonObject.getString("whsename");
+                result.add(branch);
+            }
+        }catch (Exception ex){
+            Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return result;
     }
 
 

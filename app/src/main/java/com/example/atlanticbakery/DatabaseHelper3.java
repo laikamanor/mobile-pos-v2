@@ -94,18 +94,18 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
         db.execSQL("DELETE FROM " + TABLE_NAME);
         db.execSQL("VACUUM");
     }
-
-
     public boolean checkItem(String itemName,String fromModule){
         boolean result = false;
         SQLiteDatabase db = this.getReadableDatabase();
-        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE item_name= ? AND fromModule='" + fromModule + "';",new String[]{itemName});
+        Cursor cursor;
+        cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE item_name= ? AND fromModule='" + fromModule + "';",new String[]{itemName});
         if(cursor.moveToFirst()){
             do{
                 result = true;
             }
             while (cursor.moveToNext());
         }
+        cursor.close();
         return result;
     }
 

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -69,10 +70,13 @@ import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class ShoppingCart extends AppCompatActivity {
     Connection con;
     DatabaseHelper myDb;
+    DatabaseHelper8 myDb8;
+    DatabaseHelper7 myDb7;
     String discountID = "";
     String discountName = "";
     long mLastClickTime = 0;
@@ -92,7 +96,7 @@ public class ShoppingCart extends AppCompatActivity {
     private OkHttpClient client;
 
     Menu menu;
-
+    String title,hiddenTitle;
     @SuppressLint("RestrictedApi")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -100,6 +104,8 @@ public class ShoppingCart extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_shopping_cart);
         myDb = new DatabaseHelper(this);
+        myDb8 = new DatabaseHelper8(this);
+        myDb7 = new DatabaseHelper7(this);
 
         client = new OkHttpClient();
         mQueue = Volley.newRequestQueue(this);
@@ -112,6 +118,8 @@ public class ShoppingCart extends AppCompatActivity {
         toggle.syncState();
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
 
+        title = getIntent().getStringExtra("title");
+        hiddenTitle = getIntent().getStringExtra("hiddenTitle");
 
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
         userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
@@ -228,6 +236,14 @@ public class ShoppingCart extends AppCompatActivity {
                         intent.putExtra("title", "Cut Off");
                         intent.putExtra("hiddenTitle", "API Cut Off");
                         startActivity(intent);
+                        break;
+                    case R.id.nav_uploadOffline:
+                        result = true;
+                        intent = new Intent(getBaseContext(), OfflineList.class);
+                        intent.putExtra("title", "Offline Pending Transactions");
+                        intent.putExtra("hiddenTitle", "API Offline List");
+                        startActivity(intent);
+                        finish();
                         break;
                 }
                 return result;
@@ -1011,59 +1027,124 @@ public class ShoppingCart extends AppCompatActivity {
         lblChange.setGravity(View.TEXT_ALIGNMENT_CENTER);
 
          Spinner cmbTenderType = new Spinner(this);
-         List<String> discounts = new ArrayList<>();
+         List<String> tenderTypes = new ArrayList<>();
 
-        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-        String IPaddress = sharedPreferences2.getString("IPAddress", "");
+        SharedPreferences sharedPreferences0 = getSharedPreferences("TOKEN", MODE_PRIVATE);
+        String token = sharedPreferences0.getString("token", "");
 
-        String URL = IPaddress + "/api/sales/type/get_all";
-        final JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL, null, response -> {
-            try {
-                if (response.getBoolean("success")) {
-                    JSONArray jsonArray = response.getJSONArray("data");
-                    for (int ii = 0; ii < jsonArray.length(); ii++) {
-                        JSONObject jsonObject = jsonArray.getJSONObject(ii);
-                        discounts.add(jsonObject.getString("code"));
-                    }
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, discounts);
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    cmbTenderType.setAdapter(adapter);
-                } else {
-                    String msg = response.getString("message");
-                    if (msg.equals("Token is invalid")) {
-                        final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
-                        builder.setCancelable(false);
-                        builder.setMessage("Your session is expired. Please login again.");
-                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        SharedPreferences sharedPreferences3 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+        String IPaddress = sharedPreferences3.getString("IPAddress", "");
+
+        okhttp3.Request request = new okhttp3.Request.Builder()
+                .url(IPaddress + "/api/sales/type/get_all")
+                .addHeader("Authorization", "Bearer " + token)
+                .addHeader("Content-Type", "application/json")
+                .method("GET", null)
+                .build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
                             @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                pc.loggedOut(ShoppingCart.this);
-                                pc.removeToken(ShoppingCart.this);
-                                startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
-                                finish();
-                                dialog.dismiss();
+                            public void run() {
+                                e.printStackTrace();
+//                                Toast.makeText(getBaseContext(), "Error Connection \n" + e.getMessage() + "\n" + "The data is from Resources", Toast.LENGTH_LONG).show();
+                                Cursor cursor = myDb8.getAllData();
+                                while (cursor.moveToNext()){
+                                    String module = cursor.getString(3);
+                                    if(module.contains("Sales Type")){
+                                        try{
+                                            JSONObject jsonObject1 = new JSONObject(cursor.getString(4));
+                                            JSONArray jsonArray = jsonObject1.getJSONArray("data");
+                                            for (int ii = 0; ii < jsonArray.length(); ii++) {
+                                                JSONObject jsonObject = jsonArray.getJSONObject(ii);
+                                                tenderTypes.add(jsonObject.getString("code"));
+                                            }
+                                        }catch (Exception ex){
+                                            Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_LONG).show();
+                                        }
+                                    }
+                                }
+                                ArrayAdapter<String> adapter = new ArrayAdapter<>(ShoppingCart.this, android.R.layout.simple_spinner_item, tenderTypes);
+                                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                                cmbTenderType.setAdapter(adapter);
                             }
                         });
-                        builder.show();
-                    } else {
-                        Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
                     }
-                }
-            } catch (Exception ex) {
-                Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_SHORT).show();
+                });
             }
-        }, error -> Toast.makeText(getBaseContext(), error.getMessage(), Toast.LENGTH_SHORT).show()) {
+
             @Override
-            public Map<String, String> getHeaders() {
-                SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
-                String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
-                Map<String, String> params = new HashMap<>();
-                params.put("Content-Type", "application/json");
-                params.put("Authorization", "Bearer " + token);
-                return params;
+            public void onResponse(Call call, okhttp3.Response response) throws IOException {
+                ShoppingCart.this.runOnUiThread(new Runnable() {
+                    public void run() {
+                        Handler handler = new Handler();
+                        Runnable runnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                synchronized (this) {
+                                    try {
+                                        wait(10);
+                                    } catch (InterruptedException ignored) {
+
+                                    }
+                                    handler.post(() -> {
+                                        try {
+                                            assert response.body() != null;
+                                            String result = response.body().string();
+//                                                                                    System.out.println(result);
+                                            JSONObject jsonObject1 = new JSONObject(result);
+                                            if (response.isSuccessful()) {
+                                                if (jsonObject1.getBoolean("success")) {
+                                                    JSONArray jsonArray = jsonObject1.getJSONArray("data");
+                                                    for (int ii = 0; ii < jsonArray.length(); ii++) {
+                                                        JSONObject jsonObject = jsonArray.getJSONObject(ii);
+                                                        tenderTypes.add(jsonObject.getString("code"));
+                                                    }
+                                                    ArrayAdapter<String> adapter = new ArrayAdapter<>(ShoppingCart.this, android.R.layout.simple_spinner_item, tenderTypes);
+                                                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                                                    cmbTenderType.setAdapter(adapter);
+                                                }else {
+                                                    String msg = jsonObject1.getString("message");
+                                                    if (msg.equals("Token is invalid")) {
+                                                        final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
+                                                        builder.setCancelable(false);
+                                                        builder.setMessage("Your session is expired. Please login again.");
+                                                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                                            @Override
+                                                            public void onClick(DialogInterface dialog, int which) {
+                                                                pc.loggedOut(ShoppingCart.this);
+                                                                pc.removeToken(ShoppingCart.this);
+                                                                startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
+                                                                finish();
+                                                                dialog.dismiss();
+                                                            }
+                                                        });
+                                                        builder.show();
+                                                    } else {
+                                                        Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
+                                                    }
+                                                }
+
+                                            } else {
+                                                System.out.println(jsonObject1.getString("message"));
+                                            }
+                                        } catch (Exception ex) {
+                                            ex.printStackTrace();
+                                        }
+                                    });
+                                }
+                            }
+                        };
+                        Thread thread = new Thread(runnable);
+                        thread.start();
+                    }
+                });
             }
-        };
-        mQueue.add(request);
+        });
 
         cmbTenderType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -1091,55 +1172,115 @@ public class ShoppingCart extends AppCompatActivity {
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.showSoftInput(txtCustomer, InputMethodManager.SHOW_IMPLICIT);
                 }
-                String URL = IPaddress + "/api/customer/get_all?transtype=sales";
-                final JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL, null, response -> {
-                    try {
-                        if (response.getBoolean("success")) {
-                            JSONArray jsonArray = response.getJSONArray("data");
-                            final List<String> result = new ArrayList<>();
-                            for (int ii = 0; ii < jsonArray.length(); ii++) {
-                                JSONObject jsonObject = jsonArray.getJSONObject(ii);
-                                result.add(jsonObject.getString("code"));
-                            }
-                            if (result != null) {
-                                txtCustomer.setAdapter(fillName(result));
-                            }
-                        } else {
-                            String msg = response.getString("message");
-                            if (msg.equals("Token is invalid")) {
-                                final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
-                                builder.setCancelable(false);
-                                builder.setMessage("Your session is expired. Please login again.");
-                                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(IPaddress + "/api/customer/get_all?transtype=sales")
+                        .addHeader("Authorization", "Bearer " + token)
+                        .addHeader("Content-Type", "application/json")
+                        .method("GET", null)
+                        .build();
+                client.newCall(request).enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                runOnUiThread(new Runnable() {
                                     @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        pc.loggedOut(ShoppingCart.this);
-                                        pc.removeToken(ShoppingCart.this);
-                                        startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
-                                        finish();
-                                        dialog.dismiss();
+                                    public void run() {
+                                        e.printStackTrace();
+//                                Toast.makeText(getBaseContext(), "Error Connection \n" + e.getMessage() + "\n" + "The data is from Resources", Toast.LENGTH_LONG).show();
+                                        final List<String> result = new ArrayList<>();
+                                        Cursor cursor = myDb8.getAllData();
+                                        while (cursor.moveToNext()){
+                                            String module = cursor.getString(3);
+                                            if(module.contains("Customer")){
+                                                try{
+                                                    JSONObject jsonObject1 = new JSONObject(cursor.getString(4));
+                                                    JSONArray jsonArray = jsonObject1.getJSONArray("data");
+                                                    for (int ii = 0; ii < jsonArray.length(); ii++) {
+                                                        JSONObject jsonObject = jsonArray.getJSONObject(ii);
+                                                        result.add(jsonObject.getString("code"));
+                                                    }
+                                                }catch (Exception ex){
+                                                    Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_LONG).show();
+                                                }
+                                            }
+                                        }
+                                        txtCustomer.setAdapter(fillName(result));
                                     }
                                 });
-                                builder.show();
-                            } else {
-                                Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
                             }
-                        }
-                    } catch (Exception ex) {
-                        Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_SHORT).show();
+                        });
                     }
-                }, error -> Toast.makeText(getBaseContext(), error.getMessage(), Toast.LENGTH_SHORT).show()) {
+
                     @Override
-                    public Map<String, String> getHeaders() {
-                        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
-                        String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
-                        Map<String, String> params = new HashMap<>();
-                        params.put("Content-Type", "application/json");
-                        params.put("Authorization", "Bearer " + token);
-                        return params;
+                    public void onResponse(Call call, okhttp3.Response response) throws IOException {
+                        ShoppingCart.this.runOnUiThread(new Runnable() {
+                            public void run() {
+                                Handler handler = new Handler();
+                                Runnable runnable = new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        synchronized (this) {
+                                            try {
+                                                wait(10);
+                                            } catch (InterruptedException ignored) {
+
+                                            }
+                                            handler.post(() -> {
+                                                try {
+                                                    assert response.body() != null;
+                                                    String result = response.body().string();
+
+                                                    JSONObject jsonObject1 = new JSONObject(result);
+                                                    if (response.isSuccessful()) {
+                                                        if (jsonObject1.getBoolean("success")) {
+                                                            final List<String> result2 = new ArrayList<>();
+                                                            JSONArray jsonArray = jsonObject1.getJSONArray("data");
+                                                            for (int ii = 0; ii < jsonArray.length(); ii++) {
+                                                                JSONObject jsonObject = jsonArray.getJSONObject(ii);
+                                                                result2.add(jsonObject.getString("code"));
+                                                            }
+                                                            txtCustomer.setAdapter(fillName(result2));
+                                                        }else {
+                                                            String msg = jsonObject1.getString("message");
+                                                            if (msg.equals("Token is invalid")) {
+                                                                final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
+                                                                builder.setCancelable(false);
+                                                                builder.setMessage("Your session is expired. Please login again.");
+                                                                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                                                    @Override
+                                                                    public void onClick(DialogInterface dialog, int which) {
+                                                                        pc.loggedOut(ShoppingCart.this);
+                                                                        pc.removeToken(ShoppingCart.this);
+                                                                        startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
+                                                                        finish();
+                                                                        dialog.dismiss();
+                                                                    }
+                                                                });
+                                                                builder.show();
+                                                            } else {
+                                                                Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
+                                                            }
+                                                        }
+
+                                                    } else {
+                                                        System.out.println(jsonObject1.getString("message"));
+                                                    }
+                                                } catch (Exception ex) {
+                                                    ex.printStackTrace();
+                                                }
+                                            });
+                                        }
+                                    }
+                                };
+                                Thread thread = new Thread(runnable);
+                                thread.start();
+                            }
+                        });
                     }
-                };
-                mQueue.add(request);
+                });
             }
 
             @Override
@@ -1147,9 +1288,7 @@ public class ShoppingCart extends AppCompatActivity {
 
             }
         });
-
         layout.addView(cmbTenderType);
-
         layout.addView(txtCustomer);
         layout.addView(lblSubtotal);
         layout.addView(txttendered);
@@ -1257,6 +1396,7 @@ public class ShoppingCart extends AppCompatActivity {
         myDialog.show();
     }
 
+
     public ArrayAdapter<String> fillName(List<String> names){
         return new ArrayAdapter<>(this, android.R.layout.simple_expandable_list_item_1, names);
     }
@@ -1272,7 +1412,7 @@ public class ShoppingCart extends AppCompatActivity {
     @SuppressLint("SetTextI18n")
     public void computeTotal(){
         View root = getWindow().getDecorView().getRootView();
-        TextView lblsubtotal =root.findViewWithTag("lblSubTotal");
+        TextView lblsubtotal = root.findViewWithTag("lblSubTotal");
         TextView lblTotalQuantity =root.findViewWithTag("lblTotalItems");
         Spinner cmbDiscount =root.findViewWithTag("cmbDiscountType");
         double discountType = 0.00;
@@ -1467,11 +1607,16 @@ public class ShoppingCart extends AppCompatActivity {
             SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
             String IPaddress = sharedPreferences2.getString("IPAddress", "");
 
+            String sURL = IPaddress + "/api/sales/new";
+            String method = "POST";
+            String bodyy = jsonObject.toString();
+            String fromModule = title;
+            String hiddenFromModule = hiddenTitle;
+
             MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-            System.out.println(jsonObject);
             RequestBody body = RequestBody.create(JSON, jsonObject.toString());
             okhttp3.Request request = new okhttp3.Request.Builder()
-                    .url(IPaddress + "/api/sales/new")
+                    .url(sURL)
                     .method("POST", body)
                     .addHeader("Authorization", "Bearer " + token)
                     .addHeader("Content-Type", "application/json")
@@ -1481,7 +1626,17 @@ public class ShoppingCart extends AppCompatActivity {
                 public void onFailure(Call call, IOException e) {
                     ShoppingCart.this.runOnUiThread(new Runnable() {
                         public void run() {
-                            Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm", Locale.getDefault());
+                            String currentDate = sdf.format(new Date());
+                            boolean isInserted = myDb7.insertData(sURL,method, bodyy, fromModule, hiddenFromModule,currentDate);
+                            if(isInserted){
+
+                                myDb.truncateTable();
+                                loadData();
+                                Toast.makeText(getBaseContext(), "The data is inserted to local database", Toast.LENGTH_SHORT).show();
+                            }else{
+                                Toast.makeText(getBaseContext(), "Your data is failed to insert in local database", Toast.LENGTH_SHORT).show();
+                            }
                         }
                     });
                 }
