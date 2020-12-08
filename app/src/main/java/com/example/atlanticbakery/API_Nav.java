@@ -11,17 +11,25 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Html;
+import android.text.InputType;
+import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -98,6 +106,11 @@ public class API_Nav extends AppCompatActivity {
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
                         onBtnLogout();
+                        break;
+                    case R.id.nav_changePassword:
+                        result = true;
+                        drawerLayout.closeDrawer(Gravity.START, false);
+                        changePassword();
                         break;
                     case R.id.nav_cutOff:
                         result = true;
@@ -210,26 +223,120 @@ public class API_Nav extends AppCompatActivity {
         });
 //        MyMotivationalQuotes myMotivationalQuotes = new MyMotivationalQuotes();
 //        myMotivationalQuotes.execute();
+
     }
 
 
-    private class MyMotivationalQuotes extends AsyncTask<String, Void, String> {
+    public void changePassword(){
+        AlertDialog.Builder myDialog = new AlertDialog.Builder(API_Nav.this);
+        myDialog.setCancelable(false);
+        myDialog.setMessage("*Enter Your New Password");
+        LinearLayout layout = new LinearLayout(getBaseContext());
+        layout.setPadding(40, 0, 40, 0);
+        layout.setOrientation(LinearLayout.VERTICAL);
 
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(0,0,0,20);
+        EditText txtPassword = new EditText(getBaseContext());
+        txtPassword.setTextSize(15);
+        txtPassword.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        txtPassword.setTransformationMethod(new PasswordTransformationMethod());
+        txtPassword.setLayoutParams(layoutParams);
+        layout.addView(txtPassword);
+
+        CheckBox checkPassword = new CheckBox(getBaseContext());
+        checkPassword.setText("Show Password");
+        checkPassword.setTextSize(15);
+        checkPassword.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        checkPassword.setLayoutParams(layoutParams);
+
+        checkPassword.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b){
+                    txtPassword.setTransformationMethod(null);
+                }else{
+                    txtPassword.setTransformationMethod(new PasswordTransformationMethod());
+                }
+                txtPassword.setSelection(txtPassword.length());
+            }
+        });
+
+        layout.addView(checkPassword);
+
+        myDialog.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                if(txtPassword.getText().toString().trim().isEmpty()){
+                    Toast.makeText(getBaseContext(), "Password field is required", Toast.LENGTH_SHORT).show();
+                }else{
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(API_Nav.this);
+                    builder.setMessage("Are you sure want to submit?")
+                            .setCancelable(false)
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    myChangePassword myChangePassword = new myChangePassword(txtPassword.getText().toString().trim());
+                                    myChangePassword.execute();
+                                }
+                            })
+                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.cancel();
+                                }
+                            });
+                    AlertDialog alertDialog = builder.create();
+                    alertDialog.show();
+
+                }
+            }
+        });
+
+        myDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        myDialog.setView(layout);
+        myDialog.show();
+    }
+
+    private class myChangePassword extends AsyncTask<String, Void, String> {
+        String password = "";
+        LoadingDialog loadingDialog = new LoadingDialog(API_Nav.this);
         @Override
         protected void onPreExecute() {
-            progressBar.setVisibility(View.VISIBLE);
+            loadingDialog.startLoadingDialog();
+        }
+
+        public myChangePassword(String sPassword) {
+            password = sPassword;
         }
 
         @Override
         protected String doInBackground(String... strings) {
             try {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                String currentDate = sdf.format(new Date());
+                SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+                String IPAddress = sharedPreferences2.getString("IPAddress", "");
+
+                SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+                String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("password", password);
+
+                MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+                RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+
                 client = new OkHttpClient();
                 okhttp3.Request request = new okhttp3.Request.Builder()
-                        .url("\n" +
-                                "http://newsapi.org/v2/top-headlines?country=ph&from=" + currentDate + "  &apiKey=58abe79dfa914553859bb3d2f7f38029")
-                        .method("GET", null)
+                        .url(IPAddress + "/api/user/change_pass")
+                        .method("PUT", body)
+                        .addHeader("Authorization", "Bearer " + token)
                         .addHeader("Content-Type", "application/json")
                         .build();
                 Response response = null;
@@ -240,8 +347,7 @@ public class API_Nav extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        txtQuotes.setText(ex.getMessage());
-                        progressBar.setVisibility(View.GONE);
+                        loadingDialog.dismissDialog();
                     }
                 });
             }
@@ -252,28 +358,34 @@ public class API_Nav extends AppCompatActivity {
         protected void onPostExecute(String s) {
             try {
                 if(s != null) {
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                    String currentDate = sdf.format(new Date());
-                    progressBar.setVisibility(View.GONE);
-                    System.out.println("what?" + s);
-                    JSONObject jsonObject = new JSONObject(s);
-                    JSONArray jsonArray;
-                    jsonArray = jsonObject.getJSONArray("articles");
-                    String news = "<big><b>NEWS FOR TODAY!</b></big><br><br><br>";
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject jsonObjectSource = jsonArray.getJSONObject(i);
-                        news += "<b>" + jsonObjectSource.getString("title") + "</b><br><br>-" +
-                                  jsonObjectSource.getString("description") + "<br><br><br>";
+                    JSONObject jsonObjectResponse = new JSONObject(s);
+                    loadingDialog.dismissDialog();
+                    Toast.makeText(getBaseContext(), jsonObjectResponse.getString("message"), Toast.LENGTH_SHORT).show();
+
+                    if(jsonObjectResponse.getBoolean("success")){
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(API_Nav.this);
+                        builder.setMessage("We redirect you to Login Page")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        pc.loggedOut(API_Nav.this);
+                                        pc.removeToken(API_Nav.this);
+                                        startActivity(uic.goTo(API_Nav.this, MainActivity.class));
+                                        finish();
+                                    }
+                                });
+                        AlertDialog alertDialog = builder.create();
+                        alertDialog.show();
                     }
-                    txtQuotes.setText(Html.fromHtml(news));
+
                 }
             } catch (Exception ex) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        System.out.println("TWO: " + ex.getMessage());
-                        txtQuotes.setText(ex.getMessage());
-                        progressBar.setVisibility(View.GONE);
+                        loadingDialog.dismissDialog();
                     }
                 });
             }

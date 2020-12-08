@@ -16,6 +16,9 @@
                     android:id="@+id/nav_cutOff"
                     android:title="Cut Off" />
                 <item
+                    android:id="@+id/nav_changePassword"
+                    android:title="Change Password" />
+                <item
                     android:id="@+id/nav_uploadOffline"
                     android:title="Offline Pending Transactions" />
             </menu>
