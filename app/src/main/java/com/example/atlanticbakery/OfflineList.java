@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.text.Html;
+import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -20,6 +21,10 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
@@ -112,6 +117,11 @@ public class OfflineList extends AppCompatActivity {
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
                         onBtnLogout();
+                        break;
+                    case R.id.nav_changePassword:
+                        result = true;
+                        drawerLayout.closeDrawer(Gravity.START, false);
+                        changePassword();
                         break;
                     case R.id.nav_cutOff:
                         result = true;
@@ -239,6 +249,172 @@ public class OfflineList extends AppCompatActivity {
             }
         });
     }
+
+    public void changePassword(){
+        AlertDialog.Builder myDialog = new AlertDialog.Builder(OfflineList.this);
+        myDialog.setCancelable(false);
+        myDialog.setMessage("*Enter Your New Password");
+        LinearLayout layout = new LinearLayout(getBaseContext());
+        layout.setPadding(40, 0, 40, 0);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(0,0,0,20);
+        EditText txtPassword = new EditText(getBaseContext());
+        txtPassword.setTextSize(15);
+        txtPassword.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        txtPassword.setTransformationMethod(new PasswordTransformationMethod());
+        txtPassword.setLayoutParams(layoutParams);
+        layout.addView(txtPassword);
+
+        CheckBox checkPassword = new CheckBox(getBaseContext());
+        checkPassword.setText("Show Password");
+        checkPassword.setTextSize(15);
+        checkPassword.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        checkPassword.setLayoutParams(layoutParams);
+
+        checkPassword.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b){
+                    txtPassword.setTransformationMethod(null);
+                }else{
+                    txtPassword.setTransformationMethod(new PasswordTransformationMethod());
+                }
+                txtPassword.setSelection(txtPassword.length());
+            }
+        });
+
+        layout.addView(checkPassword);
+
+        myDialog.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                if(txtPassword.getText().toString().trim().isEmpty()){
+                    Toast.makeText(getBaseContext(), "Password field is required", Toast.LENGTH_SHORT).show();
+                }else{
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(OfflineList.this);
+                    builder.setMessage("Are you sure want to submit?")
+                            .setCancelable(false)
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    OfflineList.myChangePassword myChangePassword = new OfflineList.myChangePassword(txtPassword.getText().toString().trim());
+                                    myChangePassword.execute();
+                                }
+                            })
+                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.cancel();
+                                }
+                            });
+                    AlertDialog alertDialog = builder.create();
+                    alertDialog.show();
+
+                }
+            }
+        });
+
+        myDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        myDialog.setView(layout);
+        myDialog.show();
+    }
+
+    private class myChangePassword extends AsyncTask<String, Void, String> {
+        String password = "";
+        LoadingDialog loadingDialog = new LoadingDialog(OfflineList.this);
+        @Override
+        protected void onPreExecute() {
+            loadingDialog.startLoadingDialog();
+        }
+
+        public myChangePassword(String sPassword) {
+            password = sPassword;
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+                String IPAddress = sharedPreferences2.getString("IPAddress", "");
+
+                SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+                String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("password", password);
+
+                MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+                RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+
+                client = new OkHttpClient();
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(IPAddress + "/api/user/change_pass")
+                        .method("PUT", body)
+                        .addHeader("Authorization", "Bearer " + token)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                Response response = null;
+
+                response = client.newCall(request).execute();
+                return response.body().string();
+            } catch (Exception ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadingDialog.dismissDialog();
+                    }
+                });
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            try {
+                if(s != null) {
+                    JSONObject jsonObjectResponse = new JSONObject(s);
+                    loadingDialog.dismissDialog();
+                    Toast.makeText(getBaseContext(), jsonObjectResponse.getString("message"), Toast.LENGTH_SHORT).show();
+
+                    if(jsonObjectResponse.getBoolean("success")){
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(OfflineList.this);
+                        builder.setMessage("We redirect you to Login Page")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        pc.loggedOut(OfflineList.this);
+                                        pc.removeToken(OfflineList.this);
+                                        startActivity(uic.goTo(OfflineList.this, MainActivity.class));
+                                        finish();
+                                    }
+                                });
+                        AlertDialog alertDialog = builder.create();
+                        alertDialog.show();
+                    }
+
+                }
+            } catch (Exception ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadingDialog.dismissDialog();
+                    }
+                });
+            }
+        }
+    }
+
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {

@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
                         txtMessage.setText("");
                         progressBar.setVisibility(View.GONE);
                         login.setEnabled(true);
-                        if(ex.getMessage().contains("Failed to connect to")){
+                        if(ex.getMessage().contains("Failed to connect to") || ex.getMessage().contains("timeout")){
                             isNoInternet();
                         }else{
                             showMessage("Validation", ex.getMessage());
@@ -189,32 +189,39 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String s) {
             try {
                 if(s != null) {
-                    JSONObject jsonObject1 = new JSONObject(s);
-                    String msg = jsonObject1.getString("message");
-                    if (jsonObject1.getBoolean("success")) {
-                        JSONObject jsonObjectData = jsonObject1.getJSONObject("data");
-                        userid = jsonObjectData.getInt("id");
-                        resultToken = jsonObject1.getString("token");
-                        fullName = jsonObjectData.getString("fullname");
-                        whse = jsonObjectData.getString("whse");
-                        isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
-                        isManager = (isManagerB ? 1 : 0);
-                        saveToken(resultToken);
-                        saveLoggedIn();
+                    if(s.substring(0,1).equals("{")){
+                        JSONObject jsonObject1 = new JSONObject(s);
+                        String msg = jsonObject1.getString("message");
+                        if (jsonObject1.getBoolean("success")) {
+                            JSONObject jsonObjectData = jsonObject1.getJSONObject("data");
+                            userid = jsonObjectData.getInt("id");
+                            resultToken = jsonObject1.getString("token");
+                            fullName = jsonObjectData.getString("fullname");
+                            whse = jsonObjectData.getString("whse");
+                            isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
+                            isManager = (isManagerB ? 1 : 0);
+                            saveToken(resultToken);
+                            saveLoggedIn();
 
-                        myDb8.truncateTable();
+                            myDb8.truncateTable();
 
-                        downloadsJSONS(jsonObject1.getString("token"));
-                    } else {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                txtMessage.setText("");
-                                progressBar.setVisibility(View.GONE);
-                                login.setEnabled(true);
-                                showMessage("Validation",  msg);
-                            }
-                        });
+                            downloadsJSONS(jsonObject1.getString("token"));
+                        } else {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    txtMessage.setText("");
+                                    progressBar.setVisibility(View.GONE);
+                                    login.setEnabled(true);
+                                    showMessage("Validation",  msg);
+                                }
+                            });
+                        }
+                    }else{
+                        txtMessage.setText("");
+                        progressBar.setVisibility(View.GONE);
+                        login.setEnabled(true);
+                        showMessage("Validation",  s);
                     }
                 }
             } catch (Exception ex) {
@@ -363,7 +370,7 @@ public class MainActivity extends AppCompatActivity {
                     SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
                     String IPAddress = sharedPreferences2.getString("IPAddress", "");
 
-                    MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+//                    MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 //                    System.out.println("BODY: " + jsonObjectData.getString("body"));
 
                     okhttp3.Request request = new okhttp3.Request.Builder()
@@ -378,7 +385,7 @@ public class MainActivity extends AppCompatActivity {
                         boolean apiSuccess = jsonObjectResponse.getBoolean("success");
                         if(apiSuccess){
                             String re = jsonObjectResponse.toString();
-                            System.out.println(jsonObjectData.getString("from_module") + ": " + re);
+//                            System.out.println(jsonObjectData.getString("from_module") + ": " + re);
 //                            System.out.println(jsonObjectData.getString("from_module"));
                             boolean isSuccess = myDb8.insertData(jsonObjectData.getString("sURL"), jsonObjectData.getString("method"), re, jsonObjectData.getString("from_module"), jsonObjectData.getString("date_created"));
                             if(isSuccess){

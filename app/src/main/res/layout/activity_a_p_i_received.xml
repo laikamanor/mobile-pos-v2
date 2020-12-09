@@ -143,7 +143,7 @@
 
                     <ScrollView
                         android:layout_width="match_parent"
-                        android:layout_height="300dp"
+                        android:layout_height="400dp"
                         android:layout_marginTop="10dp">
 
                         <GridLayout
@@ -154,7 +154,7 @@
                             android:layout_margin="10dp"
                             android:columnCount="3"
                             android:columnOrderPreserved="false"
-                            android:rowCount="4"
+                            android:rowCount="3"
                             android:background="@color/colorGray"/>
                     </ScrollView>
                 </LinearLayout>

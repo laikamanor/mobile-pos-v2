@@ -221,9 +221,6 @@ public class API_Nav extends AppCompatActivity {
                 return result;
             }
         });
-//        MyMotivationalQuotes myMotivationalQuotes = new MyMotivationalQuotes();
-//        myMotivationalQuotes.execute();
-
     }
 
 

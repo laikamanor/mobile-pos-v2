@@ -10,21 +10,26 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.StrictMode;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.Html;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -140,6 +145,11 @@ public class ShoppingCart extends AppCompatActivity {
                         result = true;
                         drawerLayout.closeDrawer(Gravity.START, false);
                         onBtnLogout();
+                        break;
+                    case R.id.nav_changePassword:
+                        result = true;
+                        drawerLayout.closeDrawer(Gravity.START, false);
+                        changePassword();
                         break;
                     case R.id.nav_exploreItems:
                         result = true;
@@ -506,6 +516,172 @@ public class ShoppingCart extends AppCompatActivity {
 
     }
 
+    public void changePassword(){
+        AlertDialog.Builder myDialog = new AlertDialog.Builder(ShoppingCart.this);
+        myDialog.setCancelable(false);
+        myDialog.setMessage("*Enter Your New Password");
+        LinearLayout layout = new LinearLayout(getBaseContext());
+        layout.setPadding(40, 0, 40, 0);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(0,0,0,20);
+        EditText txtPassword = new EditText(getBaseContext());
+        txtPassword.setTextSize(15);
+        txtPassword.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        txtPassword.setTransformationMethod(new PasswordTransformationMethod());
+        txtPassword.setLayoutParams(layoutParams);
+        layout.addView(txtPassword);
+
+        CheckBox checkPassword = new CheckBox(getBaseContext());
+        checkPassword.setText("Show Password");
+        checkPassword.setTextSize(15);
+        checkPassword.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        checkPassword.setLayoutParams(layoutParams);
+
+        checkPassword.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b){
+                    txtPassword.setTransformationMethod(null);
+                }else{
+                    txtPassword.setTransformationMethod(new PasswordTransformationMethod());
+                }
+                txtPassword.setSelection(txtPassword.length());
+            }
+        });
+
+        layout.addView(checkPassword);
+
+        myDialog.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                if(txtPassword.getText().toString().trim().isEmpty()){
+                    Toast.makeText(getBaseContext(), "Password field is required", Toast.LENGTH_SHORT).show();
+                }else{
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
+                    builder.setMessage("Are you sure want to submit?")
+                            .setCancelable(false)
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    ShoppingCart.myChangePassword myChangePassword = new ShoppingCart.myChangePassword(txtPassword.getText().toString().trim());
+                                    myChangePassword.execute();
+                                }
+                            })
+                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.cancel();
+                                }
+                            });
+                    AlertDialog alertDialog = builder.create();
+                    alertDialog.show();
+
+                }
+            }
+        });
+
+        myDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        myDialog.setView(layout);
+        myDialog.show();
+    }
+
+    private class myChangePassword extends AsyncTask<String, Void, String> {
+        String password = "";
+        LoadingDialog loadingDialog = new LoadingDialog(ShoppingCart.this);
+        @Override
+        protected void onPreExecute() {
+            loadingDialog.startLoadingDialog();
+        }
+
+        public myChangePassword(String sPassword) {
+            password = sPassword;
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+                String IPAddress = sharedPreferences2.getString("IPAddress", "");
+
+                SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+                String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("password", password);
+
+                MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+                RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+
+                client = new OkHttpClient();
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(IPAddress + "/api/user/change_pass")
+                        .method("PUT", body)
+                        .addHeader("Authorization", "Bearer " + token)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                Response response = null;
+
+                response = client.newCall(request).execute();
+                return response.body().string();
+            } catch (Exception ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadingDialog.dismissDialog();
+                    }
+                });
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            try {
+                if(s != null) {
+                    JSONObject jsonObjectResponse = new JSONObject(s);
+                    loadingDialog.dismissDialog();
+                    Toast.makeText(getBaseContext(), jsonObjectResponse.getString("message"), Toast.LENGTH_SHORT).show();
+
+                    if(jsonObjectResponse.getBoolean("success")){
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
+                        builder.setMessage("We redirect you to Login Page")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        pc.loggedOut(ShoppingCart.this);
+                                        pc.removeToken(ShoppingCart.this);
+                                        startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
+                                        finish();
+                                    }
+                                });
+                        AlertDialog alertDialog = builder.create();
+                        alertDialog.show();
+                    }
+
+                }
+            } catch (Exception ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadingDialog.dismissDialog();
+                    }
+                });
+            }
+        }
+    }
+
+
 
     public void onBtnLogout(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -549,7 +725,7 @@ public class ShoppingCart extends AppCompatActivity {
         final LinearLayout layout = findViewById(R.id.parentLayout);
         layout.removeAllViews();
 
-        final LinearLayout.LayoutParams layoutParamsBtnback = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 70);
+        final LinearLayout.LayoutParams layoutParamsBtnback = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         layoutParamsBtnback.setMargins(20,20,0,10);
         Button btnBack = new Button(this);
         btnBack.setLayoutParams(layoutParamsBtnback);
@@ -1173,114 +1349,89 @@ public class ShoppingCart extends AppCompatActivity {
                     imm.showSoftInput(txtCustomer, InputMethodManager.SHOW_IMPLICIT);
                 }
 
-                okhttp3.Request request = new okhttp3.Request.Builder()
-                        .url(IPaddress + "/api/customer/get_all?transtype=sales")
-                        .addHeader("Authorization", "Bearer " + token)
-                        .addHeader("Content-Type", "application/json")
-                        .method("GET", null)
-                        .build();
-                client.newCall(request).enqueue(new Callback() {
-                    @Override
-                    public void onFailure(Call call, IOException e) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        e.printStackTrace();
-//                                Toast.makeText(getBaseContext(), "Error Connection \n" + e.getMessage() + "\n" + "The data is from Resources", Toast.LENGTH_LONG).show();
-                                        final List<String> result = new ArrayList<>();
-                                        Cursor cursor = myDb8.getAllData();
-                                        while (cursor.moveToNext()){
-                                            String module = cursor.getString(3);
-                                            if(module.contains("Customer")){
-                                                try{
-                                                    JSONObject jsonObject1 = new JSONObject(cursor.getString(4));
-                                                    JSONArray jsonArray = jsonObject1.getJSONArray("data");
-                                                    for (int ii = 0; ii < jsonArray.length(); ii++) {
-                                                        JSONObject jsonObject = jsonArray.getJSONObject(ii);
-                                                        result.add(jsonObject.getString("code"));
-                                                    }
-                                                }catch (Exception ex){
-                                                    Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_LONG).show();
-                                                }
-                                            }
-                                        }
-                                        txtCustomer.setAdapter(fillName(result));
-                                    }
-                                });
-                            }
-                        });
-                    }
+               try{
+                   StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
 
-                    @Override
-                    public void onResponse(Call call, okhttp3.Response response) throws IOException {
-                        ShoppingCart.this.runOnUiThread(new Runnable() {
-                            public void run() {
-                                Handler handler = new Handler();
-                                Runnable runnable = new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        synchronized (this) {
-                                            try {
-                                                wait(10);
-                                            } catch (InterruptedException ignored) {
-
-                                            }
-                                            handler.post(() -> {
-                                                try {
-                                                    assert response.body() != null;
-                                                    String result = response.body().string();
-
-                                                    JSONObject jsonObject1 = new JSONObject(result);
-                                                    if (response.isSuccessful()) {
-                                                        if (jsonObject1.getBoolean("success")) {
-                                                            final List<String> result2 = new ArrayList<>();
-                                                            JSONArray jsonArray = jsonObject1.getJSONArray("data");
-                                                            for (int ii = 0; ii < jsonArray.length(); ii++) {
-                                                                JSONObject jsonObject = jsonArray.getJSONObject(ii);
-                                                                result2.add(jsonObject.getString("code"));
-                                                            }
-                                                            txtCustomer.setAdapter(fillName(result2));
-                                                        }else {
-                                                            String msg = jsonObject1.getString("message");
-                                                            if (msg.equals("Token is invalid")) {
-                                                                final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
-                                                                builder.setCancelable(false);
-                                                                builder.setMessage("Your session is expired. Please login again.");
-                                                                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                                                    @Override
-                                                                    public void onClick(DialogInterface dialog, int which) {
-                                                                        pc.loggedOut(ShoppingCart.this);
-                                                                        pc.removeToken(ShoppingCart.this);
-                                                                        startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
-                                                                        finish();
-                                                                        dialog.dismiss();
-                                                                    }
-                                                                });
-                                                                builder.show();
-                                                            } else {
-                                                                Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
-                                                            }
-                                                        }
-
-                                                    } else {
-                                                        System.out.println(jsonObject1.getString("message"));
-                                                    }
-                                                } catch (Exception ex) {
-                                                    ex.printStackTrace();
-                                                }
-                                            });
-                                        }
-                                    }
-                                };
-                                Thread thread = new Thread(runnable);
-                                thread.start();
-                            }
-                        });
-                    }
-                });
+                   StrictMode.setThreadPolicy(policy);
+                   okhttp3.Request request = new okhttp3.Request.Builder()
+                           .url(IPaddress + "/api/customer/get_all?transtype=sales")
+                           .addHeader("Authorization", "Bearer " + token)
+                           .addHeader("Content-Type", "application/json")
+                           .method("GET", null)
+                           .build();
+                   Response response = null;
+                   response = client.newCall(request).execute();
+                   String s = response.body().string();
+                   if(s.substring(0,1).equals("{")){
+                       try {
+                           JSONObject jsonObject1 = new JSONObject(s);
+                           if (jsonObject1.getBoolean("success")) {
+                               final List<String> result2 = new ArrayList<>();
+                               JSONArray jsonArray = jsonObject1.getJSONArray("data");
+                               for (int ii = 0; ii < jsonArray.length(); ii++) {
+                                   JSONObject jsonObject = jsonArray.getJSONObject(ii);
+                                   result2.add(jsonObject.getString("code"));
+                                   System.out.println("CODE2: " + jsonObject.getString("code"));
+                               }
+                               txtCustomer.setAdapter(fillName(result2));
+                           }else {
+                               String msg = jsonObject1.getString("message");
+                               if (msg.equals("Token is invalid")) {
+                                   final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
+                                   builder.setCancelable(false);
+                                   builder.setMessage("Your session is expired. Please login again.");
+                                   builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                       @Override
+                                       public void onClick(DialogInterface dialog, int which) {
+                                           pc.loggedOut(ShoppingCart.this);
+                                           pc.removeToken(ShoppingCart.this);
+                                           startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
+                                           finish();
+                                           dialog.dismiss();
+                                       }
+                                   });
+                                   builder.show();
+                               } else {
+                                   Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
+                               }
+                           }
+                       } catch (Exception ex) {
+                           ex.printStackTrace();
+                       }
+                   }else{
+                       if(s.contains("Failed to connect") || s.contains("timeout")){
+                           final List<String> result = new ArrayList<>();
+                           Cursor cursor = myDb8.getAllData();
+                           while (cursor.moveToNext()){
+                               String module = cursor.getString(3);
+                               if(module.contains("Customer")){
+                                   try{
+                                       JSONObject jsonObject1 = new JSONObject(cursor.getString(4));
+                                       JSONArray jsonArray = jsonObject1.getJSONArray("data");
+                                       for (int ii = 0; ii < jsonArray.length(); ii++) {
+                                           JSONObject jsonObject = jsonArray.getJSONObject(ii);
+                                           result.add(jsonObject.getString("code"));
+                                           System.out.println("CODE: " + jsonObject.getString("code"));
+                                       }
+                                   }catch (Exception ex){
+                                       Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_LONG).show();
+                                   }
+                               }
+                           }
+                           txtCustomer.setAdapter(fillName(result));
+                       }else{
+                           Toast.makeText(getBaseContext(), s, Toast.LENGTH_SHORT).show();
+                       }
+                   }
+               }catch (Exception ex){
+                   runOnUiThread(new Runnable() {
+                       @Override
+                       public void run() {
+                           ex.printStackTrace();
+                           Toast.makeText(getBaseContext(), "dito?" + ex.toString(), Toast.LENGTH_SHORT).show();
+                       }
+                   });
+               }
             }
 
             @Override

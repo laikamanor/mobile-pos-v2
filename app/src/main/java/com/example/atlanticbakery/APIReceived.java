@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.os.AsyncTask;
@@ -15,17 +16,25 @@ import android.os.Handler;
 import android.os.StrictMode;
 import android.os.SystemClock;
 import android.text.Html;
+import android.text.method.PasswordTransformationMethod;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -66,7 +75,10 @@ import java.util.Objects;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class APIReceived extends AppCompatActivity {
 
@@ -164,6 +176,11 @@ public class APIReceived extends AppCompatActivity {
                     result = true;
                     drawerLayout.closeDrawer(Gravity.START, false);
                     onBtnLogout();
+                    break;
+                case R.id.nav_changePassword:
+                    result = true;
+                    drawerLayout.closeDrawer(Gravity.START, false);
+                    changePassword();
                     break;
                 case R.id.nav_exploreItems:
                     result = true;
@@ -321,6 +338,172 @@ public class APIReceived extends AppCompatActivity {
         });
     }
 
+    public void changePassword(){
+        AlertDialog.Builder myDialog = new AlertDialog.Builder(APIReceived.this);
+        myDialog.setCancelable(false);
+        myDialog.setMessage("*Enter Your New Password");
+        LinearLayout layout = new LinearLayout(getBaseContext());
+        layout.setPadding(40, 0, 40, 0);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(0,0,0,20);
+        EditText txtPassword = new EditText(getBaseContext());
+        txtPassword.setTextSize(15);
+        txtPassword.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        txtPassword.setTransformationMethod(new PasswordTransformationMethod());
+        txtPassword.setLayoutParams(layoutParams);
+        layout.addView(txtPassword);
+
+        CheckBox checkPassword = new CheckBox(getBaseContext());
+        checkPassword.setText("Show Password");
+        checkPassword.setTextSize(15);
+        checkPassword.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        checkPassword.setLayoutParams(layoutParams);
+
+        checkPassword.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b){
+                    txtPassword.setTransformationMethod(null);
+                }else{
+                    txtPassword.setTransformationMethod(new PasswordTransformationMethod());
+                }
+                txtPassword.setSelection(txtPassword.length());
+            }
+        });
+
+        layout.addView(checkPassword);
+
+        myDialog.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                if(txtPassword.getText().toString().trim().isEmpty()){
+                    Toast.makeText(getBaseContext(), "Password field is required", Toast.LENGTH_SHORT).show();
+                }else{
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(APIReceived.this);
+                    builder.setMessage("Are you sure want to submit?")
+                            .setCancelable(false)
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    APIReceived.myChangePassword myChangePassword = new APIReceived.myChangePassword(txtPassword.getText().toString().trim());
+                                    myChangePassword.execute();
+                                }
+                            })
+                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.cancel();
+                                }
+                            });
+                    AlertDialog alertDialog = builder.create();
+                    alertDialog.show();
+
+                }
+            }
+        });
+
+        myDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        myDialog.setView(layout);
+        myDialog.show();
+    }
+
+    private class myChangePassword extends AsyncTask<String, Void, String> {
+        String password = "";
+        LoadingDialog loadingDialog = new LoadingDialog(APIReceived.this);
+        @Override
+        protected void onPreExecute() {
+            loadingDialog.startLoadingDialog();
+        }
+
+        public myChangePassword(String sPassword) {
+            password = sPassword;
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+                String IPAddress = sharedPreferences2.getString("IPAddress", "");
+
+                SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+                String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("password", password);
+
+                MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+                RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+
+                client = new OkHttpClient();
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(IPAddress + "/api/user/change_pass")
+                        .method("PUT", body)
+                        .addHeader("Authorization", "Bearer " + token)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                Response response = null;
+
+                response = client.newCall(request).execute();
+                return response.body().string();
+            } catch (Exception ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadingDialog.dismissDialog();
+                    }
+                });
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            try {
+                if(s != null) {
+                    JSONObject jsonObjectResponse = new JSONObject(s);
+                    loadingDialog.dismissDialog();
+                    Toast.makeText(getBaseContext(), jsonObjectResponse.getString("message"), Toast.LENGTH_SHORT).show();
+
+                    if(jsonObjectResponse.getBoolean("success")){
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(APIReceived.this);
+                        builder.setMessage("We redirect you to Login Page")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        pc.loggedOut(APIReceived.this);
+                                        pc.removeToken(APIReceived.this);
+                                        startActivity(uic.goTo(APIReceived.this, MainActivity.class));
+                                        finish();
+                                    }
+                                });
+                        AlertDialog alertDialog = builder.create();
+                        alertDialog.show();
+                    }
+
+                }
+            } catch (Exception ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadingDialog.dismissDialog();
+                    }
+                });
+            }
+        }
+    }
+
+
     public void loadData() {
         if (hidden_title.equals("API Received from SAP")) {
             if (myDb3.countItems(hidden_title) > 0) {
@@ -425,7 +608,6 @@ public class APIReceived extends AppCompatActivity {
         }
     }
 
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -502,7 +684,7 @@ public class APIReceived extends AppCompatActivity {
     public void uiItems2(int id, String itemName, String sapNumber, double quantity, String fromBranch,boolean isSelected){
         GridLayout gridLayout = findViewById(R.id.grid);
         CardView cardView = new CardView(APIReceived.this);
-        LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
+        LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(300, 300);
         layoutParamsCv.setMargins(20, 10, 10, 10);
         cardView.setLayoutParams(layoutParamsCv);
         cardView.setRadius(12);
@@ -547,12 +729,12 @@ public class APIReceived extends AppCompatActivity {
         String cutWord = cutWord(itemName, 25);
         txtItemName.setText(cutWord);
         txtItemName.setLayoutParams(layoutParams);
-        txtItemName.setTextSize(13);
+        txtItemName.setTextSize(15);
         txtItemName.setVisibility(View.VISIBLE);
 
         TextView txtItemLeft = new TextView(APIReceived.this);
         txtItemLeft.setLayoutParams(layoutParamsItemLeft);
-        txtItemLeft.setTextSize(10);
+        txtItemLeft.setTextSize(13);
         txtItemLeft.setVisibility(View.VISIBLE);
         txtItemLeft.setText(df.format(quantity) + " qty.");
         txtItemLeft.setTextColor(Color.parseColor("#34A853"));
@@ -1123,11 +1305,24 @@ public class APIReceived extends AppCompatActivity {
         }
     }
 
+    private int getWidthResolution(Context context)
+    {
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        Display display = wm.getDefaultDisplay();
+        DisplayMetrics metrics = new DisplayMetrics();
+        display.getMetrics(metrics);
+        int width = metrics.widthPixels;
+        int height = metrics.heightPixels;
+
+        return width;
+    }
+
     @SuppressLint("SetTextI18n")
     public void uiItems(String item, Double price, Double stockQuantity, int docEntry1, String supplier, int store_quantity, int auditor_quantity, int variance_quantity){
                 GridLayout gridLayout = findViewById(R.id.grid);
+//                gridLayout.setColumnCount(3);
                 CardView cardView = new CardView(getBaseContext());
-                LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(190, 200);
+                LinearLayout.LayoutParams layoutParamsCv = new LinearLayout.LayoutParams(300, 300);
                 layoutParamsCv.setMargins(20, 10, 10, 10);
                 cardView.setLayoutParams(layoutParamsCv);
                 cardView.setRadius(12);
@@ -1165,11 +1360,11 @@ public class APIReceived extends AppCompatActivity {
                             anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier, stockQuantity, store_quantity, auditor_quantity, variance_quantity);
                         }
                     } else if (hidden_title.equals("API Transfer Item")) {
-                        if(finalStockQuantity <= 0){
-                            Toast.makeText(getBaseContext(), "This item is not available", Toast.LENGTH_SHORT).show();
-                        }else{
-                            anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier, stockQuantity, store_quantity, auditor_quantity, variance_quantity);
-                        }
+                         if (myDb4.checkItem(item, title)) {
+                             Toast.makeText(getBaseContext(), "This item is selected", Toast.LENGTH_SHORT).show();
+                         } else {
+                             anotherFunction(finalItem, finalPrice, finalDocEntry, finalSupplier, stockQuantity, store_quantity, auditor_quantity, variance_quantity);
+                         }
                     } else if (hidden_title.equals("API Item Request")) {
                         if (myDb4.checkItem(item, title)) {
                             Toast.makeText(getBaseContext(), "This item is selected", Toast.LENGTH_SHORT).show();
@@ -1206,7 +1401,7 @@ public class APIReceived extends AppCompatActivity {
                 txtItemName.setText(cutWord(item, 35));
                 txtItemName.setTextColor(Color.rgb(0, 0, 0));
                 txtItemName.setLayoutParams(layoutParams);
-                txtItemName.setTextSize(13);
+                txtItemName.setTextSize(15);
                 txtItemName.setVisibility(View.VISIBLE);
                 linearLayout.addView(txtItemName);
 
@@ -1214,7 +1409,7 @@ public class APIReceived extends AppCompatActivity {
                     TextView txtItemLeft = new TextView(getBaseContext());
                     txtItemLeft.setLayoutParams(layoutParamsItemLeft);
                     txtItemLeft.setTextColor(Color.rgb(0, 0, 0));
-                    txtItemLeft.setTextSize(10);
+                    txtItemLeft.setTextSize(13);
                     txtItemLeft.setVisibility(View.VISIBLE);
                     if (hidden_title.equals("API Menu Items") || hidden_title.equals("API Transfer Item")) {
                         txtItemLeft.setText(df.format(stockQuantity) + " available");
