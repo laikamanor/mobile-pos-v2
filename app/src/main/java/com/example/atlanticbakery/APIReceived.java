@@ -15,7 +15,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.StrictMode;
 import android.os.SystemClock;
+import android.text.Editable;
 import android.text.Html;
+import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -88,6 +90,7 @@ public class APIReceived extends AppCompatActivity {
     TextView lblSapNumber,lblFromBranch,lblSelectedType,lblType;
     AutoCompleteTextView txtSearch;
     Spinner spinner,spinnerType;
+    Button btnRemove;
 
     String title, hidden_title;
 
@@ -136,6 +139,35 @@ public class APIReceived extends AppCompatActivity {
         spinner = findViewById(R.id.spinner);
         spinnerType = findViewById(R.id.spinnerType);
         btnRefresh = findViewById(R.id.btnRefresh);
+        btnRemove = findViewById(R.id.btnRemove);
+        btnRemove.setVisibility(View.GONE);
+        btnRemove.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                txtSearch.setText("");
+            }
+        });
+
+        txtSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                if(txtSearch.getText().toString().isEmpty()){
+                    btnRemove.setVisibility(View.GONE);
+                }else{
+                    btnRemove.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
 
         client = new OkHttpClient();
 
@@ -557,7 +589,7 @@ public class APIReceived extends AppCompatActivity {
                 btnBack.setVisibility(View.GONE);
                 lblType.setVisibility(View.VISIBLE);
                 spinnerType.setVisibility(View.VISIBLE);
-                List<String> items = Arrays.asList("Select Type","SAPPIT", "SAPPO");
+                List<String> items = Arrays.asList("Select Type","SAPIT", "SAPPO");
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(APIReceived.this, android.R.layout.simple_spinner_item, items);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerType.setAdapter(adapter);
@@ -776,7 +808,7 @@ public class APIReceived extends AppCompatActivity {
                     listItems.add(itemName);
 
                     if (!txtSearch.getText().toString().trim().isEmpty()) {
-                        if (txtSearch.getText().toString().trim().contains(itemName)) {
+                        if (txtSearch.getText().toString().trim().toLowerCase().contains(itemName.toLowerCase())) {
                             uiItems2(id,itemName,sapNumber,quantity,fromBranch,isSelected);
                         }
                     }else{

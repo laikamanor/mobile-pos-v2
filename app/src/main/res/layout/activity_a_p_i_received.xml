@@ -17,18 +17,35 @@
                 android:orientation="vertical"
                 android:id="@+id/linear">
 
-                <AutoCompleteTextView
-                    android:id="@+id/txtSearch"
-                    android:layout_width="match_parent"
+
+                <FrameLayout
+                    android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:ems="10"
-                    android:inputType="textPersonName"
-                    android:textColor="@android:color/black"
-                    android:textSize="25sp"
-                    android:layout_marginLeft="20dp"
-                    android:layout_marginRight="20dp"
-                    android:layout_marginTop="10dp"
-                    android:hint="Search"/>
+                    android:layout_marginTop="9dp"
+                    android:padding="5dp">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/txtSearch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ems="10"
+                        android:inputType="textPersonName"
+                        android:textColor="@android:color/black"
+                        android:textSize="25sp"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginRight="20dp"
+                        android:layout_marginTop="10dp"
+                        android:hint="Search"/>
+
+                    <Button
+                        android:id="@+id/btnRemove"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_marginRight="10dp"
+                        android:layout_gravity="right|center_vertical"
+                        android:background="@drawable/ic_delete_foreground" />
+
+                </FrameLayout>
 
                 <Button
                     android:id="@+id/btnSearch"

@@ -510,6 +510,7 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
                 }else{
                     resultURL = salesURL;
                 }
+                System.out.println("result: " + resultURL);
                 okhttp3.Request request = new okhttp3.Request.Builder()
                         .url(IPAddress +  resultURL)
                         .method("GET", null)

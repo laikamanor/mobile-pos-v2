@@ -364,17 +364,17 @@ public class API_InventoryConfirmation extends AppCompatActivity {
                                                 String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
 
                                                 SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-                                                String IPaddress = sharedPreferences2.getString("IPAddress", "");
+                                                String IPAddress = sharedPreferences2.getString("IPAddress", "");
 
 
-                                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
-                                                String currentDateandTime = sdf.format(new Date());
+                                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                                                String currentDateTime = sdf.format(new Date());
 
-                                                String URL = IPaddress + "/api/inv/count/confirm?transdate=" + currentDateandTime;
+                                                String URL = IPAddress + "/api/inv/count/confirm?transdate=" + currentDateTime;
 
                                                 JSONObject zxxz = new JSONObject();
                                                 try {
-                                                    zxxz.put("transdate", currentDateandTime);
+                                                    zxxz.put("transdate", currentDateTime);
                                                     zxxz.put("confirm", true);
                                                     if(sap_number == 0){
                                                         zxxz.put("po_sap",JSONObject.NULL);
@@ -387,7 +387,7 @@ public class API_InventoryConfirmation extends AppCompatActivity {
                                                 }
 
                                                 MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-                                                System.out.println("body: " + zxxz);
+//                                                System.out.println("body: " + zxxz);
                                                 RequestBody body = RequestBody.create(JSON, zxxz.toString());
                                                 okhttp3.Request request = new okhttp3.Request.Builder()
                                                         .url(URL)

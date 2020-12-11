@@ -17,6 +17,7 @@ import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,12 +25,14 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -37,6 +40,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
@@ -48,6 +52,7 @@ import com.android.volley.RequestQueue;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.bottomnavigation.BottomNavigationItemView;
 import com.google.android.material.navigation.NavigationView;
 
 import org.json.JSONArray;
@@ -279,7 +284,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             layout.setPadding(40, 40, 40, 40);
             layout.setOrientation(LinearLayout.VERTICAL);
 
-            Spinner cmbBranch = new Spinner(getBaseContext());
+            TextView lblSelectedBranch = new TextView(getBaseContext());
             EditText txtSAPNumber = new EditText(getBaseContext());
             EditText txtSupplier = new EditText(getBaseContext());
             if(hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Transfer Item") || hiddenTitle.equals("API Item Request")){
@@ -307,13 +312,42 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                     lblBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
                     layout.addView(lblBranch);
 
-                    List<String> discounts = returnBranches();
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, discounts);
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    cmbBranch.setAdapter(adapter);
-                    layoutParamsBranch.setMargins(0,0,0,20);
-                    cmbBranch.setLayoutParams(layoutParamsBranch);
-                    layout.addView(cmbBranch);
+                    LinearLayout layoutBranch = new LinearLayout(getBaseContext());
+                    layoutBranch.setOrientation(LinearLayout.HORIZONTAL);
+
+                    LinearLayout.LayoutParams layoutParamsBranch2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+
+                    LinearLayout.LayoutParams layoutParamsBranch3 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                    layoutParamsBranch3.setMargins(10,0,0,0);
+
+                    lblSelectedBranch.setText("N/A");
+                    lblSelectedBranch.setTextColor(Color.rgb(0,0,0));
+                    lblSelectedBranch.setTextSize(15);
+                    lblSelectedBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    lblSelectedBranch.setLayoutParams(layoutParamsBranch2);
+                    layoutBranch.addView(lblSelectedBranch);
+
+                    TextView btnSelectBranch = new TextView(getBaseContext());
+                    btnSelectBranch.setText("...");
+                    btnSelectBranch.setPadding(20,10,20,10);
+                    btnSelectBranch.setBackgroundColor(Color.BLACK);
+                    btnSelectBranch.setTextColor(Color.WHITE);
+                    btnSelectBranch.setTextSize(15);
+                    btnSelectBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    btnSelectBranch.setLayoutParams(layoutParamsBranch3);
+
+                    btnSelectBranch.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            showWarehouses(lblSelectedBranch);
+                        }
+                    });
+
+                    layoutBranch.addView(btnSelectBranch);
+
+
+                    layout.addView(layoutBranch);
+
                 }
 
                 if(hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Transfer Item")){
@@ -388,11 +422,11 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             String finalSupplier = supplier;
             myDialog.setPositiveButton("Submit", (dialogInterface, i) -> {
                 String type = getIntent().getStringExtra("type");
-                if(cmbBranch.getSelectedItemPosition() <= 0 && hiddenTitle.equals("API Received Item") && type.equals("SAPIT")){
+                if(lblSelectedBranch.getText().toString().equals("N/A") && hiddenTitle.equals("API Received Item") && type.equals("SAPIT")){
                     Toast.makeText(getBaseContext(), "Please select from Warehouse", Toast.LENGTH_SHORT).show();
-                }else if(cmbBranch.getSelectedItemPosition() <= 0 && hiddenTitle.equals("API Transfer Item")){
+                }else if(lblSelectedBranch.getText().toString().equals("N/A") && hiddenTitle.equals("API Transfer Item")){
                     Toast.makeText(getBaseContext(), "Please select to Warehouse", Toast.LENGTH_SHORT).show();
-                }else if(cmbBranch.getSelectedItemPosition() <= 0 && hiddenTitle.equals("API Item Request")) {
+                }else if(lblSelectedBranch.getText().toString().equals("N/A") && hiddenTitle.equals("API Item Request")) {
                     Toast.makeText(getBaseContext(), "Please select to Warehouse", Toast.LENGTH_SHORT).show();
                 }else if(txtRemarks.getText().toString().isEmpty()){
                     Toast.makeText(getBaseContext(), "Remarks field is empty", Toast.LENGTH_SHORT).show();
@@ -404,9 +438,9 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
 
                     if(hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Transfer Item") || hiddenTitle.equals("API Item Request")) {
                         if (hiddenTitle.equals("API Received Item") && type.equals("SAPIT")) {
-                            whseCode = findWarehouseCode(cmbBranch.getSelectedItem().toString());
+                            whseCode = findWarehouseCode(lblSelectedBranch.getText().toString());
                         }else if(!hiddenTitle.equals("API Received Item")){
-                            whseCode = findWarehouseCode(cmbBranch.getSelectedItem().toString());
+                            whseCode = findWarehouseCode(lblSelectedBranch.getText().toString());
                         }
                     }
 
@@ -439,6 +473,173 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 finish();
             }
         });
+    }
+
+    public void showWarehouses(TextView lblSelectedBranch){
+        AlertDialog _dialog = null;
+        AlertDialog.Builder dialogSelectWarehouse = new AlertDialog.Builder(API_SelectedItems.this);
+        dialogSelectWarehouse.setTitle("Select Warehouse");
+        dialogSelectWarehouse.setCancelable(false);
+        LinearLayout layout = new LinearLayout(getBaseContext());
+        layout.setPadding(40, 40, 40, 40);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        AutoCompleteTextView txtSearchBranch = new AutoCompleteTextView(getBaseContext());
+        txtSearchBranch.setTextSize(13);
+        layout.addView(txtSearchBranch);
+
+        final List<String>[] warehouses = new List[]{returnBranches()};
+        final ArrayList<String>[] myReference = new ArrayList[]{getReference(warehouses[0], txtSearchBranch.getText().toString().trim())};
+        final ArrayList<String>[] myID = new ArrayList[]{getID(warehouses[0], txtSearchBranch.getText().toString().trim())};
+        final List<String>[] listItems = new List[]{getListItems(warehouses[0])};
+
+        TextView btnSearchBranch = new TextView(getBaseContext());
+        btnSearchBranch.setBackgroundColor(Color.parseColor("#0b8a0f"));
+        btnSearchBranch.setPadding(20,20,20,20);
+        btnSearchBranch.setTextColor(Color.WHITE);
+        btnSearchBranch.setTextSize(13);
+        btnSearchBranch.setText("Search");
+        ListView listView = new ListView(getBaseContext());
+        btnSearchBranch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                myReference[0] = getReference(warehouses[0], txtSearchBranch.getText().toString().trim());
+                myID[0] = getID(warehouses[0], txtSearchBranch.getText().toString().trim());
+                listItems[0] = getListItems(warehouses[0]);
+
+                API_SelectedItems.MyAdapter adapter = new API_SelectedItems.MyAdapter(API_SelectedItems.this, myReference[0], myID[0]);
+
+                listView.setAdapter(adapter);
+            }
+        });
+
+        layout.addView(btnSearchBranch);
+
+
+        LinearLayout.LayoutParams layoutParamsWarehouses = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,300);
+        layoutParamsWarehouses.setMargins(10,10,10,10);
+        listView.setLayoutParams(layoutParamsWarehouses);
+
+        txtSearchBranch.setAdapter(fillItems(listItems[0]));
+        API_SelectedItems.MyAdapter adapter = new API_SelectedItems.MyAdapter(API_SelectedItems.this, myReference[0], myID[0]);
+        dialogSelectWarehouse.setView(layout);
+
+        dialogSelectWarehouse.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        _dialog = dialogSelectWarehouse.show();
+        listView.setAdapter(adapter);
+
+        AlertDialog final_dialog = _dialog;
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        TextView textView = view.findViewById(R.id.txtIDs);
+                        TextView textView1 = view.findViewById(R.id.txtReference);
+                        lblSelectedBranch.setText(textView1.getText().toString());
+                        lblSelectedBranch.setTag(textView1.getText().toString());
+                        final_dialog.dismiss();
+                    }
+                });
+            }
+        });
+        layout.addView(listView);
+    }
+
+    public List<String> getListItems(List<String> warehouses){
+        List<String> result = new ArrayList<String>();
+        for(String temp : warehouses){
+            if(!temp.contains("Select Warehouse")){
+                result.add(temp);
+//                if (!txtSearchBranch.getText().toString().trim().isEmpty()) {
+//                    if (txtSearchBranch.getText().toString().trim().contains(temp)) {
+//                        myReference.add(temp);
+//                        myID.add("0");
+//                    }
+//                }else{
+//                    myReference.add(temp);
+//                    myID.add("0");
+//                }
+            }
+        }
+        return result;
+    }
+
+    public ArrayList<String> getReference(List<String> warehouses,String value){
+        ArrayList<String> result = new ArrayList<String>();
+        for(String temp : warehouses){
+            if(!temp.contains("Select Warehouse")){
+                if (!value.isEmpty()) {
+                    if (value.trim().toLowerCase().equals(temp.toLowerCase())) {
+                        result.add(temp);
+                    }
+                }else{
+                    result.add(temp);
+//                    myID.add("0");
+                }
+            }
+        }
+        return result;
+    }
+
+    public ArrayList<String> getID(List<String> warehouses,String value){
+        ArrayList<String> result = new ArrayList<String>();
+        for(String temp : warehouses){
+            if(!temp.contains("Select Warehouse")){
+                if (!value.isEmpty()) {
+                    if (value.trim().contains(temp)) {
+                        result.add("0");
+//                        myID.add("0");
+                    }
+                }else{
+                    result.add("0");
+//                    myID.add("0");
+                }
+            }
+        }
+        return result;
+    }
+
+
+
+
+    public ArrayAdapter<String> fillItems(List<String> items){
+        return new ArrayAdapter<>(this, android.R.layout.simple_expandable_list_item_1, items);
+    }
+
+    class MyAdapter extends ArrayAdapter<String> {
+        Context rContext;
+        ArrayList<String> myReference;
+        ArrayList<String> myIds;
+
+        MyAdapter(Context c, ArrayList<String> reference, ArrayList<String> id) {
+            super(c, R.layout.custom_list_view_sales_logs, R.id.txtReference, reference);
+            this.rContext = c;
+            this.myReference = reference;
+            this.myIds = id;
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+            LayoutInflater layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View row = layoutInflater.inflate(R.layout.custom_list_view_sales_logs, parent, false);
+            TextView textView1 = row.findViewById(R.id.txtReference);
+            TextView textView2 = row.findViewById(R.id.txtIDs);
+
+            textView1.setText(myReference.get(position));
+            textView2.setText(myIds.get(position));
+            textView2.setVisibility(View.INVISIBLE);
+
+            return row;
+        }
     }
 
     public void changePassword(){
@@ -713,7 +914,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm", Locale.getDefault());
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
                         String currentDate = sdf.format(new Date());
                         boolean isInserted = myDb7.insertData(sURL,method, bodyy, fromModule, hiddenFromModule,currentDate);
                         if(isInserted){
@@ -837,7 +1038,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm", Locale.getDefault());
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
                         String currentDate = sdf.format(new Date());
                         boolean isInserted = myDb7.insertData(sURL,method, bodyy, fromModule, hiddenFromModule,currentDate);
                         if(isInserted){
@@ -985,11 +1186,11 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm", Locale.getDefault());
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
                         String currentDate = sdf.format(new Date());
                         boolean isInserted = myDb7.insertData(sURL,method, bodyy, fromModule, hiddenFromModule,currentDate);
+                        btnProceed.setEnabled(true);
                         if(isInserted){
-                            btnProceed.setEnabled(true);
                             Toast.makeText(getBaseContext(),  "The data is inserted to local database", Toast.LENGTH_SHORT).show();
 
                             myDb4.truncateTable();
@@ -1000,7 +1201,6 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                             startActivity(intent);
                             finish();
                         }else{
-                            btnProceed.setEnabled(true);
                             Toast.makeText(getBaseContext(),  "Your data is failed to insert in local database", Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -1018,8 +1218,10 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
     public void formatResponse(String temp){
         if(!temp.isEmpty() && temp.substring(0,1).equals("{")){
             try{
-                JSONObject jj = new JSONObject(temp );
+                JSONObject jj = new JSONObject(temp);
+                System.out.println("JJ: " + jj);
                 boolean isSuccess = jj.getBoolean("success");
+                String reference = jj.getString("reference");
                 if (isSuccess) {
                     myDb4.truncateTable();
                     runOnUiThread(new Runnable() {
@@ -1027,38 +1229,54 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                         public void run() {
                             btnProceed.setEnabled(true);
                             Toast.makeText(getBaseContext(), "Transaction Completed", Toast.LENGTH_SHORT).show();
+
+                            final AlertDialog.Builder builder = new AlertDialog.Builder(API_SelectedItems.this);
+                            builder.setCancelable(false);
+                            builder.setMessage("Reference #: " + reference);
+                            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Intent intent;
+                                    intent = new Intent(getBaseContext(), API_SelectedItems.class);
+                                    intent.putExtra("title", title);
+                                    intent.putExtra("hiddenTitle", hiddenTitle);
+                                    startActivity(intent);
+                                    finish();
+                                }
+                            });
+                            builder.show();
                         }
                     });
-                    Intent intent;
-                    intent = new Intent(getBaseContext(), API_SelectedItems.class);
-                    intent.putExtra("title", title);
-                    intent.putExtra("hiddenTitle", hiddenTitle);
-                    startActivity(intent);
-                    finish();
+
                 } else {
-                    btnProceed.setEnabled(true);
                     String msg = jj.getString("message");
-                    if(msg.equals("Token is invalid")){
-                        final AlertDialog.Builder builder = new AlertDialog.Builder(API_SelectedItems.this);
-                        builder.setCancelable(false);
-                        builder.setMessage("Your session is expired. Please login again.");
-                        builder.setPositiveButton("OK", (dialog, which) -> {
-                            pc.loggedOut(API_SelectedItems.this);
-                            pc.removeToken(API_SelectedItems.this);
-                            startActivity(uic.goTo(API_SelectedItems.this, MainActivity.class));
-                            finish();
-                            dialog.dismiss();
-                        });
-                        builder.show();
-                    }else{
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                btnProceed.setEnabled(true);
-                                Toast.makeText(getBaseContext(), "Error \n" +  msg, Toast.LENGTH_SHORT).show();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            btnProceed.setEnabled(true);
+                            if(msg.equals("Token is invalid")){
+                                final AlertDialog.Builder builder = new AlertDialog.Builder(API_SelectedItems.this);
+                                builder.setCancelable(false);
+                                builder.setMessage("Your session is expired. Please login again.");
+                                builder.setPositiveButton("OK", (dialog, which) -> {
+                                    pc.loggedOut(API_SelectedItems.this);
+                                    pc.removeToken(API_SelectedItems.this);
+                                    startActivity(uic.goTo(API_SelectedItems.this, MainActivity.class));
+                                    finish();
+                                    dialog.dismiss();
+                                });
+                                builder.show();
+                            }else{
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        btnProceed.setEnabled(true);
+                                        Toast.makeText(getBaseContext(), "Error \n" +  msg, Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                             }
-                        });
-                    }
+                        }
+                    });
                 }
             }catch (Exception ex){
                 runOnUiThread(new Runnable() {
@@ -1535,13 +1753,24 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                                 boolean isSuccess = jj.getBoolean("success");
                                 if (isSuccess) {
                                     myDb3.truncateTable();
+                                    JSONObject jsonObjectData = jj.getJSONObject("data");
                                     Toast.makeText(getBaseContext(), jj.getString("message"), Toast.LENGTH_SHORT).show();
-                                    Intent intent;
-                                    intent = new Intent(getBaseContext(), API_SelectedItems.class);
-                                    intent.putExtra("title", title);
-                                    intent.putExtra("hiddenTitle", hiddenTitle);
-                                    startActivity(intent);
-                                    finish();
+                                    final AlertDialog.Builder builder = new AlertDialog.Builder(API_SelectedItems.this);
+                                    builder.setCancelable(false);
+                                    builder.setMessage("Reference #: " + jsonObjectData.getString("reference"));
+                                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            Intent intent;
+                                            intent = new Intent(getBaseContext(), API_SelectedItems.class);
+                                            intent.putExtra("title", title);
+                                            intent.putExtra("hiddenTitle", hiddenTitle);
+                                            startActivity(intent);
+                                            finish();
+                                            dialog.dismiss();
+                                        }
+                                    });
+                                    builder.show();
                                 } else {
                                     String msg = jj.getString("message");
                                     if (msg.equals("Token is invalid")) {

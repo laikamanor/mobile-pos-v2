@@ -19,6 +19,7 @@ import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,6 +34,7 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -40,6 +42,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
@@ -102,6 +105,7 @@ public class ShoppingCart extends AppCompatActivity {
 
     Menu menu;
     String title,hiddenTitle;
+    String gCustomer;
     @SuppressLint("RestrictedApi")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -259,6 +263,9 @@ public class ShoppingCart extends AppCompatActivity {
                 return result;
             }
         });
+
+        hmReturnCustomers();
+        hmReturnCustomers();
 
 //        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
 //            @SuppressLint("WrongConstant")
@@ -1136,9 +1143,39 @@ public class ShoppingCart extends AppCompatActivity {
         lblARTitle.setGravity(View.TEXT_ALIGNMENT_CENTER);
         layout.addView(lblARTitle);
 
-        final AutoCompleteTextView txtCustomer = new AutoCompleteTextView(ShoppingCart.this);
-        txtCustomer.setHint("Customer Name");
+        TextView lblCustomer = new TextView(ShoppingCart.this);
+        lblCustomer.setText("N/A");
+        lblCustomer.setTextSize(20);
+        lblCustomer.setGravity(View.TEXT_ALIGNMENT_CENTER);
 
+        LinearLayout layoutBranch = new LinearLayout(getBaseContext());
+
+        layoutBranch.setOrientation(LinearLayout.HORIZONTAL);
+
+        LinearLayout.LayoutParams layoutParamsBranch2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lblCustomer.setLayoutParams(layoutParamsBranch2);
+
+        LinearLayout.LayoutParams layoutParamsBranch3 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParamsBranch3.setMargins(10,0,0,0);
+
+
+        TextView btnSelectBranch = new TextView(getBaseContext());
+        btnSelectBranch.setText("...");
+        btnSelectBranch.setPadding(20,10,20,10);
+        btnSelectBranch.setBackgroundColor(Color.BLACK);
+        btnSelectBranch.setTextColor(Color.WHITE);
+        btnSelectBranch.setTextSize(15);
+        btnSelectBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        btnSelectBranch.setLayoutParams(layoutParamsBranch3);
+
+        btnSelectBranch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showWarehouses(lblCustomer);
+            }
+        });
+        layoutBranch.addView(lblCustomer);
+        layoutBranch.addView(btnSelectBranch);
 
         View root = getWindow().getDecorView().getRootView();
         Spinner cmbDiscount =root.findViewWithTag("cmbDiscountType");
@@ -1196,7 +1233,6 @@ public class ShoppingCart extends AppCompatActivity {
             }
         });
 
-
         double v = 0 - getSubTotal;
         lblChange.setText("Change: " + df.format(v));
         lblChange.setTextSize(20);
@@ -1209,10 +1245,10 @@ public class ShoppingCart extends AppCompatActivity {
         String token = sharedPreferences0.getString("token", "");
 
         SharedPreferences sharedPreferences3 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-        String IPaddress = sharedPreferences3.getString("IPAddress", "");
+        String IPAddress = sharedPreferences3.getString("IPAddress", "");
 
         okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(IPaddress + "/api/sales/type/get_all")
+                .url(IPAddress + "/api/sales/type/get_all")
                 .addHeader("Authorization", "Bearer " + token)
                 .addHeader("Content-Type", "application/json")
                 .method("GET", null)
@@ -1328,110 +1364,24 @@ public class ShoppingCart extends AppCompatActivity {
                 if(0 == cmbTenderType.getSelectedItem().toString().indexOf("CASH")){
                     txttendered.setText("");
                     txttendered.setEnabled(true);
-                    txtCustomer.setText("");
-                    txtCustomer.setEnabled(false);
+                    lblCustomer.setText("");
                     txttendered.requestFocus();
+                    btnSelectBranch.setEnabled(false);
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.showSoftInput(txttendered, InputMethodManager.SHOW_IMPLICIT);
                 }else if(0 == cmbTenderType.getSelectedItem().toString().indexOf("Agent AR Sales")){
                     txttendered.setText("");
                     txttendered.setEnabled(false);
-                    txtCustomer.setText("");
-                    txtCustomer.setEnabled(false);
+                    lblCustomer.setText("");
+                    btnSelectBranch.setEnabled(false);
                 }
                 else{
                     txttendered.setText("");
                     txttendered.setEnabled(false);
-                    txtCustomer.setText("");
-                    txtCustomer.setEnabled(true);
-                    txtCustomer.requestFocus();
-                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.showSoftInput(txtCustomer, InputMethodManager.SHOW_IMPLICIT);
+                    lblCustomer.setText("");
+                    lblCustomer.requestFocus();
+                    btnSelectBranch.setEnabled(true);
                 }
-
-               try{
-                   StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-
-                   StrictMode.setThreadPolicy(policy);
-                   okhttp3.Request request = new okhttp3.Request.Builder()
-                           .url(IPaddress + "/api/customer/get_all?transtype=sales")
-                           .addHeader("Authorization", "Bearer " + token)
-                           .addHeader("Content-Type", "application/json")
-                           .method("GET", null)
-                           .build();
-                   Response response = null;
-                   response = client.newCall(request).execute();
-                   String s = response.body().string();
-                   if(s.substring(0,1).equals("{")){
-                       try {
-                           JSONObject jsonObject1 = new JSONObject(s);
-                           if (jsonObject1.getBoolean("success")) {
-                               final List<String> result2 = new ArrayList<>();
-                               JSONArray jsonArray = jsonObject1.getJSONArray("data");
-                               for (int ii = 0; ii < jsonArray.length(); ii++) {
-                                   JSONObject jsonObject = jsonArray.getJSONObject(ii);
-                                   result2.add(jsonObject.getString("code"));
-                                   System.out.println("CODE2: " + jsonObject.getString("code"));
-                               }
-                               txtCustomer.setAdapter(fillName(result2));
-                           }else {
-                               String msg = jsonObject1.getString("message");
-                               if (msg.equals("Token is invalid")) {
-                                   final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
-                                   builder.setCancelable(false);
-                                   builder.setMessage("Your session is expired. Please login again.");
-                                   builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                       @Override
-                                       public void onClick(DialogInterface dialog, int which) {
-                                           pc.loggedOut(ShoppingCart.this);
-                                           pc.removeToken(ShoppingCart.this);
-                                           startActivity(uic.goTo(ShoppingCart.this, MainActivity.class));
-                                           finish();
-                                           dialog.dismiss();
-                                       }
-                                   });
-                                   builder.show();
-                               } else {
-                                   Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
-                               }
-                           }
-                       } catch (Exception ex) {
-                           ex.printStackTrace();
-                       }
-                   }else{
-                       if(s.contains("Failed to connect") || s.contains("timeout")){
-                           final List<String> result = new ArrayList<>();
-                           Cursor cursor = myDb8.getAllData();
-                           while (cursor.moveToNext()){
-                               String module = cursor.getString(3);
-                               if(module.contains("Customer")){
-                                   try{
-                                       JSONObject jsonObject1 = new JSONObject(cursor.getString(4));
-                                       JSONArray jsonArray = jsonObject1.getJSONArray("data");
-                                       for (int ii = 0; ii < jsonArray.length(); ii++) {
-                                           JSONObject jsonObject = jsonArray.getJSONObject(ii);
-                                           result.add(jsonObject.getString("code"));
-                                           System.out.println("CODE: " + jsonObject.getString("code"));
-                                       }
-                                   }catch (Exception ex){
-                                       Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_LONG).show();
-                                   }
-                               }
-                           }
-                           txtCustomer.setAdapter(fillName(result));
-                       }else{
-                           Toast.makeText(getBaseContext(), s, Toast.LENGTH_SHORT).show();
-                       }
-                   }
-               }catch (Exception ex){
-                   runOnUiThread(new Runnable() {
-                       @Override
-                       public void run() {
-                           ex.printStackTrace();
-                           Toast.makeText(getBaseContext(), "dito?" + ex.toString(), Toast.LENGTH_SHORT).show();
-                       }
-                   });
-               }
             }
 
             @Override
@@ -1439,11 +1389,27 @@ public class ShoppingCart extends AppCompatActivity {
 
             }
         });
+
+        TextView lblRemarks = new TextView(getBaseContext());
+        lblRemarks.setText("Remarks:");
+        lblRemarks.setTextSize(20);
+        lblRemarks.setGravity(View.TEXT_ALIGNMENT_CENTER);
+
+
+        EditText txtRemarks = new EditText(getBaseContext());
+        txtRemarks.setTextColor(Color.rgb(0,0,0));
+        txtRemarks.setTextSize(15);
+        txtRemarks.setGravity(View.TEXT_ALIGNMENT_CENTER);
+
         layout.addView(cmbTenderType);
-        layout.addView(txtCustomer);
+//        layout.addView(lblCustomer);
+        layout.addView(layoutBranch);
         layout.addView(lblSubtotal);
         layout.addView(txttendered);
         layout.addView(lblChange);
+
+        layout.addView(lblRemarks);
+        layout.addView(txtRemarks);
 
         myDialog.setView(layout);
         myDialog.setCancelable(false);
@@ -1466,13 +1432,14 @@ public class ShoppingCart extends AppCompatActivity {
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    final String customerName = txtCustomer.getText().toString().trim();
+                                    final String customerName = lblCustomer.getText().toString().trim();
                                     String tendertype = cmbTenderType.getSelectedItem().toString();
                                     if (cmbTenderType.getAdapter() == null) {
                                         toastMsg("Please select Service Type", 0);
                                     } else if (customerName.isEmpty() && cmbTenderType.getSelectedItem().toString() == "AR Sales") {
                                         toastMsg("Name field is required", 0);
-                                    } else {
+                                    }
+                                    else {
                                         AlertDialog.Builder dialogConfirmation = new AlertDialog.Builder(ShoppingCart.this);
                                         dialogConfirmation.setTitle("Confirm Order?");
                                         final String finalTendertype = tendertype;
@@ -1501,7 +1468,7 @@ public class ShoppingCart extends AppCompatActivity {
                                                 }
 //                                          CUSTOMER
                                                 try {
-                                                    APISaveTransaction(finalTendertype, tenderamt, txtCustomer.getText().toString());
+                                                    APISaveTransaction(finalTendertype, tenderamt, lblCustomer.getText().toString(),txtRemarks.getText().toString());
 //                                                    insertTransaction(finalTendertype, disctype, tenderamt, customerName);
                                                     discountID = "";
                                                     discountName = "";
@@ -1545,6 +1512,259 @@ public class ShoppingCart extends AppCompatActivity {
         });
 
         myDialog.show();
+    }
+
+    public void showWarehouses(TextView lblSelectedBranch){
+        AlertDialog _dialog = null;
+        AlertDialog.Builder dialogSelectWarehouse = new AlertDialog.Builder(ShoppingCart.this);
+        dialogSelectWarehouse.setTitle("Select Customer");
+        dialogSelectWarehouse.setCancelable(false);
+        LinearLayout layout = new LinearLayout(getBaseContext());
+        layout.setPadding(40, 40, 40, 40);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        AutoCompleteTextView txtSearchBranch = new AutoCompleteTextView(getBaseContext());
+        txtSearchBranch.setTextSize(13);
+        layout.addView(txtSearchBranch);
+
+        final List<String>[] warehouses = new List[]{returnCustomers()};
+        final ArrayList<String>[] myReference = new ArrayList[]{getReference(warehouses[0], txtSearchBranch.getText().toString().trim())};
+        final ArrayList<String>[] myID = new ArrayList[]{getID(warehouses[0], txtSearchBranch.getText().toString().trim())};
+        final List<String>[] listItems = new List[]{getListItems(warehouses[0])};
+
+        TextView btnSearchBranch = new TextView(getBaseContext());
+        btnSearchBranch.setBackgroundColor(Color.parseColor("#0b8a0f"));
+        btnSearchBranch.setPadding(20,20,20,20);
+        btnSearchBranch.setTextColor(Color.WHITE);
+        btnSearchBranch.setTextSize(13);
+        btnSearchBranch.setText("Search");
+        ListView listView = new ListView(getBaseContext());
+        btnSearchBranch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                myReference[0] = getReference(warehouses[0], txtSearchBranch.getText().toString().trim());
+                myID[0] = getID(warehouses[0], txtSearchBranch.getText().toString().trim());
+                listItems[0] = getListItems(warehouses[0]);
+
+                ShoppingCart.MyAdapter adapter = new ShoppingCart.MyAdapter(ShoppingCart.this, myReference[0], myID[0]);
+
+                listView.setAdapter(adapter);
+            }
+        });
+
+        layout.addView(btnSearchBranch);
+
+
+        LinearLayout.LayoutParams layoutParamsWarehouses = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,300);
+        layoutParamsWarehouses.setMargins(10,10,10,10);
+        listView.setLayoutParams(layoutParamsWarehouses);
+
+        txtSearchBranch.setAdapter(fillItems(listItems[0]));
+        ShoppingCart.MyAdapter adapter = new ShoppingCart.MyAdapter(ShoppingCart.this, myReference[0], myID[0]);
+        dialogSelectWarehouse.setView(layout);
+
+        dialogSelectWarehouse.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        _dialog = dialogSelectWarehouse.show();
+        listView.setAdapter(adapter);
+
+        AlertDialog final_dialog = _dialog;
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        TextView textView = view.findViewById(R.id.txtIDs);
+                        TextView textView1 = view.findViewById(R.id.txtReference);
+                        lblSelectedBranch.setText(textView1.getText().toString());
+                        lblSelectedBranch.setTag(textView1.getText().toString());
+                        final_dialog.dismiss();
+                    }
+                });
+            }
+        });
+        layout.addView(listView);
+    }
+
+    public List<String> getListItems(List<String> warehouses){
+        List<String> result = new ArrayList<String>();
+        for(String temp : warehouses){
+            if(!temp.contains("Select Warehouse")){
+                result.add(temp);
+//                if (!txtSearchBranch.getText().toString().trim().isEmpty()) {
+//                    if (txtSearchBranch.getText().toString().trim().contains(temp)) {
+//                        myReference.add(temp);
+//                        myID.add("0");
+//                    }
+//                }else{
+//                    myReference.add(temp);
+//                    myID.add("0");
+//                }
+            }
+        }
+        return result;
+    }
+
+    public ArrayList<String> getReference(List<String> warehouses,String value){
+        ArrayList<String> result = new ArrayList<String>();
+        for(String temp : warehouses){
+            if(!temp.contains("Select Warehouse")){
+                if (!value.isEmpty()) {
+                    if (value.trim().toLowerCase().equals(temp.toLowerCase())) {
+                        result.add(temp);
+                    }
+                }else{
+                    result.add(temp);
+//                    myID.add("0");
+                }
+            }
+        }
+        return result;
+    }
+
+    public ArrayList<String> getID(List<String> warehouses,String value){
+        ArrayList<String> result = new ArrayList<String>();
+        for(String temp : warehouses){
+            if(!temp.contains("Select Warehouse")){
+                if (!value.isEmpty()) {
+                    if (value.trim().contains(temp)) {
+                        result.add("0");
+//                        myID.add("0");
+                    }
+                }else{
+                    result.add("0");
+//                    myID.add("0");
+                }
+            }
+        }
+        return result;
+    }
+
+
+
+
+    public ArrayAdapter<String> fillItems(List<String> items){
+        return new ArrayAdapter<>(this, android.R.layout.simple_expandable_list_item_1, items);
+    }
+
+    class MyAdapter extends ArrayAdapter<String> {
+        Context rContext;
+        ArrayList<String> myReference;
+        ArrayList<String> myIds;
+
+        MyAdapter(Context c, ArrayList<String> reference, ArrayList<String> id) {
+            super(c, R.layout.custom_list_view_sales_logs, R.id.txtReference, reference);
+            this.rContext = c;
+            this.myReference = reference;
+            this.myIds = id;
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+            LayoutInflater layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View row = layoutInflater.inflate(R.layout.custom_list_view_sales_logs, parent, false);
+            TextView textView1 = row.findViewById(R.id.txtReference);
+            TextView textView2 = row.findViewById(R.id.txtIDs);
+
+            textView1.setText(myReference.get(position));
+            textView2.setText(myIds.get(position));
+            textView2.setVisibility(View.INVISIBLE);
+
+            return row;
+        }
+    }
+
+
+    public void hmReturnCustomers(){
+        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+        String IPAddress = sharedPreferences2.getString("IPAddress", "");
+        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+        String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+        String URL = IPAddress + "/api/customer/get_all?transtype=sales";
+        okhttp3.Request request = new okhttp3.Request.Builder()
+                .url(URL)
+                .method("GET", null)
+                .addHeader("Authorization", "Bearer " + token)
+                .addHeader("Content-Type", "application/json")
+                .build();
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try  {
+                    client = new OkHttpClient();
+                    client.newCall(request).enqueue(new Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    e.printStackTrace();
+//                                    Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                            Cursor cursor = myDb8.getAllData();
+                            while (cursor.moveToNext()){
+                                String module = cursor.getString(3);
+                                if(module.contains("Customer")){
+                                    System.out.println(cursor.getString(4));
+                                    gCustomer = cursor.getString(4);
+                                }else{
+                                    System.out.println("ELSE: " + cursor.getString(4));
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onResponse(Call call, okhttp3.Response response) {
+                            try {
+//                                System.out.println(response.body().string());
+                                String sResult = response.body().string();
+                                gCustomer = sResult;
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.start();
+    }
+
+    public List<String> returnCustomers(){
+        List<String> result = new ArrayList<>();
+        System.out.println(gCustomer);
+        try{
+            JSONObject jsonObjectResponse = new JSONObject(gCustomer);
+            JSONArray jsonArray = jsonObjectResponse.getJSONArray("data");
+            for(int i = 0; i < jsonArray.length(); i++){
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+//                            String branch = jsonObject.getString("whsecode") + "," + jsonObject.getString("whsename");
+                String branch = jsonObject.getString("code");
+                result.add(branch);
+            }
+        }catch (Exception ex){
+            Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return result;
     }
 
 
@@ -1684,7 +1904,7 @@ public class ShoppingCart extends AppCompatActivity {
 //        }
 //    }
 
-    public void APISaveTransaction(String transtype, Double tenderAmount, String customerName){
+    public void APISaveTransaction(String transtype, Double tenderAmount, String customerName,String remarks){
         try{
             SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
             String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
@@ -1729,7 +1949,7 @@ public class ShoppingCart extends AppCompatActivity {
                 jsonObjectHeader.put("cust_name",customerName);
             }
 
-            jsonObjectHeader.put("remarks",null);
+            jsonObjectHeader.put("remarks",remarks.trim().isEmpty() ? JSONObject.NULL : remarks);
             jsonObjectHeader.put("transtype",transtype);
             jsonObjectHeader.put("reference2",null);
             jsonObjectHeader.put("delfee",0);
@@ -1777,7 +1997,7 @@ public class ShoppingCart extends AppCompatActivity {
                 public void onFailure(Call call, IOException e) {
                     ShoppingCart.this.runOnUiThread(new Runnable() {
                         public void run() {
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm", Locale.getDefault());
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
                             String currentDate = sdf.format(new Date());
                             boolean isInserted = myDb7.insertData(sURL,method, bodyy, fromModule, hiddenFromModule,currentDate);
                             if(isInserted){
@@ -1805,6 +2025,8 @@ public class ShoppingCart extends AppCompatActivity {
                                     JSONObject jj = new JSONObject(finalResult);
                                     boolean isSuccess = jj.getBoolean("success");
                                     if (isSuccess) {
+                                        myDb.truncateTable();
+                                        loadData();
                                         JSONObject jsonObjectData = jj.getJSONObject("data");
                                         final AlertDialog.Builder builder = new AlertDialog.Builder(ShoppingCart.this);
                                         builder.setCancelable(false);
@@ -1812,8 +2034,6 @@ public class ShoppingCart extends AppCompatActivity {
                                         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                                             @Override
                                             public void onClick(DialogInterface dialog, int which) {
-                                                myDb.truncateTable();
-                                                loadData();
                                                 dialog.dismiss();
                                             }
                                         });

@@ -381,19 +381,25 @@ public class MainActivity extends AppCompatActivity {
                     Response response = null;
                     try {
                         response = client.newCall(request).execute();
-                        JSONObject jsonObjectResponse = new JSONObject(response.body().string());
-                        boolean apiSuccess = jsonObjectResponse.getBoolean("success");
-                        if(apiSuccess){
-                            String re = jsonObjectResponse.toString();
+                        String s = response.body().string();
+                        if(s.substring(0,1).equals("{")){
+                            JSONObject jsonObjectResponse = new JSONObject(s);
+                            boolean apiSuccess = jsonObjectResponse.getBoolean("success");
+                            if(apiSuccess){
+                                String re = jsonObjectResponse.toString();
 //                            System.out.println(jsonObjectData.getString("from_module") + ": " + re);
 //                            System.out.println(jsonObjectData.getString("from_module"));
-                            boolean isSuccess = myDb8.insertData(jsonObjectData.getString("sURL"), jsonObjectData.getString("method"), re, jsonObjectData.getString("from_module"), jsonObjectData.getString("date_created"));
-                            if(isSuccess){
-                                appendJsons += jsonObjectData.getString("from_module") + " Resources downloaded \n";
-                            }else {
-                                appendJsons += jsonObjectData.getString("from_module") + " Resources failed to download \n";
+                                boolean isSuccess = myDb8.insertData(jsonObjectData.getString("sURL"), jsonObjectData.getString("method"), re, jsonObjectData.getString("from_module"), jsonObjectData.getString("date_created"));
+                                if(isSuccess){
+                                    appendJsons += jsonObjectData.getString("from_module") + " Resources downloaded \n";
+                                }else {
+                                    appendJsons += jsonObjectData.getString("from_module") + " Resources failed to download \n";
+                                }
                             }
+                        }else{
+                            appendJsons += jsonObjectData.getString("from_module") + " Resources failed to download \n";
                         }
+
                     } catch (Exception ex) {
                         runOnUiThread(new Runnable() {
                             @Override
