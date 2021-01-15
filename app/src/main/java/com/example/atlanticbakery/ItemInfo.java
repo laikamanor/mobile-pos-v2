@@ -3,7 +3,6 @@ import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -715,7 +714,7 @@ public class ItemInfo extends AppCompatActivity {
                                         String title = Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar()).getTitle()).toString().trim();
                                         boolean isInserted;
                                         if (title.equals("Menu Items")) {
-                                            isInserted = myDb.insertData(quantityy, discountPercent, price, free, totalPrice, itemName, inv_type);
+                                            isInserted = myDb.insertData(quantityy, discountPercent, price, free, totalPrice, itemName, inv_type,"");
                                         } else if (title.equals("Received from SAP")) {
                                             int id = getIntent().getIntExtra("id", 0);
                                             isInserted = myDb3.updateSelected(Integer.toString(id), 1, quantityy);
@@ -730,7 +729,7 @@ public class ItemInfo extends AppCompatActivity {
                                             } else if (title.equals("PO Store Count List Items")) {
                                                 type = "PO Store Count";
                                             }
-                                            isInserted = myDb4.insertData(itemName, Double.parseDouble(String.valueOf(quantity3)), type, 1);
+                                            isInserted = myDb4.insertData(itemName, Double.parseDouble(String.valueOf(quantity3)), type, 1,"BAG");
                                         } else {
                                             isInserted = myDb2.insertData(itemName, quantity3, title);
                                         }

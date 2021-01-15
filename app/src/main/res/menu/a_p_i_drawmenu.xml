@@ -61,6 +61,22 @@
         </group>
     </item>
 
+    <item android:title="Production">
+        <group android:checkableBehavior="single">
+            <menu>
+                <item
+                    android:id="@+id/nav_issueProduction"
+                    android:title="Issue For Production" />
+                <item
+                    android:id="@+id/nav_confirmIssueProduction"
+                    android:title="Confirm Issue For Production" />
+                <item
+                    android:id="@+id/nav_receivedProduction"
+                    android:title="Received From Production" />
+            </menu>
+        </group>
+    </item>
+
     <item android:title="Manual Transactions">
         <group android:checkableBehavior="single">
             <menu>

@@ -5,7 +5,6 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.annotation.SuppressLint;
@@ -25,7 +24,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -40,12 +38,10 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 

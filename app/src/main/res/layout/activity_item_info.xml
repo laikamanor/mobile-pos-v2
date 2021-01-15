@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/navDrawer"
+    android:id="@+id/drawer_layout"
     android:background="@android:color/white">
 
     <ScrollView
@@ -148,13 +148,29 @@
 
     </ScrollView>
 
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/nav"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:background="@color/colorWhite"
-        app:menu="@menu/drawmenu"
-        android:layout_gravity="start">
-    </com.google.android.material.navigation.NavigationView>
+    <LinearLayout
+        android:orientation="vertical"
+        android:id="@+id/activity_controller"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <FrameLayout
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+        </FrameLayout>
+    </LinearLayout>
+
+    <ExpandableListView
+        android:id="@+id/navList"
+        android:layout_gravity= "left|start"
+        android:background="@android:color/white"
+        android:divider="@color/dividerColor"
+        android:dividerHeight="0.5dp"
+        android:indicatorLeft="?android:attr/expandableListPreferredItemIndicatorLeft"
+        android:layout_width="235dp"
+        android:layout_height="match_parent">
+
+    </ExpandableListView>
 
 </androidx.drawerlayout.widget.DrawerLayout>

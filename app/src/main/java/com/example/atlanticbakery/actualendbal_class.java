@@ -1,7 +1,6 @@
 package com.example.atlanticbakery;
 
 import android.app.Activity;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Build;
 import android.widget.Toast;

@@ -13,9 +13,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -416,7 +414,7 @@ public class ItemInfo2 extends AppCompatActivity {
             String itemname = lblItem.getText().toString();
             double quantity = (txtQuantity.getText().toString().equals("") || Integer.parseInt(txtQuantity.getText().toString()) <= 0) ? 0 : Integer.parseInt(txtQuantity.getText().toString());
             String type = (title.equals("AC Final Count List Items")) ? "Final Count" : "PO Final Count";
-            boolean isInserted = myDb4.insertData(itemname, Double.parseDouble(String.valueOf(quantity)), type, 1);
+            boolean isInserted = myDb4.insertData(itemname, Double.parseDouble(String.valueOf(quantity)), type, 1,"bag");
             if (isInserted) {
                 z = "Item Added";
             } else {

@@ -1,20 +1,14 @@
 package com.example.atlanticbakery;
 
 import android.app.Activity;
-import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.os.Build;
 import android.widget.Toast;
-
-import androidx.annotation.RequiresApi;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import static android.content.Context.MODE_PRIVATE;
+
 public class shoppingCart_class {
     Connection con;
     connection_class cc = new connection_class();

@@ -9,7 +9,6 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.text.Html;
 import android.view.Gravity;
 import android.view.Menu;
@@ -24,9 +23,6 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Spinner;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,12 +34,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import com.google.android.material.internal.DescendantOffsetUtils;
 import com.google.android.material.navigation.NavigationView;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;

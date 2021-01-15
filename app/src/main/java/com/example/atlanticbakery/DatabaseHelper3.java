@@ -10,8 +10,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import androidx.annotation.Nullable;
 
 public class DatabaseHelper3 extends SQLiteOpenHelper {
-    public static final String DATABASE_NAME = "zxx.db";
-    public static final String TABLE_NAME = "zxx";
+    public static final String DATABASE_NAME = "qq.db";
+    public static final String TABLE_NAME = "tbl_qq";
     public  static  final String COL_1 = "id";
     public  static  final String COL_2 = "sap_number";
     public  static  final String COL_3 = "fromBranch";
@@ -23,6 +23,8 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
     public  static  final String COL_9 = "toBranch";
     public  static  final String COL_10 = "base_id";
     public  static  final String COL_11 = "fromModule";
+    public  static  final String COL_12 = "uom";
+    public  static  final String COL_13 = "received_quantity";
     public DatabaseHelper3(@Nullable Context context) {
         super(context, DATABASE_NAME, null, 1);
         SQLiteDatabase db = this.getWritableDatabase();
@@ -30,7 +32,7 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        sqLiteDatabase.execSQL("CREATE TABLE " + TABLE_NAME + "(id INTEGER PRIMARY KEY AUTOINCREMENT,sap_number INTEGER, fromBranch TEXT,item_name TEXT,quantity INTEGER,actual_quantity INTEGER,isSelected INTEGER,isSAPIT INTEGER,toBranch TEXT, base_id INTEGER,fromModule TEXT)");
+        sqLiteDatabase.execSQL("CREATE TABLE " + TABLE_NAME + "(id INTEGER PRIMARY KEY AUTOINCREMENT,sap_number INTEGER, fromBranch TEXT,item_name TEXT,quantity INTEGER,actual_quantity INTEGER,isSelected INTEGER,isSAPIT INTEGER,toBranch TEXT, base_id INTEGER,fromModule TEXT,uom TEXT,received_quantity INTEGER)");
     }
 
     @Override
@@ -39,7 +41,7 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
         onCreate(sqLiteDatabase);
     }
 
-    public boolean insertData(String sapNumber, String fromBranch,  String itemName,Double quantity,Integer actual_quantity,int isSAPIT,String toBranch,int baseID, String fromModule,int isSelected){
+    public boolean insertData(String sapNumber, String fromBranch,  String itemName,Double quantity,Integer actual_quantity,int isSAPIT,String toBranch,int baseID, String fromModule,int isSelected, String uom,int received_quantity){
         SQLiteDatabase db = this.getReadableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COL_2, sapNumber);
@@ -52,6 +54,8 @@ public class DatabaseHelper3 extends SQLiteOpenHelper {
         contentValues.put(COL_9, toBranch);
         contentValues.put(COL_10, baseID);
         contentValues.put(COL_11, fromModule);
+        contentValues.put(COL_12, uom);
+        contentValues.put(COL_13, received_quantity);
         long resultQuery = db.insert(TABLE_NAME,null,contentValues);
         boolean result;
         result = resultQuery != -1;

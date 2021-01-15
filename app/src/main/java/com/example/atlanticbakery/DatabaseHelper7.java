@@ -8,8 +8,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import androidx.annotation.Nullable;
 
-import com.google.gson.JsonObject;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -50,11 +48,14 @@ public class DatabaseHelper7 extends SQLiteOpenHelper {
         try{
             Cursor cursor;
             SQLiteDatabase db = this.getWritableDatabase();
-            cursor = db.rawQuery("SELECT body,from_module FROM " + TABLE_NAME + " WHERE from_module IN ('Menu Items', 'Transfer Item');" , null);
+            cursor = db.rawQuery("SELECT body,from_module FROM " + TABLE_NAME + " WHERE from_module IN ('Sales', 'Transfer Item');" , null);
             if(cursor != null) {
                 while (cursor.moveToNext()) {
+//                    if(cursor.getString(1).equals("Transfer Item")){
+////                        System.out.println("ano moduleee " + cursor.getString(0));
+//                    }
                     JSONObject jsonObjectBody = new JSONObject(cursor.getString(0));
-                    JSONArray jsonArray = jsonObjectBody.getJSONArray((cursor.getString(1).equals("Menu Items") ? "rows" : "details"));
+                    JSONArray jsonArray = jsonObjectBody.getJSONArray((cursor.getString(1).equals("Sales") ? "rows" : "details"));
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jsonObjectRows = jsonArray.getJSONObject(i);
                         if(itemName.contains(jsonObjectRows.getString("item_code"))){

@@ -1,6 +1,5 @@
 package com.example.atlanticbakery;
 
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,7 +10,6 @@ import android.os.SystemClock;
 import android.text.Html;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -22,25 +20,21 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.gson.JsonObject;
+import com.github.javiersantos.appupdater.AppUpdater;
+import com.github.javiersantos.appupdater.enums.Display;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
@@ -51,9 +45,9 @@ public class MainActivity extends AppCompatActivity {
     DatabaseHelper5 myDb5;
     DatabaseHelper8 myDb8;
 
-    int userid,isManager = 0;
-    boolean isManagerB = false;
-    String fullName="",whse = "",resultToken = "";
+    int userid,isManager = 0,isSales = 0, isProduction = 0,isAdmin = 0;
+    boolean isManagerB = false,isSalesB=false,isProductionB = false,isAdminB = false;
+    String fullName="",whse = "",resultToken = "",branch = "";
     //Declaring layout button,editTexts and progress bar
     Button login;
     EditText username, password;
@@ -98,9 +92,15 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             mLastClickTime = SystemClock.elapsedRealtime();
-
-            MyLogin myLogin = new MyLogin();
-            myLogin.execute("");
+            AppUpdater appUpdater = new AppUpdater(getBaseContext());
+            appUpdater.setGitHubUserAndRepo("laikamanor","mobile-pos-v2");
+            appUpdater.setDisplay(Display.SNACKBAR);
+            appUpdater.setDisplay(Display.DIALOG);
+            appUpdater.setDisplay(Display.NOTIFICATION);
+            appUpdater.start();
+//
+//            MyLogin myLogin = new MyLogin();
+//            myLogin.execute("");
         });
     }
 
@@ -159,6 +159,7 @@ public class MainActivity extends AppCompatActivity {
                 client = new OkHttpClient();
                 SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
                 String IPAddress = sharedPreferences2.getString("IPAddress", "");
+//                System.out.println("IP Address: " + IPAddress);
                 okhttp3.Request request = new okhttp3.Request.Builder()
                         .url(IPAddress + "/api/auth/login?username=" + us + "&password=" + ps)
                         .method("GET", null)
@@ -198,8 +199,15 @@ public class MainActivity extends AppCompatActivity {
                             resultToken = jsonObject1.getString("token");
                             fullName = jsonObjectData.getString("fullname");
                             whse = jsonObjectData.getString("whse");
+                            branch = jsonObjectData.getString("branch");
                             isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
+                            isSalesB = (!jsonObjectData.isNull("isSales") && jsonObjectData.getBoolean("isSales"));
+                            isProductionB = (!jsonObjectData.isNull("isProduction") && jsonObjectData.getBoolean("isProduction"));
+                            isAdminB = (!jsonObjectData.isNull("isAdmin") && jsonObjectData.getBoolean("isAdmin"));
+                            isAdmin = (isAdminB ? 1 : 0);
                             isManager = (isManagerB ? 1 : 0);
+                            isSales = (isSalesB ? 1 : 0);
+                            isProduction = (isProductionB ? 1 : 0);
                             saveToken(resultToken);
                             saveLoggedIn();
 
@@ -262,6 +270,12 @@ public class MainActivity extends AppCompatActivity {
                 whse = "N/A";
                 isManagerB = false;
                 isManager = (isManagerB ? 1 : 0);
+                isSalesB = false;
+                isSales = (isSalesB ? 1 : 0);
+                isProductionB = false;
+                isAdminB = false;
+                isProduction = (isProductionB ? 1 : 0);;
+                isAdmin = (isAdminB ? 1 : 0);
                 saveToken(resultToken);
                 saveLoggedIn();
                 openAPIMainMenu();
@@ -328,6 +342,14 @@ public class MainActivity extends AppCompatActivity {
             jsonObjectStock.put("from_module", "Stock");
             jsonObjectStock.put("date_created", currentDate);
             jsonArrays.put(jsonObjectStock);
+
+            JSONObject jsonObjectItemGroup = new JSONObject();
+            jsonObjectItemGroup.put("sURL", "/api/item/item_grp/getall");
+            jsonObjectItemGroup.put("method", "GET");
+            jsonObjectItemGroup.put("from_module", "Item Group");
+            jsonObjectItemGroup.put("date_created", currentDate);
+            jsonArrays.put(jsonObjectItemGroup);
+
             jsonObjectData2.put("data", jsonArrays);
         }catch (Exception ex){
             ex.printStackTrace();
@@ -508,7 +530,13 @@ public class MainActivity extends AppCompatActivity {
                     fullName = jsonObjectData.getString("fullname");
                     whse = jsonObjectData.getString("whse");
                     isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
+                    isSalesB = (!jsonObjectData.isNull("isSales") && jsonObjectData.getBoolean("isSales"));
+                    isProductionB = (!jsonObjectData.isNull("isProduction") && jsonObjectData.getBoolean("isProduction"));
+                    isAdminB = (!jsonObjectData.isNull("isAdmin") && jsonObjectData.getBoolean("isAdmin"));
+                    isAdmin = (isAdminB ? 1 : 0);
                     isManager = (isManagerB ? 1 : 0);
+                    isSales = (isSalesB ? 1 : 0);
+                    isProduction = (isProductionB ? 1 : 0);
                     saveToken(resultToken);
                     saveLoggedIn();
                     openAPIMainMenu();
@@ -548,9 +576,13 @@ public class MainActivity extends AppCompatActivity {
         editor.putString("username",susername).apply();
         editor.putString("password",spassword).apply();
         editor.putString("fullname",fullName).apply();
+        editor.putString("branch",branch).apply();
         editor.putString("userid",Integer.toString(userid)).apply();
         editor.putString("whse",whse).apply();
         editor.putString("isManager",Integer.toString(isManager)).apply();
+        editor.putString("isSales",Integer.toString(isSales)).apply();
+        editor.putString("isProduction",Integer.toString(isProduction)).apply();
+        editor.putString("isAdmin",Integer.toString(isAdmin)).apply();
 //        uc.insetLoginLogs(MainActivity.this, susername);
 //        uc.checkCutOff(MainActivity.this, susername);
     }
@@ -562,7 +594,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public  void openAPIMainMenu(){
-        Intent intent = new Intent(this, API_Nav.class);
+        Intent intent = new Intent(this, API_Nav2.class);
         startActivity(intent);
         finish();
     }

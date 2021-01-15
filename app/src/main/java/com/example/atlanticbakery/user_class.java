@@ -7,8 +7,6 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
-import com.android.volley.RequestQueue;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;

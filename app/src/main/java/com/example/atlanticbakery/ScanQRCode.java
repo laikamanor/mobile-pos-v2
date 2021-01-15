@@ -442,7 +442,7 @@ public class ScanQRCode extends AppCompatActivity {
         protected String doInBackground(String... params) {
             String itemName = resultText.getText().toString();
             double price = itemc.returnItemNamePrice(ScanQRCode.this, itemName);
-            boolean isInserted = myDb.insertData(1.0, 0.00, price, 0, price, itemName,"Own Inventory");
+            boolean isInserted = myDb.insertData(1.0, 0.00, price, 0, price, itemName,"Own Inventory","");
             if (isInserted) {
                 z = "Item Added";
             } else {

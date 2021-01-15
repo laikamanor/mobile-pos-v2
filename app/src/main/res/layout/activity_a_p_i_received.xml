@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/navDrawer">
+    android:id="@+id/drawer_layout">
 
         <ScrollView
             android:layout_width="match_parent"
@@ -84,6 +84,27 @@
                     android:layout_marginTop="10dp"
                     android:layout_marginBottom="5dp"/>
 
+                <TextView
+                    android:id="@+id/lblItemGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Item Group: "
+                    android:layout_marginRight="20dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="5dp"
+                    android:visibility="gone"
+                    android:textSize="20sp"/>
+
+                <Spinner
+                    android:id="@+id/spinnerItemGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="20dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone"
+                    android:layout_marginBottom="5dp"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -116,7 +137,7 @@
                     android:id="@+id/lblSapNumber"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="IT#: "
+                    android:text="#: "
                     android:layout_marginRight="20dp"
                     android:layout_marginLeft="20dp"
                     android:textSize="20sp"/>
@@ -191,14 +212,29 @@
 
 
 
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/nav"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:background="@color/colorWhite"
-        app:menu="@menu/a_p_i_drawmenu"
-        android:layout_gravity="start">
+    <LinearLayout
+        android:orientation="vertical"
+        android:id="@+id/activity_controller"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    </com.google.android.material.navigation.NavigationView>
+        <FrameLayout
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+        </FrameLayout>
+    </LinearLayout>
+
+    <ExpandableListView
+        android:id="@+id/navList"
+        android:layout_gravity= "left|start"
+        android:background="@android:color/white"
+        android:divider="@color/dividerColor"
+        android:dividerHeight="0.5dp"
+        android:indicatorLeft="?android:attr/expandableListPreferredItemIndicatorLeft"
+        android:layout_width="235dp"
+        android:layout_height="match_parent">
+
+    </ExpandableListView>
 
 </androidx.drawerlayout.widget.DrawerLayout>

@@ -1,29 +1,27 @@
 package com.example.atlanticbakery;
 
-import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.text.Html;
 import android.text.method.PasswordTransformationMethod;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ExpandableListAdapter;
+import android.widget.ExpandableListView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -36,18 +34,20 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import com.google.android.material.navigation.NavigationView;
+import com.example.atlanticbakery.Adapter.CustomExpandableListAdapter;
+import com.example.atlanticbakery.Helper.FragmentNavigationManager_OfflineItems;
+import com.example.atlanticbakery.Interface.NavigationManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -56,9 +56,17 @@ import okhttp3.Response;
 public class OfflineItems extends AppCompatActivity {
     prefs_class pc = new prefs_class();
     ui_class uic = new ui_class();
-    private DrawerLayout drawerLayout;
-    private ActionBarDrawerToggle toggle;
-    NavigationView navigationView;
+    navigation_class navc = new navigation_class();
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private String mActivityTitle;
+
+    private ExpandableListView expandableListView;
+    private ExpandableListAdapter adapter;
+    private List<String> listTitle;
+    private Map<String, List<String>> listChild;
+    private NavigationManager navigationManager;
+
     DatabaseHelper myDb;
     DatabaseHelper7 myDb7;
 
@@ -86,160 +94,41 @@ public class OfflineItems extends AppCompatActivity {
 
         myDb = new DatabaseHelper(this);
         myDb7 = new DatabaseHelper7(this);
-        navigationView = findViewById(R.id.nav);
-        drawerLayout = findViewById(R.id.navDrawer);
-        toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
+        mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+        mActivityTitle = getTitle().toString();
+        expandableListView = (ExpandableListView)findViewById(R.id.navList);
+        navigationManager = FragmentNavigationManager_OfflineItems.getmInstance(this);
 
         client = new OkHttpClient();
 
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         title = getIntent().getStringExtra("title");
         hidden_title = getIntent().getStringExtra("hiddenTitle");
-        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
 
         txtReference = findViewById(R.id.txtReference);
         String reference = getIntent().getStringExtra("reference");
         txtReference.setText(reference);
 
-
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
         String fullName = Objects.requireNonNull(sharedPreferences.getString("fullname", ""));
 
-        menu = navigationView.getMenu();
-        MenuItem nav_shoppingCart = menu.findItem(R.id.usernameLogin);
-        nav_shoppingCart.setTitle("Signed In " + fullName);
 
-        int totalCart = myDb.countItems();
-        MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
-        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @SuppressLint("WrongConstant")
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean result = false;
-                Intent intent;
-                switch (menuItem.getItemId()) {
-                    case R.id.nav_logOut:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        onBtnLogout();
-                        break;
-                    case R.id.nav_changePassword:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        changePassword();
-                        break;
-                    case R.id.nav_cutOff:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        intent = new Intent(getBaseContext(), CutOff.class);
-                        intent.putExtra("title", "Cut Off");
-                        intent.putExtra("hiddenTitle", "API Cut Off");
-                        startActivity(intent);
-                        break;
-                    case R.id.nav_exploreItems:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Menu Items");
-                        intent.putExtra("hiddenTitle", "API Menu Items");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_shoppingCart:
-                        result = true;
-                        intent = new Intent(getBaseContext(), ShoppingCart.class);
-                        intent.putExtra("title", "Shopping Cart");
-                        intent.putExtra("hiddenTitle", "API Shopping Cart");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_receivedItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received Item");
-                        intent.putExtra("hiddenTitle", "API Received Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_transferItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Transfer Item");
-                        intent.putExtra("hiddenTitle", "API Transfer Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_receivedSap:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received from SAP");
-                        intent.putExtra("hiddenTitle", "API Received from SAP");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_systemTransferItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received from System Transfer Item");
-                        intent.putExtra("hiddenTitle", "API System Transfer Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_itemRequest:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Item Request");
-                        intent.putExtra("hiddenTitle", "API Item Request");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_InventoryCount:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Inventory Count");
-                        intent.putExtra("hiddenTitle", "API Inventory Count");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_invConfirmation:
-                        result = true;
-                        intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
-                        intent.putExtra("title", "Inv. and P.O Count Confirmation");
-                        intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_pullOutCount:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Pull Out Request");
-                        intent.putExtra("hiddenTitle", "API Pull Out Count");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_invLogs:
-                        result = true;
-                        intent = new Intent(getBaseContext(), API_SalesLogs.class);
-                        intent.putExtra("title", "Inventory Logs");
-                        intent.putExtra("hiddenTitle", "API Inventory Logs");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_uploadOffline:
-                        result = true;
-                        intent = new Intent(getBaseContext(), OfflineList.class);
-                        intent.putExtra("title", "Offline Pending Transactions");
-                        intent.putExtra("hiddenTitle", "API Offline List");
-                        startActivity(intent);
-                        finish();
-                        break;
-                }
-                return result;
-            }
-        });
+        View listReaderView = getLayoutInflater().inflate(R.layout.nav_header, null,false);
+        TextView txtName = listReaderView.findViewById(R.id.txtName);
+        txtName.setText(fullName + " - v" + BuildConfig.VERSION_NAME);
+        expandableListView.addHeaderView(listReaderView);
+
+        genData();
+        addDrawersItem();
+        setupDrawer();
+
+        if(savedInstanceState == null){
+            selectFirstItemDefault();
+        }
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
+
         typeTrans = getIntent().getStringExtra("type");
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -294,6 +183,190 @@ public class OfflineItems extends AppCompatActivity {
                 alertDialog.show();
             }
         });
+    }
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        mDrawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+
+    }
+
+    public void selectFirstItemDefault(){
+        if(navigationManager != null){
+            navigationManager.showFragment(getString(R.string.app_name));
+            getSupportActionBar().setTitle(getString(R.string.app_name));
+        }
+    }
+
+    public void addDrawersItem(){
+        adapter = new CustomExpandableListAdapter(this, listTitle, listChild);
+        expandableListView.setAdapter(adapter);
+        expandableListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+            @Override
+            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+                String selectedItem = ((List)listChild.get(listTitle.get(groupPosition)))
+                        .get(childPosition).toString();
+                getSupportActionBar().setTitle(selectedItem);
+                Intent intent;
+                if(selectedItem.equals("Received from SAP")){
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from SAP");
+                    intent.putExtra("hiddenTitle", "API Received from SAP");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Received from System Transfer Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from System Transfer Item");
+                    intent.putExtra("hiddenTitle", "API System Transfer Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Manual Received Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received Item");
+                    intent.putExtra("hiddenTitle", "API Received Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Manual Transfer Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Transfer Item");
+                    intent.putExtra("hiddenTitle", "API Transfer Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Sales")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Sales");
+                    intent.putExtra("hiddenTitle", "API Menu Items");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Issue For Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Issue For Production");
+                    intent.putExtra("hiddenTitle", "API Issue For Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Confirm Issue For Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Confirm Issue For Production");
+                    intent.putExtra("hiddenTitle", "API Confirm Issue For Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Received from Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from Production");
+                    intent.putExtra("hiddenTitle", "API Received from Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Item Request")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Item Request");
+                    intent.putExtra("hiddenTitle", "API Item Request");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Inventory Count")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Inventory Count");
+                    intent.putExtra("hiddenTitle", "API Inventory Count");
+                    startActivity(intent);
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Pull out Request")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Pull Out Request");
+                    intent.putExtra("hiddenTitle", "API Pull Out Count");
+                    startActivity(intent);
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Logout")){
+                    onBtnLogout();
+                }
+                else if(selectedItem.equals("Logs")){
+                    intent = new Intent(getBaseContext(), API_SalesLogs.class);
+                    intent.putExtra("title", "Inventory Logs");
+                    intent.putExtra("hiddenTitle", "API Inventory Logs");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Cut Off")){
+                    intent = new Intent(getBaseContext(), CutOff.class);
+                    intent.putExtra("title", "Cut Off");
+                    intent.putExtra("hiddenTitle", "API Cut Off");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Inventory Confirmation")){
+                    intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
+                    intent.putExtra("title", "Inv. and P.O Count Confirmation");
+                    intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Change Password")){
+                    changePassword();
+                }
+                else if(selectedItem.equals("Offline Pending Transactions")){
+                    intent = new Intent(getBaseContext(), OfflineList.class);
+                    intent.putExtra("title", "Offline Pending Transactions");
+                    intent.putExtra("hiddenTitle", "API Offline List");
+                    startActivity(intent);
+                    finish();
+                }
+                return true;
+            }
+        });
+    }
+
+    public void setupDrawer(){
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,R.string.open,R.string.close){
+        };
+
+        mDrawerToggle.setDrawerIndicatorEnabled(true);
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+    }
+
+    public void genData(){
+        List<String>title = navc.getTitles(getString(R.string.app_name));
+        listChild = new TreeMap<>();
+        int iterate = getString(R.string.app_name).equals("Atlantic Bakery") ? 5 : 4;
+        int titleIndex = 0;
+        while (iterate >= 0){
+            listChild.put(title.get(titleIndex),navc.getItem(title.get(titleIndex)));
+            titleIndex += 1;
+            iterate -= 1;
+        }
+        listTitle = new ArrayList<>(listChild.keySet());
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu item) {
+        getMenuInflater().inflate(R.menu.main_menu,item);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if(mDrawerToggle.onOptionsItemSelected(item))
+            return true;
+
+        return super.onOptionsItemSelected(item);
     }
 
     public void changePassword(){
@@ -464,12 +537,13 @@ public class OfflineItems extends AppCompatActivity {
 
 
     public void loadData(String result,String type){
+        System.out.println("this is a type: " + type);
         try{
             tableLayout.removeAllViews();
             TableRow tableColumn = new TableRow(OfflineItems.this);
             String[] columns;
 
-            if(!typeTrans.equals("Menu Items")) {
+            if(!typeTrans.equals("Sales")) {
                 columns = new String[]{"Item", "Qty."};
             }else{
                 columns = new String[]{"Item", "Qty.", "Price", "Disc. %"};
@@ -489,7 +563,7 @@ public class OfflineItems extends AppCompatActivity {
             JSONObject jsonObjectHeader = jsonObject.getJSONObject("header");
             System.out.println(jsonObjectHeader);
             String sHeader = "";
-            if(type.equals("Menu Items") || type.equals("Transfer Item")) {
+            if(type.equals("Sales") || type.equals("Transfer Item")) {
                 sHeader = "Transdate: " + jsonObjectHeader.getString("transdate") + "\n" +
 //                        "Remarks: " + jsonObjectHeader.getString("remarks") + "\n" +
                         (type.equals("Transfer Item") ? "" : "Trans. Type: " + jsonObjectHeader.getString("transtype") + "\n") +
@@ -512,12 +586,11 @@ public class OfflineItems extends AppCompatActivity {
 
             String arrayName = "";
 
-            if(type.equals("Menu Items") || type.equals("Item Request")){
+            if(type.equals("Sales") || type.equals("Item Request")){
                 arrayName = "rows";
             }else if(type.equals("Received Item") || type.equals("Transfer Item")){
                 arrayName = "details";
             }
-
             JSONArray jsonArrayRecRow = jsonObject.getJSONArray(arrayName);
             for (int i = 0; i < jsonArrayRecRow.length(); i++) {
                 JSONObject jsonObjectRecRow = jsonArrayRecRow.getJSONObject(i);
@@ -557,7 +630,7 @@ public class OfflineItems extends AppCompatActivity {
                 double price = jsonObjectRecRow.isNull("unit_price") ? 0.00 : jsonObjectRecRow.getDouble("unit_price");
                 double discprcnt = jsonObjectRecRow.isNull("discprcnt") ? 0.00 : jsonObjectRecRow.getDouble("discprcnt");
 
-                if(typeTrans.equals("Menu Items")){
+                if(typeTrans.equals("Sales")){
                     lblColumn3.setText(df.format(price));
                     lblColumn3.setTextSize(15);
                     lblColumn3.setTextColor(Color.BLACK);
@@ -590,6 +663,7 @@ public class OfflineItems extends AppCompatActivity {
 
             }
         }catch (Exception ex){
+            ex.printStackTrace();
             Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
@@ -626,11 +700,4 @@ public class OfflineItems extends AppCompatActivity {
         alertDialog.show();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if(toggle.onOptionsItemSelected(item)){
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
 }

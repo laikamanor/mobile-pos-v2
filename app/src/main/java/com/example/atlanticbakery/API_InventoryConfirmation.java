@@ -4,7 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -15,20 +15,18 @@ import android.text.Html;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ExpandableListAdapter;
+import android.widget.ExpandableListView;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -42,7 +40,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import com.google.android.material.navigation.NavigationView;
+import com.example.atlanticbakery.Adapter.CustomExpandableListAdapter;
+import com.example.atlanticbakery.Helper.FragmentNavigationManager_InventoryConfirmation;
+import com.example.atlanticbakery.Interface.NavigationManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -55,7 +55,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -74,16 +76,25 @@ public class API_InventoryConfirmation extends AppCompatActivity {
 
     prefs_class pc = new prefs_class();
     ui_class uic = new ui_class();
+    navigation_class navc = new navigation_class();
     DecimalFormat df = new DecimalFormat("#,###");
 
-    private DrawerLayout drawerLayout;
-    private ActionBarDrawerToggle toggle;
-    NavigationView navigationView;
     DatabaseHelper myDb;
 
     Menu menu;
     double poCount = 0;
     String gBranch = "";
+
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private String mActivityTitle;
+//    private String[] items;
+
+    private ExpandableListView expandableListView;
+    private ExpandableListAdapter adapter;
+    private List<String> listTitle;
+    private Map<String, List<String>> listChild;
+    private NavigationManager navigationManager;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,13 +102,6 @@ public class API_InventoryConfirmation extends AppCompatActivity {
 
         myDb = new DatabaseHelper(this);
 
-        navigationView = findViewById(R.id.nav);
-        drawerLayout = findViewById(R.id.navDrawer);
-        toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
-
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         client = new OkHttpClient();
 
@@ -106,144 +110,31 @@ public class API_InventoryConfirmation extends AppCompatActivity {
 
         title = getIntent().getStringExtra("title");
         hidden_title = getIntent().getStringExtra("hiddenTitle");
-        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
 
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
         String fullName = Objects.requireNonNull(sharedPreferences.getString("fullname", ""));
 
-        menu = navigationView.getMenu();
-        MenuItem nav_shoppingCart = menu.findItem(R.id.usernameLogin);
-        nav_shoppingCart.setTitle("Signed In " + fullName);
+        mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+        mActivityTitle = getTitle().toString();
+        expandableListView = (ExpandableListView)findViewById(R.id.navList);
+        navigationManager = FragmentNavigationManager_InventoryConfirmation.getmInstance(this);
 
-        int totalCart = myDb.countItems();
-        MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
+        View listReaderView = getLayoutInflater().inflate(R.layout.nav_header, null,false);
+        TextView txtName = listReaderView.findViewById(R.id.txtName);
+        txtName.setText(fullName + " - v" + BuildConfig.VERSION_NAME);
+        expandableListView.addHeaderView(listReaderView);
 
-        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @SuppressLint("WrongConstant")
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean result = false;
-                Intent intent;
-                switch (menuItem.getItemId()) {
-                    case R.id.nav_logOut:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        onBtnLogout();
-                        break;
-                    case R.id.nav_changePassword:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        changePassword();
-                        break;
-                    case R.id.nav_exploreItems:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Menu Items");
-                        intent.putExtra("hiddenTitle", "API Menu Items");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_shoppingCart:
-                        result = true;
-                        intent = new Intent(getBaseContext(), ShoppingCart.class);
-                        intent.putExtra("title", "Shopping Cart");
-                        intent.putExtra("hiddenTitle", "API Shopping Cart");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_receivedItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received Item");
-                        intent.putExtra("hiddenTitle", "API Received Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_transferItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Transfer Item");
-                        intent.putExtra("hiddenTitle", "API Transfer Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_receivedSap:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received from SAP");
-                        intent.putExtra("hiddenTitle", "API Received from SAP");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_systemTransferItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received from System Transfer Item");
-                        intent.putExtra("hiddenTitle", "API System Transfer Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_itemRequest:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Item Request");
-                        intent.putExtra("hiddenTitle", "API Item Request");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_InventoryCount:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Inventory Count");
-                        intent.putExtra("hiddenTitle", "API Inventory Count");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_invConfirmation:
-                        result = true;
-                        intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
-                        intent.putExtra("title", "Inv. and P.O Count Confirmation");
-                        intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_cutOff:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        intent = new Intent(getBaseContext(), CutOff.class);
-                        intent.putExtra("title", "Cut Off");
-                        intent.putExtra("hiddenTitle", "API Cut Off");
-                        startActivity(intent);
-                        break;
-                    case  R.id.nav_pullOutCount:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Pull Out Request");
-                        intent.putExtra("hiddenTitle", "API Pull Out Count");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_invLogs:
-                        result = true;
-                        intent = new Intent(getBaseContext(), API_SalesLogs.class);
-                        intent.putExtra("title", "Inventory Logs");
-                        intent.putExtra("hiddenTitle", "API Inventory Logs");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_uploadOffline:
-                        result = true;
-                        intent = new Intent(getBaseContext(), OfflineList.class);
-                        intent.putExtra("title", "Offline Pending Transactions");
-                        intent.putExtra("hiddenTitle", "API Offline List");
-                        startActivity(intent);
-                        finish();
-                        break;
-                }
-                return result;
-            }
-        });
+        genData();
+        addDrawersItem();
+        setupDrawer();
+
+        if(savedInstanceState == null){
+            selectFirstItemDefault();
+        }
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
+
 
         hmReturnBranches();
         hmReturnBranches();
@@ -251,94 +142,71 @@ public class API_InventoryConfirmation extends AppCompatActivity {
         btnProceed.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final String[] poDestination = {""};
-                final int[] itr = {0};
+                double [] actualCash = {0.0};
                 AlertDialog.Builder myDialog = new AlertDialog.Builder(API_InventoryConfirmation.this);
                 myDialog.setCancelable(false);
 
-                if(poCount > 0.00){
+                LinearLayout layout = new LinearLayout(getBaseContext());
+                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                layoutParams.setMargins(50,50,50,50);
 
-                    LinearLayout layout = new LinearLayout(getBaseContext());
-                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                    layoutParams.setMargins(50,50,50,50);
+                LinearLayout.LayoutParams layoutParamsLblWarehouses = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                layout.setOrientation(LinearLayout.VERTICAL);
+                layout.setLayoutParams(layoutParams);
 
-                    LinearLayout.LayoutParams layoutParamsLblWarehouses = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                    layout.setOrientation(LinearLayout.VERTICAL);
-                    layout.setLayoutParams(layoutParams);
+                LinearLayout.LayoutParams layoutParamsLblITR = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                layoutParamsLblITR.setMargins(50,20,50,0);
 
-                    TextView lblPullOutDestination = new TextView(getBaseContext());
-                    lblPullOutDestination.setTextSize(15);
-                    lblPullOutDestination.setText("Pull Out Destination:");
-                    layoutParamsLblWarehouses.setMargins(50,20,50,10);
-                    lblPullOutDestination.setLayoutParams(layoutParamsLblWarehouses);
-                    layout.addView(lblPullOutDestination);
+                LinearLayout.LayoutParams layoutParamsTxtITR = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                layoutParamsTxtITR.setMargins(50,0,50,10);
 
-                    SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
-                    String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
-                    SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-                    String IPaddress = sharedPreferences2.getString("IPAddress", "");
+                TextView lblActualCash = new TextView(getBaseContext());
+                lblActualCash.setTextSize(15);
+                lblActualCash.setTextColor(Color.rgb(0,0,0));
+                lblActualCash.setText("*Actual Cash:");
+                lblActualCash.setLayoutParams(layoutParamsLblITR);
+                layout.addView(lblActualCash);
 
-                    Spinner cmbWarehouses = new Spinner(getBaseContext());
-                    LinearLayout.LayoutParams layoutParamsCmbWarehouses = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                    layoutParamsCmbWarehouses.setMargins(50,0,50,0);
-                    cmbWarehouses.setLayoutParams(layoutParamsCmbWarehouses);
-                    List<String> warehouses = new ArrayList<>();
-                    warehouses.add("Select Warehouse");
-                    warehouses = returnBranches();
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(API_InventoryConfirmation.this, android.R.layout.simple_spinner_item, warehouses);
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    cmbWarehouses.setAdapter(adapter);
-                    cmbWarehouses.setSelection(-1);
+                EditText txtActualCash = new EditText(getBaseContext());
+                txtActualCash.setTextSize(15);
+                txtActualCash.setLayoutParams(layoutParamsTxtITR);
+                txtActualCash.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                layout.addView(txtActualCash);
 
-                    cmbWarehouses.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                        @Override
-                        public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                            poDestination[0] = findWarehouseCode(cmbWarehouses.getSelectedItem().toString());
-                        }
 
-                        @Override
-                        public void onNothingSelected(AdapterView<?> adapterView) {
+                txtActualCash.addTextChangedListener(new TextWatcher() {
+                    @Override
+                    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 
-                        }
-                    });
+                    }
 
-                    layout.addView(cmbWarehouses);
+                    @Override
+                    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                        actualCash[0] = (txtActualCash.getText().toString().isEmpty() ||txtActualCash.getText().toString().equals(".") ? 0.00 : Double.parseDouble(txtActualCash.getText().toString()));
+                    }
 
-                    TextView lblITRNumber = new TextView(getBaseContext());
-                    lblITRNumber.setTextSize(15);
-                    lblITRNumber.setText("ITR #:");
-                    LinearLayout.LayoutParams layoutParamsLblITR = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                    layoutParamsLblITR.setMargins(50,10,50,0);
-                    lblITRNumber.setLayoutParams(layoutParamsLblITR);
-                    layout.addView(lblITRNumber);
+                    @Override
+                    public void afterTextChanged(Editable editable) {
 
-                    EditText txtITRNumber = new EditText(getBaseContext());
-                    txtITRNumber.setTextSize(15);
-                    txtITRNumber.setHint("Enter ITR (Option)");
-                    LinearLayout.LayoutParams layoutParamsTxtITR = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                    layoutParamsTxtITR.setMargins(50,0,50,10);
-                    txtITRNumber.setLayoutParams(layoutParamsTxtITR);
-                    txtITRNumber.setInputType(InputType.TYPE_CLASS_NUMBER);
+                    }
+                });
 
-                    txtITRNumber.addTextChangedListener(new TextWatcher() {
-                        @Override
-                        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                TextView lblRemarks = new TextView(getBaseContext());
+                lblRemarks.setTextColor(Color.rgb(0,0,0));
+                lblRemarks.setText("*Remarks:");
+                lblRemarks.setTextSize(15);
+                lblRemarks.setLayoutParams(layoutParamsLblITR);
+                lblRemarks.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                layout.addView(lblRemarks);
 
-                        }
+                EditText txtRemarks = new EditText(API_InventoryConfirmation.this);
+                txtRemarks.setTextColor(Color.rgb(0,0,0));
+                txtRemarks.setTextSize(15);
+                txtRemarks.setLayoutParams(layoutParamsTxtITR);
+                txtRemarks.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                layout.addView(txtRemarks);
 
-                        @Override
-                        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                            itr[0] = (txtITRNumber.getText().toString().isEmpty() ? 0 : Integer.parseInt(txtITRNumber.getText().toString()));
-                        }
-
-                        @Override
-                        public void afterTextChanged(Editable editable) {
-                        }
-                    });
-                    layout.addView(txtITRNumber);
-                    myDialog.setView(layout);
-                }
-
+                myDialog.setView(layout);
 
                 myDialog.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
                     @Override
@@ -349,17 +217,19 @@ public class API_InventoryConfirmation extends AppCompatActivity {
                         mLastClickTime = SystemClock.elapsedRealtime();
 
                         try{
-                            if(poDestination[0].equals("Select Warehouse")){
-                                Toast.makeText(getBaseContext(), "Please select Pull Out Destination", Toast.LENGTH_SHORT).show();
-                            }else{
+                            if(txtRemarks.getText().toString().trim().isEmpty()){
+                                Toast.makeText(getBaseContext(), "Please enter remarks", Toast.LENGTH_SHORT).show();
+                            }
+                            if(actualCash[0] <= 0.00) {
+                                Toast.makeText(getBaseContext(), "Please enter actual cash", Toast.LENGTH_SHORT).show();
+                            }
+                            else{
                                 AlertDialog.Builder builder = new AlertDialog.Builder(API_InventoryConfirmation.this);
                                 builder.setMessage("Are you sure want to submit?")
                                         .setCancelable(false)
                                         .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                             @Override
                                             public void onClick(DialogInterface dialog, int which) {
-                                                String poD = poDestination[0];
-                                                int sap_number = itr[0];
                                                 SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
                                                 String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
 
@@ -376,18 +246,14 @@ public class API_InventoryConfirmation extends AppCompatActivity {
                                                 try {
                                                     zxxz.put("transdate", currentDateTime);
                                                     zxxz.put("confirm", true);
-                                                    if(sap_number == 0){
-                                                        zxxz.put("po_sap",JSONObject.NULL);
-                                                    }else{
-                                                        zxxz.put("po_sap",sap_number);
-                                                    }
-                                                    zxxz.put("po_whse", poD);
+                                                    zxxz.put("actual_cash", actualCash[0]);
+                                                    zxxz.put("remarks", txtRemarks.getText().toString().trim());
                                                 } catch (JSONException e) {
                                                     e.printStackTrace();
                                                 }
 
                                                 MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-//                                                System.out.println("body: " + zxxz);
+                                                System.out.println("body: " + zxxz);
                                                 RequestBody body = RequestBody.create(JSON, zxxz.toString());
                                                 okhttp3.Request request = new okhttp3.Request.Builder()
                                                         .url(URL)
@@ -659,6 +525,192 @@ public class API_InventoryConfirmation extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        mDrawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+
+    }
+
+    public void selectFirstItemDefault(){
+        if(navigationManager != null){
+            String firstItem = listTitle.get(0);
+            navigationManager.showFragment(firstItem);
+            getSupportActionBar().setTitle(firstItem);
+        }
+    }
+
+    public void addDrawersItem(){
+        adapter = new CustomExpandableListAdapter(this, listTitle, listChild);
+        expandableListView.setAdapter(adapter);
+        expandableListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+            @Override
+            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+                String selectedItem = ((List)listChild.get(listTitle.get(groupPosition)))
+                        .get(childPosition).toString();
+                getSupportActionBar().setTitle(selectedItem);
+                Intent intent;
+                if(selectedItem.equals("Received from SAP")){
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from SAP");
+                    intent.putExtra("hiddenTitle", "API Received from SAP");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Received from System Transfer Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from System Transfer Item");
+                    intent.putExtra("hiddenTitle", "API System Transfer Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Manual Received Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received Item");
+                    intent.putExtra("hiddenTitle", "API Received Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Manual Transfer Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Transfer Item");
+                    intent.putExtra("hiddenTitle", "API Transfer Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Sales")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Sales");
+                    intent.putExtra("hiddenTitle", "API Menu Items");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Issue For Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Issue For Production");
+                    intent.putExtra("hiddenTitle", "API Issue For Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Confirm Issue For Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Confirm Issue For Production");
+                    intent.putExtra("hiddenTitle", "API Confirm Issue For Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Received from Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from Production");
+                    intent.putExtra("hiddenTitle", "API Received from Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Item Request")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Item Request");
+                    intent.putExtra("hiddenTitle", "API Item Request");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Inventory Count")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Inventory Count");
+                    intent.putExtra("hiddenTitle", "API Inventory Count");
+                    startActivity(intent);
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Pull out Request")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Pull Out Request");
+                    intent.putExtra("hiddenTitle", "API Pull Out Count");
+                    startActivity(intent);
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Logout")){
+                    onBtnLogout();
+                }
+                else if(selectedItem.equals("Logs")){
+                    intent = new Intent(getBaseContext(), API_SalesLogs.class);
+                    intent.putExtra("title", "Inventory Logs");
+                    intent.putExtra("hiddenTitle", "API Inventory Logs");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Cut Off")){
+                    intent = new Intent(getBaseContext(), CutOff.class);
+                    intent.putExtra("title", "Cut Off");
+                    intent.putExtra("hiddenTitle", "API Cut Off");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Inventory Confirmation")){
+                    intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
+                    intent.putExtra("title", "Inv. and P.O Count Confirmation");
+                    intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Change Password")){
+                    changePassword();
+                }
+                else if(selectedItem.equals("Offline Pending Transactions")){
+                    intent = new Intent(getBaseContext(), OfflineList.class);
+                    intent.putExtra("title", "Offline Pending Transactions");
+                    intent.putExtra("hiddenTitle", "API Offline List");
+                    startActivity(intent);
+                    finish();
+                }
+                return true;
+            }
+        });
+    }
+
+    public void setupDrawer(){
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,R.string.open,R.string.close){
+        };
+
+        mDrawerToggle.setDrawerIndicatorEnabled(true);
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+    }
+
+    public void genData(){
+        List<String>title = navc.getTitles(getString(R.string.app_name));
+        listChild = new TreeMap<>();
+        int iterate = getString(R.string.app_name).equals("Atlantic Bakery") ? 5 : 4;
+        int titleIndex = 0;
+        while (iterate >= 0){
+            listChild.put(title.get(titleIndex),navc.getItem(title.get(titleIndex)));
+            titleIndex += 1;
+            iterate -= 1;
+        }
+        listTitle = new ArrayList<>(listChild.keySet());
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu item) {
+        getMenuInflater().inflate(R.menu.main_menu,item);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if(mDrawerToggle.onOptionsItemSelected(item))
+            return true;
+
+        return super.onOptionsItemSelected(item);
+    }
+
 
     @Override
     protected void onResume() {
@@ -917,14 +969,6 @@ public class API_InventoryConfirmation extends AppCompatActivity {
                 });
         AlertDialog alertDialog = builder.create();
         alertDialog.show();
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if(toggle.onOptionsItemSelected(item)){
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     @SuppressLint("SetTextI18n")

@@ -5,7 +5,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import  com.android.volley.AuthFailureError;
@@ -17,11 +16,9 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 public class SalesInventory_Received extends AppCompatActivity {
     public static final String URL_WS = "http://192.168.11.8:5000/api/user/get_all_users";

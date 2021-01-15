@@ -10,15 +10,9 @@ import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.SystemClock;
-import android.text.Html;
-import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -36,19 +30,10 @@ import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationView;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -90,13 +75,13 @@ public class API_Nav extends AppCompatActivity {
 
         menu = navigationView.getMenu();
         MenuItem nav_shoppingCart = menu.findItem(R.id.usernameLogin);
-        nav_shoppingCart.setTitle("Signed In " + fullName);
+        nav_shoppingCart.setTitle("Signed In " + fullName  + " - v" + BuildConfig.VERSION_NAME);
 
         int totalCart = myDb.countItems();
         MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
         nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @SuppressLint("WrongConstant")
+            @SuppressLint({"WrongConstant", "NonConstantResourceId"})
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 boolean result = false;
@@ -133,6 +118,30 @@ public class API_Nav extends AppCompatActivity {
                         intent = new Intent(getBaseContext(), ShoppingCart.class);
                         intent.putExtra("title", "Shopping Cart");
                         intent.putExtra("hiddenTitle", "API Shopping Cart");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_issueProduction:
+                        result = true;
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Issue For Production");
+                        intent.putExtra("hiddenTitle", "API Issue For Production");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_confirmIssueProduction:
+                        result = true;
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Confirm Issue For Production");
+                        intent.putExtra("hiddenTitle", "API Confirm Issue For Production");
+                        startActivity(intent);
+                        finish();
+                        break;
+                    case R.id.nav_receivedProduction:
+                        result = true;
+                        intent = new Intent(getBaseContext(), APIReceived.class);
+                        intent.putExtra("title", "Received from Production");
+                        intent.putExtra("hiddenTitle", "API Received from Production");
                         startActivity(intent);
                         finish();
                         break;

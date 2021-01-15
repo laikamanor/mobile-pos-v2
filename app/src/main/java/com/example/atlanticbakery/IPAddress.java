@@ -1,29 +1,19 @@
 package com.example.atlanticbakery;
 
-import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.StrictMode;
-import android.os.SystemClock;
 import android.text.Html;
-import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.Objects;
 
 public class IPAddress extends AppCompatActivity {

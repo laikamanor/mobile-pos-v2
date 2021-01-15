@@ -7,12 +7,10 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
-import java.security.PublicKey;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Objects;
-import java.util.StringTokenizer;
 
 import static android.content.Context.MODE_PRIVATE;
 public class item_class {

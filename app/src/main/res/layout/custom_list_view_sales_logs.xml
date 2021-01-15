@@ -27,5 +27,18 @@
             android:textStyle="bold"
             android:layout_margin="5dp"
             android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/txtAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:gravity="right"
+            android:text=""
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="20sp"
+
+            android:textStyle="bold" />
+
     </LinearLayout>
 </LinearLayout>

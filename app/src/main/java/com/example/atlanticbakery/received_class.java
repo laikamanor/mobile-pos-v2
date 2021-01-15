@@ -6,13 +6,11 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class received_class {
     connection_class cc = new connection_class();

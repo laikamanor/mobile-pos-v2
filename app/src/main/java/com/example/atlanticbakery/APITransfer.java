@@ -1,14 +1,9 @@
 package com.example.atlanticbakery;
 
-import androidx.annotation.RestrictTo;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -17,7 +12,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
 import okhttp3.Call;
@@ -27,8 +21,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class APITransfer extends AppCompatActivity {
     private OkHttpClient client;

@@ -6,12 +6,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.SystemClock;
+import android.os.Handler;
 import android.text.Html;
 import android.text.method.PasswordTransformationMethod;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -25,6 +25,8 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ExpandableListAdapter;
+import android.widget.ExpandableListView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -39,18 +41,24 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import com.google.android.material.navigation.NavigationView;
+import com.example.atlanticbakery.Adapter.CustomExpandableListAdapter;
+import com.example.atlanticbakery.Helper.FragmentNavigationManager_API_SalesLogs;
+import com.example.atlanticbakery.Interface.NavigationManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -62,22 +70,33 @@ import okhttp3.Response;
 public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog.OnDateSetListener {
     prefs_class pc = new prefs_class();
     ui_class uic = new ui_class();
-    private DrawerLayout drawerLayout;
-    private ActionBarDrawerToggle toggle;
-    NavigationView navigationView;
+    navigation_class navc = new navigation_class();
     DatabaseHelper myDb;
+
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private String mActivityTitle;
+//    private String[] items;
+
+    private ExpandableListView expandableListView;
+    private ExpandableListAdapter adapter;
+    private List<String> listTitle;
+    private Map<String, List<String>> listChild;
+    private NavigationManager navigationManager;
 
     private OkHttpClient client;
     Menu menu;
     ListView listView;
     String title,hidden_title;
-    Spinner cmbType;
+    TextView txtTotal,txtUser;
+    Spinner cmbType,cmbStatus,cmbUser;
 
     Button btnPickDate;
     TextView lblDate;
     CheckBox checkSAP;
     ProgressBar progressBar;
-    long mLastClickTime;
+    JSONArray jsonArrayUsers = new JSONArray();
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,7 +106,11 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
         progressBar.setVisibility(View.GONE);
         cmbType = findViewById(R.id.cmbType);
         lblDate= findViewById(R.id.txtDate);
+        txtTotal = findViewById(R.id.txtTotal);
+        txtUser = findViewById(R.id.lblUser);
         checkSAP = findViewById(R.id.checkSAP);
+        cmbStatus = findViewById(R.id.cmbStatus);
+        cmbUser = findViewById(R.id.cmbUser);
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDateandTime = sdf.format(new Date());
@@ -108,158 +131,33 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
                 showDate();
             }
         });
-
         myDb = new DatabaseHelper(this);
-        navigationView = findViewById(R.id.nav);
-        drawerLayout = findViewById(R.id.navDrawer);
-        toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
-
-        client = new OkHttpClient();
-
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+        mActivityTitle = getTitle().toString();
+        expandableListView = (ExpandableListView)findViewById(R.id.navList);
+        navigationManager = FragmentNavigationManager_API_SalesLogs.getmInstance(this);
 
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
         String fullName = Objects.requireNonNull(sharedPreferences.getString("fullname", ""));
 
-        menu = navigationView.getMenu();
-        MenuItem nav_shoppingCart = menu.findItem(R.id.usernameLogin);
-        nav_shoppingCart.setTitle("Signed In " + fullName);
+        View listReaderView = getLayoutInflater().inflate(R.layout.nav_header, null,false);
+        TextView txtName = listReaderView.findViewById(R.id.txtName);
+        txtName.setText(fullName + " - v" + BuildConfig.VERSION_NAME);
+        expandableListView.addHeaderView(listReaderView);
+
+        genData();
+        addDrawersItem();
+        setupDrawer();
+
+        if(savedInstanceState == null){
+            selectFirstItemDefault();
+        }
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
 
         title = getIntent().getStringExtra("title");
         hidden_title = getIntent().getStringExtra("hiddenTitle");
         Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
-
-
-        int totalCart = myDb.countItems();
-        MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
-        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @SuppressLint("WrongConstant")
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean result = false;
-                Intent intent;
-                switch (menuItem.getItemId()) {
-                    case R.id.nav_logOut:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        onBtnLogout();
-                        break;
-                    case R.id.nav_changePassword:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        changePassword();
-                        break;
-                    case R.id.nav_cutOff:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        intent = new Intent(getBaseContext(), CutOff.class);
-                        intent.putExtra("title", "Cut Off");
-                        intent.putExtra("hiddenTitle", "API Cut Off");
-                        startActivity(intent);
-                        break;
-                    case R.id.nav_exploreItems:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Menu Items");
-                        intent.putExtra("hiddenTitle", "API Menu Items");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_shoppingCart:
-                        result = true;
-                        intent = new Intent(getBaseContext(), ShoppingCart.class);
-                        intent.putExtra("title", "Shopping Cart");
-                        intent.putExtra("hiddenTitle", "API Shopping Cart");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_receivedItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received Item");
-                        intent.putExtra("hiddenTitle", "API Received Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_transferItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Transfer Item");
-                        intent.putExtra("hiddenTitle", "API Transfer Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_receivedSap:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received from SAP");
-                        intent.putExtra("hiddenTitle", "API Received from SAP");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_systemTransferItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received from System Transfer Item");
-                        intent.putExtra("hiddenTitle", "API System Transfer Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_itemRequest:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Item Request");
-                        intent.putExtra("hiddenTitle", "API Item Request");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_InventoryCount:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Inventory Count");
-                        intent.putExtra("hiddenTitle", "API Inventory Count");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_invConfirmation:
-                        result = true;
-                        intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
-                        intent.putExtra("title", "Inv. and P.O Count Confirmation");
-                        intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_pullOutCount:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Pull Out Request");
-                        intent.putExtra("hiddenTitle", "API Pull Out Count");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_invLogs:
-                        result = true;
-                        intent = new Intent(getBaseContext(), API_SalesLogs.class);
-                        intent.putExtra("title", "Inventory Logs");
-                        intent.putExtra("hiddenTitle", "API Inventory Logs");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_uploadOffline:
-                        result = true;
-                        intent = new Intent(getBaseContext(), OfflineList.class);
-                        intent.putExtra("title", "Offline Pending Transactions");
-                        intent.putExtra("hiddenTitle", "API Offline List");
-                        startActivity(intent);
-                        finish();
-                        break;
-                }
-                return result;
-            }
-        });
         listView = findViewById(R.id.listView);
 
         ArrayList<String> types = new ArrayList<>();
@@ -274,12 +172,22 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 if(i == 0){
+                    txtTotal.setVisibility(View.GONE);
+                    cmbUser.setVisibility(View.GONE);
+                    txtUser.setVisibility(View.GONE);
                     MyData myData = new MyData("Received Transactions");
                     myData.execute();
                 }else if(i == 1){
+                    cmbUser.setVisibility(View.GONE);
+                    txtUser.setVisibility(View.GONE);
+                    txtTotal.setVisibility(View.GONE);
                     MyData myData = new MyData("Transfer Transactions");
                     myData.execute();
                 }else if(i == 2){
+                    txtTotal.setVisibility(View.VISIBLE);
+                    cmbUser.setVisibility(View.VISIBLE);
+                    txtUser.setVisibility(View.VISIBLE);
+                    loadUsers();
                     MyData myData = new MyData("Sales Transactions");
                     myData.execute();
                 }
@@ -291,6 +199,325 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
             }
         });
 
+        ArrayList<String> status = new ArrayList<>();
+        status.add("All");
+        status.add("Open");
+        status.add("Closed");
+        status.add("Cancelled");
+        ArrayAdapter<String> adapter1 = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, status);
+        adapter1.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        cmbStatus.setAdapter(adapter1);
+        cmbStatus.setSelection(0);
+
+        cmbStatus.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int i, long id) {
+                MyData myData = new MyData(cmbType.getSelectedItem().toString());
+                myData.execute();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        cmbUser.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                MyData myData = new MyData(cmbType.getSelectedItem().toString());
+                myData.execute();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+    }
+
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        mDrawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+
+    }
+
+    public void selectFirstItemDefault(){
+        if(navigationManager != null){
+            String firstItem = listTitle.get(0);
+            navigationManager.showFragment(firstItem);
+            getSupportActionBar().setTitle(firstItem);
+        }
+    }
+
+    public void addDrawersItem(){
+        adapter = new CustomExpandableListAdapter(this, listTitle, listChild);
+        expandableListView.setAdapter(adapter);
+        expandableListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+            @Override
+            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+                String selectedItem = ((List)listChild.get(listTitle.get(groupPosition)))
+                        .get(childPosition).toString();
+                getSupportActionBar().setTitle(selectedItem);
+                Intent intent;
+                if(selectedItem.equals("Received from SAP")){
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from SAP");
+                    intent.putExtra("hiddenTitle", "API Received from SAP");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Received from System Transfer Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from System Transfer Item");
+                    intent.putExtra("hiddenTitle", "API System Transfer Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Manual Received Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received Item");
+                    intent.putExtra("hiddenTitle", "API Received Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Manual Transfer Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Transfer Item");
+                    intent.putExtra("hiddenTitle", "API Transfer Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Sales")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Sales");
+                    intent.putExtra("hiddenTitle", "API Menu Items");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Issue For Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Issue For Production");
+                    intent.putExtra("hiddenTitle", "API Issue For Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Confirm Issue For Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Confirm Issue For Production");
+                    intent.putExtra("hiddenTitle", "API Confirm Issue For Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Received from Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from Production");
+                    intent.putExtra("hiddenTitle", "API Received from Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Item Request")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Item Request");
+                    intent.putExtra("hiddenTitle", "API Item Request");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Inventory Count")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Inventory Count");
+                    intent.putExtra("hiddenTitle", "API Inventory Count");
+                    startActivity(intent);
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Pull out Request")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Pull Out Request");
+                    intent.putExtra("hiddenTitle", "API Pull Out Count");
+                    startActivity(intent);
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Logout")){
+                    onBtnLogout();
+                }
+                else if(selectedItem.equals("Logs")){
+                    intent = new Intent(getBaseContext(), API_SalesLogs.class);
+                    intent.putExtra("title", "Inventory Logs");
+                    intent.putExtra("hiddenTitle", "API Inventory Logs");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Cut Off")){
+                    intent = new Intent(getBaseContext(), CutOff.class);
+                    intent.putExtra("title", "Cut Off");
+                    intent.putExtra("hiddenTitle", "API Cut Off");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Inventory Confirmation")){
+                    intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
+                    intent.putExtra("title", "Inv. and P.O Count Confirmation");
+                    intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Change Password")){
+                    changePassword();
+                }
+                else if(selectedItem.equals("Offline Pending Transactions")){
+                    intent = new Intent(getBaseContext(), OfflineList.class);
+                    intent.putExtra("title", "Offline Pending Transactions");
+                    intent.putExtra("hiddenTitle", "API Offline List");
+                    startActivity(intent);
+                    finish();
+                }
+                return true;
+            }
+        });
+    }
+
+    public void setupDrawer(){
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,R.string.open,R.string.close){
+        };
+
+        mDrawerToggle.setDrawerIndicatorEnabled(true);
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+    }
+
+    public void genData(){
+        List<String>title = navc.getTitles(getString(R.string.app_name));
+        listChild = new TreeMap<>();
+        int iterate = getString(R.string.app_name).equals("Atlantic Bakery") ? 5 : 4;
+        int titleIndex = 0;
+        while (iterate >= 0){
+            listChild.put(title.get(titleIndex),navc.getItem(title.get(titleIndex)));
+            titleIndex += 1;
+            iterate -= 1;
+        }
+        listTitle = new ArrayList<>(listChild.keySet());
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu item) {
+        getMenuInflater().inflate(R.menu.main_menu,item);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if(mDrawerToggle.onOptionsItemSelected(item))
+            return true;
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
+    public void loadUsers(){
+        List<String> tenderTypes = new ArrayList<>();
+
+        SharedPreferences sharedPreferences0 = getSharedPreferences("TOKEN", MODE_PRIVATE);
+        String token = sharedPreferences0.getString("token", "");
+
+        SharedPreferences sharedPreferences3 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+        String IPAddress = sharedPreferences3.getString("IPAddress", "");
+
+        SharedPreferences sharedPreferences4 = getSharedPreferences("LOGIN", MODE_PRIVATE);
+        String userID = sharedPreferences4.getString("userid", "");
+        String isManager = sharedPreferences4.getString("isManager", "");
+        String isAdmin = sharedPreferences4.getString("isAdmin", "");
+        String branchCode = sharedPreferences4.getString("branch", "");
+        String sURL = "";
+        if(Integer.parseInt(isManager.trim()) > 0 || Integer.parseInt(isAdmin.trim()) > 0){
+            sURL = "?isSales=1&branch=" + branchCode;
+        }else {
+            sURL = "?id=" + userID;
+        }
+        System.out.println("RESS: " + IPAddress + "/api/auth/user/get_all" + sURL);
+        okhttp3.Request request = new okhttp3.Request.Builder()
+                .url(IPAddress + "/api/auth/user/get_all" + sURL)
+                .addHeader("Authorization", "Bearer " + token)
+                .addHeader("Content-Type", "application/json")
+                .method("GET", null)
+                .build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, okhttp3.Response response) throws IOException {
+                API_SalesLogs.this.runOnUiThread(new Runnable() {
+                    public void run() {
+                        Handler handler = new Handler();
+                        Runnable runnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                synchronized (this) {
+                                    try {
+                                        wait(10);
+                                    } catch (InterruptedException ignored) {
+
+                                    }
+                                    handler.post(() -> {
+                                        try {
+                                            assert response.body() != null;
+                                            String result = response.body().string();
+//                                                                                    System.out.println(result);
+                                            JSONObject jsonObject1 = new JSONObject(result);
+                                            if (response.isSuccessful()) {
+                                                if (jsonObject1.getBoolean("success")) {
+                                                    JSONArray jsonArray = jsonObject1.getJSONArray("data");
+                                                    System.out.println("FINAL: " + isManager);
+                                                    if(Integer.parseInt(isManager.trim()) > 0 || Integer.parseInt(isAdmin.trim()) > 0){
+                                                        tenderTypes.add("All");
+                                                    }
+                                                    for (int ii = 0; ii < jsonArray.length(); ii++) {
+                                                        JSONObject jsonObject = jsonArray.getJSONObject(ii);
+                                                        tenderTypes.add(jsonObject.getString("username"));
+                                                        JSONObject jsonObjectUsers = new JSONObject();
+                                                        jsonObjectUsers.put("id", jsonObject.getInt("id"));
+                                                        jsonObjectUsers.put("username", jsonObject.getString("username"));
+                                                        jsonArrayUsers.put(jsonObjectUsers);
+                                                    }
+                                                    ArrayAdapter<String> adapter = new ArrayAdapter<>(API_SalesLogs.this, android.R.layout.simple_spinner_item, tenderTypes);
+                                                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                                                    cmbUser.setAdapter(adapter);
+                                                }else {
+                                                    String msg = jsonObject1.getString("message");
+                                                    Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
+                                                }
+
+                                            } else {
+                                                System.out.println(jsonObject1.getString("message"));
+                                            }
+                                        } catch (Exception ex) {
+                                            ex.printStackTrace();
+                                        }
+                                    });
+                                }
+                            }
+                        };
+                        Thread thread = new Thread(runnable);
+                        thread.start();
+                    }
+                });
+            }
+        });
     }
 
     public void changePassword(){
@@ -494,20 +721,34 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
                 String token = sharedPreferences0.getString("token", "");
 
                 SharedPreferences sharedPreferences3 = getSharedPreferences("LOGIN", MODE_PRIVATE);
+                String branchCode = sharedPreferences3.getString("branch", "");
                 String userID = sharedPreferences3.getString("userid", "");
                 String sUserID = userID.isEmpty() ? "" : "&created_by=" + userID;
-
+                String statusDecode = cmbStatus.getSelectedItem().toString().equals("All") ? "" : cmbStatus.getSelectedItem().toString().equals("Open") ? "O" : cmbStatus.getSelectedItem().equals("Closed") ? "C" : cmbStatus.getSelectedItem().toString().equals("Cancelled") ? "N" : "";
+                String sStatus = "&docstatus=" + statusDecode;
                 String sSAPNumber = checkSAP.isChecked() ? "&sap_number=1" : "&sap_number=";
-
-                String recURL = "/api/inv/recv/get_all?transdate=" + lblDate.getText().toString() + sSAPNumber + sUserID,
-                        transURL = "/api/inv/trfr/getall?transdate=" + lblDate.getText().toString() + sSAPNumber + sUserID,
-                        salesURL = "/api/sales/get_all?transdate=" + lblDate.getText().toString() + sSAPNumber + sUserID,
+                String sBranch = "&branch=" + branchCode;
+                int id = 0;
+                if(cmbType.getSelectedItem().toString().equals("Sales Transactions")){
+                    for (int ii = 0; ii < jsonArrayUsers.length(); ii++) {
+                        JSONObject jsonObject = jsonArrayUsers.getJSONObject(ii);
+                        if(cmbUser.getSelectedItem().toString().equals(jsonObject.getString("username"))){
+                            id = jsonObject.getInt("id");
+                            break;
+                        }
+                    }
+                }
+                String sUser = "&created_by=" + (id > 0 ? id : "");
+                String recURL = "/api/inv/recv/get_all?transdate=" + lblDate.getText().toString() + sSAPNumber + sUserID + sStatus,
+                        transURL = "/api/inv/trfr/getall?transdate=" + lblDate.getText().toString() + sSAPNumber + sUserID + sStatus,
+                        salesURL = "/api/sales/get_all?transdate=" + lblDate.getText().toString() + sSAPNumber + sStatus + sUser + sBranch ,
                         resultURL = "";
                 if(type.equals("Received Transactions")){
                     resultURL = recURL;
                 }else if(type.equals("Transfer Transactions")){
                     resultURL = transURL;
                 }else{
+                    System.out.println("SALES URL: " + salesURL);
                     resultURL = salesURL;
                 }
                 System.out.println("result: " + resultURL);
@@ -558,18 +799,23 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
                 JSONObject jsonObject1 = new JSONObject(temp);
                 if(jsonObject1.getBoolean("success")){
                     JSONArray jsonArrayData = jsonObject1.getJSONArray("data");
+                    System.out.println("ey: " + jsonObject1);
                     ArrayList<String> myReference = new ArrayList<String>();
                     ArrayList<String> myID = new ArrayList<String>();
-                    int count =0;
+                    ArrayList<String> myAmount = new ArrayList<String>();
+                    DecimalFormat df = new DecimalFormat("#,###.00");
+                    double total = 0.00;
                     for (int i = 0; i < jsonArrayData.length(); i++) {
                         JSONObject jsonObjectData = jsonArrayData.getJSONObject(i);
-                        myReference.add(jsonObjectData.getString("reference"));
+                        myReference.add(jsonObjectData.getString("reference") + "\n SAP #: " + (jsonObjectData.isNull("sap_number") ? "" : jsonObjectData.getString("sap_number")));
                         myID.add(String.valueOf(jsonObjectData.getInt("id")));
-                        count+= 1;
+                        String amount = (cmbType.getSelectedItem().toString().equals("Sales Transactions") ? df.format(jsonObjectData.getDouble("doctotal")) : "");
+                        myAmount.add(amount);
+                        total += cmbType.getSelectedItem().toString().equals("Sales Transactions") ? jsonObjectData.getDouble("doctotal") : 0.00;
                     }
-                    MyAdapter adapter = new MyAdapter(this, myReference, myID);;
+                    txtTotal.setText("Total: " + df.format(total));
+                    MyAdapter adapter = new MyAdapter(this, myReference, myID,myAmount);;
                     runOnUiThread(new Runnable() {
-
                         @Override
                         public void run() {
                             listView.setAdapter(adapter);
@@ -634,12 +880,14 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
         Context rContext;
         ArrayList<String> myReference;
         ArrayList<String> myIds;
+        ArrayList<String> amounts;
 
-        MyAdapter(Context c, ArrayList<String> reference, ArrayList<String> id) {
+        MyAdapter(Context c, ArrayList<String> reference, ArrayList<String> id,ArrayList<String> amount) {
             super(c, R.layout.custom_list_view_sales_logs, R.id.txtReference, reference);
             this.rContext = c;
             this.myReference = reference;
             this.myIds = id;
+            this.amounts = amount;
         }
 
         @NonNull
@@ -649,10 +897,12 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
             View row = layoutInflater.inflate(R.layout.custom_list_view_sales_logs, parent, false);
             TextView textView1 = row.findViewById(R.id.txtReference);
             TextView textView2 = row.findViewById(R.id.txtIDs);
-
+            TextView textView3 = row.findViewById(R.id.txtAmount);
             textView1.setText(myReference.get(position));
             textView2.setText(myIds.get(position));
-            textView2.setVisibility(View.INVISIBLE);
+            textView3.setText(amounts.get(position));
+            textView2.setVisibility(View.GONE);
+            textView3.setVisibility((amounts.get(position).equals("") ? View.GONE : View.VISIBLE));
 
             return row;
         }
@@ -688,13 +938,5 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
                 });
         AlertDialog alertDialog = builder.create();
         alertDialog.show();
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if(toggle.onOptionsItemSelected(item)){
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 }

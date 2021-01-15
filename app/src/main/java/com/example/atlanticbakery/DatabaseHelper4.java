@@ -9,18 +9,16 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import androidx.annotation.Nullable;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public class DatabaseHelper4 extends SQLiteOpenHelper {
 
-    public static final String DATABASE_NAME = "bnm.db";
-    public static final String TABLE_NAME = "bnm";
+    public static final String DATABASE_NAME = "as.db";
+    public static final String TABLE_NAME = "zx";
     public  static  final String COL_1 = "id";
     public  static  final String COL_2 = "itemname";
     public  static  final String COL_3 = "quantity";
     public  static  final String COL_4 = "type";
     public  static  final String COL_5 = "status";
+    public  static  final String COL_6 = "uom";
     public DatabaseHelper4(@Nullable Context context) {
         super(context, DATABASE_NAME, null, 1);
         SQLiteDatabase db = this.getWritableDatabase();
@@ -28,7 +26,7 @@ public class DatabaseHelper4 extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        sqLiteDatabase.execSQL("CREATE TABLE " + TABLE_NAME + "(id INTEGER PRIMARY KEY AUTOINCREMENT,itemname TEXT, quantity FLOAT,type TEXT,status INTEGER)");
+        sqLiteDatabase.execSQL("CREATE TABLE " + TABLE_NAME + "(id INTEGER PRIMARY KEY AUTOINCREMENT,itemname TEXT, quantity FLOAT,type TEXT,status INTEGER,uom TEXT)");
     }
 
     @Override
@@ -36,13 +34,14 @@ public class DatabaseHelper4 extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         onCreate(sqLiteDatabase);
     }
-    public boolean insertData(String itemName, Double quantity, String type, Integer status){
+    public boolean insertData(String itemName, Double quantity, String type, Integer status, String uom){
         SQLiteDatabase db = this.getReadableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COL_2, itemName);
         contentValues.put(COL_3, quantity);
         contentValues.put(COL_4, type);
         contentValues.put(COL_5, status);
+        contentValues.put(COL_6, uom);
         long resultQuery = db.insert(TABLE_NAME,null,contentValues);
         boolean result;
         result = resultQuery != -1;

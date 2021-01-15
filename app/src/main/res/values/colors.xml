@@ -8,4 +8,7 @@
     <color name="colorBlue">#00477e</color>
     <color name="colorGray">#d9d9d9</color>
     <color name="colorLabel">#4a4d4b</color>
+    <color name="dividerColor">#80DBC4</color>
+    <color name="list_item_title">#AAAAAA</color>
+    <color name="list_group_title">#808080</color>
 </resources>

@@ -4,13 +4,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.StrictMode;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.Html;
@@ -32,6 +32,8 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ExpandableListAdapter;
+import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -49,12 +51,11 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.android.material.navigation.NavigationView;
-import com.google.gson.JsonObject;
+import com.example.atlanticbakery.Adapter.CustomExpandableListAdapter;
+import com.example.atlanticbakery.Helper.FragmentNavigationManager_ShoppingCart;
+import com.example.atlanticbakery.Interface.NavigationManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -66,12 +67,11 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.TreeMap;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -89,12 +89,19 @@ public class ShoppingCart extends AppCompatActivity {
     String discountName = "";
     long mLastClickTime = 0;
     private RequestQueue mQueue;
-    private DrawerLayout drawerLayout;
-    private ActionBarDrawerToggle toggle;
-    NavigationView navigationView;
 
     ui_class uic = new ui_class();
     prefs_class pc = new prefs_class();
+    navigation_class navc = new navigation_class();
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private String mActivityTitle;
+    private ExpandableListView expandableListView;
+    private ExpandableListAdapter adapter;
+    private List<String> listTitle;
+    private Map<String, List<String>> listChild;
+    private NavigationManager navigationManager;
+
     int userID = 0;
 
     DecimalFormat df = new DecimalFormat("#,###.00");
@@ -119,408 +126,222 @@ public class ShoppingCart extends AppCompatActivity {
         client = new OkHttpClient();
         mQueue = Volley.newRequestQueue(this);
 
-        navigationView = findViewById(R.id.nav);
-        drawerLayout = findViewById(R.id.navDrawer);
-        toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
 
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
 
         title = getIntent().getStringExtra("title");
         hiddenTitle = getIntent().getStringExtra("hiddenTitle");
 
+        mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+        mActivityTitle = getTitle().toString();
+        expandableListView = (ExpandableListView)findViewById(R.id.navList);
+        navigationManager = FragmentNavigationManager_ShoppingCart.getmInstance(this);
+
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
-        userID = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString("userid", "")));
         String fullName = Objects.requireNonNull(sharedPreferences.getString("fullname", ""));
 
-        menu = navigationView.getMenu();
-        MenuItem nav_UsernameLogin = menu.findItem(R.id.usernameLogin);
-        nav_UsernameLogin.setTitle("Signed In " + fullName);
+        View listReaderView = getLayoutInflater().inflate(R.layout.nav_header, null,false);
+        TextView txtName = listReaderView.findViewById(R.id.txtName);
+        txtName.setText(fullName + " - v" + BuildConfig.VERSION_NAME);
+        expandableListView.addHeaderView(listReaderView);
 
-        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @SuppressLint("WrongConstant")
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                boolean result = false;
-                Intent intent;
-                switch (menuItem.getItemId()) {
-                    case R.id.nav_logOut:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        onBtnLogout();
-                        break;
-                    case R.id.nav_changePassword:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        changePassword();
-                        break;
-                    case R.id.nav_exploreItems:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Menu Items");
-                        intent.putExtra("hiddenTitle", "API Menu Items");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_receivedItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received Item");
-                        intent.putExtra("hiddenTitle", "API Received Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_transferItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Transfer Item");
-                        intent.putExtra("hiddenTitle", "API Transfer Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_receivedSap:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received from SAP");
-                        intent.putExtra("hiddenTitle", "API Received from SAP");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_systemTransferItem:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Received from System Transfer Item");
-                        intent.putExtra("hiddenTitle", "API System Transfer Item");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_itemRequest:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Item Request");
-                        intent.putExtra("hiddenTitle", "API Item Request");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_InventoryCount:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Inventory Count");
-                        intent.putExtra("hiddenTitle", "API Inventory Count");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_invConfirmation:
-                        result = true;
-                        intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
-                        intent.putExtra("title", "Inv. and P.O Count Confirmation");
-                        intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_shoppingCart:
-                        result = true;
-                        intent = new Intent(getBaseContext(), ShoppingCart.class);
-                        intent.putExtra("title", "Shopping Cart");
-                        intent.putExtra("hiddenTitle", "API Shopping Cart");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_pullOutCount:
-                        result = true;
-                        intent = new Intent(getBaseContext(), APIReceived.class);
-                        intent.putExtra("title", "Pull Out Request");
-                        intent.putExtra("hiddenTitle", "API Pull Out Count");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case  R.id.nav_invLogs:
-                        result = true;
-                        intent = new Intent(getBaseContext(), API_SalesLogs.class);
-                        intent.putExtra("title", "Inventory Logs");
-                        intent.putExtra("hiddenTitle", "API Inventory Logs");
-                        startActivity(intent);
-                        finish();
-                        break;
-                    case R.id.nav_cutOff:
-                        result = true;
-                        drawerLayout.closeDrawer(Gravity.START, false);
-                        intent = new Intent(getBaseContext(), CutOff.class);
-                        intent.putExtra("title", "Cut Off");
-                        intent.putExtra("hiddenTitle", "API Cut Off");
-                        startActivity(intent);
-                        break;
-                    case R.id.nav_uploadOffline:
-                        result = true;
-                        intent = new Intent(getBaseContext(), OfflineList.class);
-                        intent.putExtra("title", "Offline Pending Transactions");
-                        intent.putExtra("hiddenTitle", "API Offline List");
-                        startActivity(intent);
-                        finish();
-                        break;
-                }
-                return result;
-            }
-        });
+        genData();
+        addDrawersItem();
+        setupDrawer();
 
+        if(savedInstanceState == null){
+            selectFirstItemDefault();
+        }
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setTitle(getString(R.string.app_name));
         hmReturnCustomers();
         hmReturnCustomers();
-
-//        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-//            @SuppressLint("WrongConstant")
-//            @Override
-//            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-////                boolean isStoreExist = ac.isTypeExist(ShoppingCart.this, "Store Count");
-////                boolean isAuditorExist = ac.isTypeExist(ShoppingCart.this, "Auditor Count");
-////                boolean isFinalExist = ac.isTypeExist(ShoppingCart.this, "Final Count");
-//
-////                boolean isStorePullOutExist = ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out");
-////                boolean isAuditorPullOutExist = ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out");
-////                boolean isFinalPullOutExist = ac.isTypeExist(ShoppingCart.this, "Final Count Pull Out");
-//                boolean result = false;
-//                Intent intent;
-//                switch (menuItem.getItemId()) {
-//                    case R.id.nav_logOut:
-//                        result = true;
-//                        drawerLayout.closeDrawer(Gravity.START, false);
-//                        onBtnLogout();
-//                        break;
-//                    case R.id.nav_scanItem:
-//                        result = true;
-//                        drawerLayout.closeDrawer(Gravity.START, false);
-//                        startActivity(uic.goTo(ShoppingCart.this, ScanQRCode.class));
-//                        finish();
-//                        break;
-//                    case R.id.nav_exploreItems:
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), AvailableItems.class);
-//                        intent.putExtra("title", "Menu Items");
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-//                    case R.id.nav_shoppingCart:
-//                        result = true;
-//                        drawerLayout.closeDrawer(Gravity.START, false);
-//                        startActivity(uic.goTo(ShoppingCart.this, ShoppingCart.class));
-//                        finish();
-//                        break;
-//                    case R.id.nav_receivedProduction:
-//                        if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
-//                            if(!accessc.isUserAllowed(ShoppingCart.this,"Received from Production", userID)){
-//                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-//                            }else if(accessc.checkCutOff(ShoppingCart.this)) {
-//                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-//                            }else{
-//                                result = true;
-//                                intent = new Intent(getBaseContext(), AvailableItems.class);
-//                                intent.putExtra("title", "Manual Received from Production");
-//                                startActivity(intent);
-//                                finish();
-//                            }
-//                        }else if(accessc.checkCutOff(ShoppingCart.this)){
-//                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-//                        }else {
-//                            result = true;
-//                            intent = new Intent(getBaseContext(), AvailableItems.class);
-//                            intent.putExtra("title", "Manual Received from Production");
-//                            startActivity(intent);
-//                            finish();
-//                        }
-//                        break;
-//                    case R.id.nav_receivedBranch:
-//                        if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")) {
-//                            if (!accessc.isUserAllowed(ShoppingCart.this, "Received from Production", userID)) {
-//                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-//                            }else if(accessc.checkCutOff(ShoppingCart.this)) {
-//                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-//                            }else {
-//                                result = true;
-//                                intent = new Intent(getBaseContext(), AvailableItems.class);
-//                                intent.putExtra("title", "Manual Received from Other Branch");
-//                                startActivity(intent);
-//                                finish();
-//                            }
-//                        }else if(accessc.checkCutOff(ShoppingCart.this)){
-//                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-//                        }else {
-//                            result = true;
-//                            intent = new Intent(getBaseContext(), AvailableItems.class);
-//                            intent.putExtra("title", "Manual Received from Other Branch");
-//                            startActivity(intent);
-//                            finish();
-//                        }
-//                        break;
-//                    case R.id.nav_receivedSupplier:
-//                        if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")) {
-//                            if (!accessc.isUserAllowed(ShoppingCart.this, "Received from Production", userID)) {
-//                                Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-//                            }else if(accessc.checkCutOff(ShoppingCart.this)) {
-//                                Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-//                            } else {
-//                                result = true;
-//                                intent = new Intent(getBaseContext(), AvailableItems.class);
-//                                intent.putExtra("title", "Manual Received from Direct Supplier");
-//                                startActivity(intent);
-//                                finish();
-//                            }
-//                        }else if(accessc.checkCutOff(ShoppingCart.this)){
-//                            Toast.makeText(getBaseContext(), "Your account is already cut off", Toast.LENGTH_SHORT).show();
-//                        }else {
-//                            result = true;
-//                            intent = new Intent(getBaseContext(), AvailableItems.class);
-//                            intent.putExtra("title", "Manual Received from Direct Supplier");
-//                            startActivity(intent);
-//                            finish();
-//                        }
-//                        break;
-//                    case R.id.nav_transferOut2:
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), AvailableItems.class);
-//                        intent.putExtra("title", "Manual Transfer Out");
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-//                    case R.id.nav_storeCountListPullOut:
-//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Final Count Pull Out")){
-//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-//                        }else if (ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out")) {
-//                            Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
-//                        }else{
-//                            result = true;
-//                            intent = new Intent(getBaseContext(), AvailableItems.class);
-//                            intent.putExtra("title", "PO Store Count List Items");
-//                            startActivity(intent);
-//                            finish();
-//                        }
-//                        break;
-//                    case R.id.nav_auditorCountListPullOut:
-//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Final Count Pull Out")){
-//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-//                        }else if (ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out")) {
-//                            Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
-//                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Auditor")){
-//                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-//                        }else{
-//                            result = true;
-//                            intent = new Intent(getBaseContext(), AvailableItems.class);
-//                            intent.putExtra("title", "PO Auditor Count List Items");
-//                            startActivity(intent);
-//                            finish();
-//                        }
-//                        break;
-//                    case R.id.nav_finalCountListPullOut:
-//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out") && ac.isTypeExist(ShoppingCart.this, "Final Count Pull Out")){
-//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-//                        }else if (!ac.isTypeExist(ShoppingCart.this, "Auditor Count Pull Out") & !ac.isTypeExist(ShoppingCart.this, "Store Count Pull Out")) {
-//                            Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
-//                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
-//                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-//                        }else {
-//                            result = true;
-//                            intent = new Intent(getBaseContext(), AvailableItems.class);
-//                            intent.putExtra("title", "PO Final Count List Items");
-//                            startActivity(intent);
-//                            finish();
-//                        }
-//                        break;
-//                    case R.id.nav_storeCountList:
-//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count") && ac.isTypeExist(ShoppingCart.this, "Store Count") && ac.isTypeExist(ShoppingCart.this, "Final Count")){
-//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-//                        }else if (ac.isTypeExist(ShoppingCart.this, "Store Count")) {
-//                            Toast.makeText(getBaseContext(), "You have already Store Count", Toast.LENGTH_SHORT).show();
-//                        }else{
-//                            result = true;
-//                            intent = new Intent(getBaseContext(), AvailableItems.class);
-//                            intent.putExtra("title", "AC Store Count List Items");
-//                            startActivity(intent);
-//                            finish();
-//                        }
-//                        break;
-//                    case R.id.nav_auditorCountList:
-//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count") && ac.isTypeExist(ShoppingCart.this, "Store Count") && ac.isTypeExist(ShoppingCart.this, "Final Count")){
-//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-//                        }else if (ac.isTypeExist(ShoppingCart.this, "Auditor Count")) {
-//                            Toast.makeText(getBaseContext(), "You have already Auditor Count", Toast.LENGTH_SHORT).show();
-//                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Auditor")){
-//                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-//                        }else{
-//                            result = true;
-//                            intent = new Intent(getBaseContext(), AvailableItems.class);
-//                            intent.putExtra("title", "AC Auditor Count List Items");
-//                            startActivity(intent);
-//                            finish();
-//                        }
-//                        break;
-//                    case R.id.nav_finalCountList:
-//                        if(!accessc.checkCutOff(ShoppingCart.this)) {
-//                            Toast.makeText(getBaseContext(), "Cut Off first", Toast.LENGTH_SHORT).show();
-//                        }else if(ac.isTypeExist(ShoppingCart.this, "Auditor Count") && ac.isTypeExist(ShoppingCart.this, "Store Count") && ac.isTypeExist(ShoppingCart.this, "Final Count")){
-//                            Toast.makeText(getBaseContext(), "You have already Final Count", Toast.LENGTH_SHORT).show();
-//                        }else if (!ac.isTypeExist(ShoppingCart.this, "Auditor Count") & !ac.isTypeExist(ShoppingCart.this, "Store Count")) {
-//                            Toast.makeText(getBaseContext(), "Finish Store and Audit First", Toast.LENGTH_SHORT).show();
-//                        }else if(!uc.returnWorkgroup(ShoppingCart.this).equals("Manager")){
-//                            Toast.makeText(getBaseContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-//                        }else {
-//                            result = true;
-//                            intent = new Intent(getBaseContext(), AvailableItems.class);
-//                            intent.putExtra("title", "AC Final Count List Items");
-//                            startActivity(intent);
-//                            finish();
-//                        }
-//                        break;
-//                    case R.id.nav_inventory:
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), Inventory.class);
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-//                    case R.id.nav_cancelRecTrans:
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), CancelRecTrans.class);
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-//                    case R.id.nav_receivedSap:
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), ReceivedSap.class);
-//                        intent.putExtra("title", "Received from SAP");
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-//                    case R.id.nav_updateActualEndingBalance:
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), UpdateActualEndingBalance.class);
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-//                    case R.id.nav_itemReceivable:
-//                        result = true;
-//                        intent = new Intent(getBaseContext(), AvailableItems.class);
-//                        intent.putExtra("title", "Item Receivable");
-//                        startActivity(intent);
-//                        finish();
-//                        break;
-//                }
-//                return result;
-//            }
-//        });
 
         Objects.requireNonNull(Objects.requireNonNull(getSupportActionBar())).setTitle(Html.fromHtml("<font color='#ffffff'>Shopping Cart</font>"));
         getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
 
         loadData();
 
+    }
+
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        mDrawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+
+    }
+
+    public void selectFirstItemDefault(){
+        if(navigationManager != null){
+            String firstItem = listTitle.get(0);
+            navigationManager.showFragment(firstItem);
+            getSupportActionBar().setTitle(firstItem);
+        }
+    }
+
+    public void addDrawersItem(){
+        adapter = new CustomExpandableListAdapter(this, listTitle, listChild);
+        expandableListView.setAdapter(adapter);
+        expandableListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+            @Override
+            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+                String selectedItem = ((List)listChild.get(listTitle.get(groupPosition)))
+                        .get(childPosition).toString();
+                getSupportActionBar().setTitle(selectedItem);
+                Intent intent;
+                if(selectedItem.equals("Received from SAP")){
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from SAP");
+                    intent.putExtra("hiddenTitle", "API Received from SAP");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Received from System Transfer Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from System Transfer Item");
+                    intent.putExtra("hiddenTitle", "API System Transfer Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Manual Received Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received Item");
+                    intent.putExtra("hiddenTitle", "API Received Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Manual Transfer Item")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Transfer Item");
+                    intent.putExtra("hiddenTitle", "API Transfer Item");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Sales")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Sales");
+                    intent.putExtra("hiddenTitle", "API Menu Items");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Issue For Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Issue For Production");
+                    intent.putExtra("hiddenTitle", "API Issue For Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Confirm Issue For Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Confirm Issue For Production");
+                    intent.putExtra("hiddenTitle", "API Confirm Issue For Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Received from Production")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Received from Production");
+                    intent.putExtra("hiddenTitle", "API Received from Production");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Item Request")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Item Request");
+                    intent.putExtra("hiddenTitle", "API Item Request");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Inventory Count")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Inventory Count");
+                    intent.putExtra("hiddenTitle", "API Inventory Count");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Pull out Request")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Pull Out Request");
+                    intent.putExtra("hiddenTitle", "API Pull Out Count");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Logout")){
+                    onBtnLogout();
+                }
+                else if(selectedItem.equals("Logs")){
+                    intent = new Intent(getBaseContext(), API_SalesLogs.class);
+                    intent.putExtra("title", "Inventory Logs");
+                    intent.putExtra("hiddenTitle", "API Inventory Logs");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Cut Off")){
+                    intent = new Intent(getBaseContext(), CutOff.class);
+                    intent.putExtra("title", "Cut Off");
+                    intent.putExtra("hiddenTitle", "API Cut Off");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Inventory Confirmation")){
+                    intent = new Intent(getBaseContext(), API_InventoryConfirmation.class);
+                    intent.putExtra("title", "Inv. and P.O Count Confirmation");
+                    intent.putExtra("hiddenTitle", "API Inventory Count Confirmation");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Offline Pending Transactions")){
+                    intent = new Intent(getBaseContext(), OfflineList.class);
+                    intent.putExtra("title", "Offline Pending Transactions");
+                    intent.putExtra("hiddenTitle", "API Offline List");
+                    startActivity(intent);
+                    finish();
+                }
+                return true;
+            }
+        });
+    }
+
+    public void setupDrawer(){
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,R.string.open,R.string.close){
+        };
+
+        mDrawerToggle.setDrawerIndicatorEnabled(true);
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+    }
+
+    public void genData(){
+        List<String>title = navc.getTitles(getString(R.string.app_name));
+        listChild = new TreeMap<>();
+        int iterate = getString(R.string.app_name).equals("Atlantic Bakery") ? 5 : 4;
+        int titleIndex = 0;
+        while (iterate >= 0){
+            listChild.put(title.get(titleIndex),navc.getItem(title.get(titleIndex)));
+            titleIndex += 1;
+            iterate -= 1;
+        }
+        listTitle = new ArrayList<>(listChild.keySet());
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu item) {
+        getMenuInflater().inflate(R.menu.main_menu,item);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if(mDrawerToggle.onOptionsItemSelected(item))
+            return true;
+
+        return super.onOptionsItemSelected(item);
     }
 
     public void changePassword(){
@@ -712,19 +533,6 @@ public class ShoppingCart extends AppCompatActivity {
         alertDialog.show();
     }
 
-
-
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int totalCart = myDb.countItems();
-        MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
-        if(toggle.onOptionsItemSelected(item)){
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
 
     @SuppressLint({"SetTextI18n", "ResourceType", "RtlHardcoded"})
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -1108,9 +916,6 @@ public class ShoppingCart extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        int totalCart = myDb.countItems();
-        MenuItem nav_ShoppingCart = menu.findItem(R.id.nav_shoppingCart);
-        nav_ShoppingCart.setTitle("Shopping Cart (" + totalCart + ")");
     }
 
     @Override
@@ -1965,7 +1770,7 @@ public class ShoppingCart extends AppCompatActivity {
                     JSONObject jsonObjectRow = new JSONObject();
                     jsonObjectRow.put("item_code", cursor.getString(1));
                     jsonObjectRow.put("quantity", cursor.getDouble(2));
-                    jsonObjectRow.put("uom", "pc(s)");
+                    jsonObjectRow.put("uom", cursor.getString(8));
                     jsonObjectRow.put("unit_price", cursor.getDouble(3));
                     jsonObjectRow.put("discprcnt", cursor.getDouble(4));
                     boolean free = (cursor.getInt(6) > 0);

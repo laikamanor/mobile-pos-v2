@@ -10,7 +10,6 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
-
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -20,58 +19,55 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         tools:targetApi="n">
-        <activity android:name=".API_ReceivedSAP">
+        <activity android:name="com.example.atlanticbakery.API_IssueProductionItems"></activity>
+        <activity android:name="com.example.atlanticbakery.API_Nav2">
+
         </activity>
-        <activity android:name=".API_SelectedItems" />
-        <activity android:name=".API_Nav" />
-        <activity android:name=".API_ItemInfo" />
-        <activity android:name=".ManualReceived" />
-        <activity android:name=".APIReceived" />
-        <activity android:name=".APITransfer" />
-        <activity android:name=".Users" />
-        <activity android:name=".ItemReceivable" />
-        <activity android:name=".API_SalesLogs">
-        </activity>
-        <activity android:name=".SalesInventory_Received" />
-        <activity android:name=".SalesInventory_AvailableItems" />
-        <activity android:name=".UpdateActualEndingBalance" />
-        <activity android:name=".ItemInfo2" />
-        <activity android:name=".StoreAuditorSelected" />
-        <activity android:name=".ReceivedSap2" />
-        <activity android:name=".Counter1" />
-        <activity android:name=".ReceivedSap" />
-        <activity android:name=".Received" />
-        <activity android:name=".CancelRecTrans" />
-        <activity android:name=".ScanQRCode" />
-        <activity android:name=".ScanCode" />
-        <activity android:name=".Inventory" />
-        <activity android:name=".ShoppingCart" />
-        <activity android:name=".ItemInfo" />
-        <activity android:name=".CreateUsers" />
-<!--        <activity android:name=".AvailableItems" />-->
-        <activity android:name=".API_InventoryConfirmation" />
-        <activity android:name=".OfflineList" />
-        <activity android:name=".OfflineItems" />
-        <activity android:name=".CutOff" />
-        <activity android:name=".SplashScreen">
+        <activity android:name="com.example.atlanticbakery.API_ReceivedSAP" />
+        <activity android:name="com.example.atlanticbakery.API_SelectedItems" />
+        <activity android:name="com.example.atlanticbakery.API_Nav" />
+        <activity android:name="com.example.atlanticbakery.API_ItemInfo" />
+        <activity android:name="com.example.atlanticbakery.ManualReceived" />
+        <activity android:name="com.example.atlanticbakery.APIReceived" />
+        <activity android:name="com.example.atlanticbakery.APITransfer" />
+        <activity android:name="com.example.atlanticbakery.Users" />
+        <activity android:name="com.example.atlanticbakery.ItemReceivable" />
+        <activity android:name="com.example.atlanticbakery.API_SalesLogs" />
+        <activity android:name="com.example.atlanticbakery.SalesInventory_Received" />
+        <activity android:name="com.example.atlanticbakery.SalesInventory_AvailableItems" />
+        <activity android:name="com.example.atlanticbakery.UpdateActualEndingBalance" />
+        <activity android:name="com.example.atlanticbakery.ItemInfo2" />
+        <activity android:name="com.example.atlanticbakery.StoreAuditorSelected" />
+        <activity android:name="com.example.atlanticbakery.ReceivedSap2" />
+        <activity android:name="com.example.atlanticbakery.Counter1" />
+        <activity android:name="com.example.atlanticbakery.ReceivedSap" />
+        <activity android:name="com.example.atlanticbakery.Received" />
+        <activity android:name="com.example.atlanticbakery.CancelRecTrans" />
+        <activity android:name="com.example.atlanticbakery.ScanQRCode" />
+        <activity android:name="com.example.atlanticbakery.ScanCode" />
+        <activity android:name="com.example.atlanticbakery.Inventory" />
+        <activity android:name="com.example.atlanticbakery.ShoppingCart" />
+        <activity android:name="com.example.atlanticbakery.ItemInfo" />
+        <activity android:name="com.example.atlanticbakery.CreateUsers" /> <!-- <activity android:name=".AvailableItems" /> -->
+        <activity android:name="com.example.atlanticbakery.API_InventoryConfirmation" />
+        <activity android:name="com.example.atlanticbakery.OfflineList" />
+        <activity android:name="com.example.atlanticbakery.OfflineItems" />
+        <activity android:name="com.example.atlanticbakery.CutOff" />
+        <activity android:name="com.example.atlanticbakery.SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-    </activity>
-
-        <activity android:name=".API_SalesLogsItems"/>
-
-        <activity android:name=".MainActivity2">
-
         </activity>
-        <activity android:name=".IPAddress" />
-        <activity android:name=".Nav" />
-        <activity android:name=".MainActivity" />
+        <activity android:name="com.example.atlanticbakery.API_SalesLogsItems" />
+        <activity android:name="com.example.atlanticbakery.MainActivity2" />
+        <activity android:name="com.example.atlanticbakery.IPAddress" />
+        <activity android:name="com.example.atlanticbakery.Nav" />
+        <activity android:name="com.example.atlanticbakery.MainActivity" />
+
         <uses-library
             android:name="org.apache.http.legacy"
-            android:required="false"/>
+            android:required="false" />
     </application>
 
 </manifest>

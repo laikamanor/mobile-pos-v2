@@ -8,7 +8,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -16,9 +15,7 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.text.Editable;
 import android.text.Html;
-import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;

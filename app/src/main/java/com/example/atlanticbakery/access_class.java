@@ -1,19 +1,14 @@
 package com.example.atlanticbakery;
 
 import android.app.Activity;
-import android.content.SharedPreferences;
 import android.os.Build;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
-import net.sourceforge.jtds.jdbc.DateTime;
-
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.Objects;
 
 public class access_class {
     Connection con;

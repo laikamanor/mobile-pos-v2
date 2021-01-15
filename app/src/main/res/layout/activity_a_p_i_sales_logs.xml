@@ -3,80 +3,152 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/navDrawer"
+    android:id="@+id/drawer_layout"
     >
 
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
 
-        <Spinner
-            android:id="@+id/cmbType"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginRight="20dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginTop="50dp"
-            android:layout_marginBottom="30dp"/>
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/txtDate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="20dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginBottom="10dp"
-            android:textSize="13sp"
-            android:text="Date: 0000-00-00" />
+            <Spinner
+                android:id="@+id/cmbType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="20dp"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="50dp"
+                android:layout_marginBottom="30dp"/>
 
-        <Button
-            android:id="@+id/btnPickDate"
-            android:layout_width="100dp"
-            android:layout_height="30dp"
-            android:layout_marginRight="20dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginBottom="10dp"
-            android:text="Pick Date"
-            android:background="@android:color/holo_blue_dark"
-            android:textColor="@android:color/white"/>
+            <TextView
+                android:id="@+id/txtDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="20dp"
+                android:layout_marginLeft="20dp"
+                android:layout_marginBottom="10dp"
+                android:textSize="13sp"
+                android:text="Date: 0000-00-00" />
 
-        <CheckBox
-            android:id="@+id/checkSAP"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="20dp"
-            android:layout_marginLeft="20dp"
-            android:textSize="13sp"
-            android:text="All SAP" />
+            <Button
+                android:id="@+id/btnPickDate"
+                android:layout_width="100dp"
+                android:layout_height="30dp"
+                android:layout_marginRight="20dp"
+                android:layout_marginLeft="20dp"
+                android:layout_marginBottom="10dp"
+                android:text="Pick Date"
+                android:background="@android:color/holo_blue_dark"
+                android:textColor="@android:color/white"/>
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"/>
+            <CheckBox
+                android:id="@+id/checkSAP"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="20dp"
+                android:layout_marginLeft="20dp"
+                android:textSize="13sp"
+                android:text="All SAP" />
 
-        <ListView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="30dp"
+            android:orientation="horizontal"
             android:layout_marginRight="20dp"
-            android:layout_marginLeft="20dp"
-            android:id="@+id/listView"/>
+            android:layout_marginLeft="20dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:text="Doc. Status:" />
 
+            <Spinner
+                android:id="@+id/cmbStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginRight="20dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="20dp">
+                <TextView
+                    android:id="@+id/lblUser"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:text="Created By:" />
+
+                <Spinner
+                    android:id="@+id/cmbUser"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"/>
+
+            <ListView
+                android:layout_width="wrap_content"
+                android:layout_height="300dp"
+                android:layout_marginRight="20dp"
+                android:layout_marginLeft="20dp"
+                android:id="@+id/listView">
+            </ListView>
+
+            <TextView
+                android:id="@+id/txtTotal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="20dp"
+                android:layout_marginLeft="20dp"
+                android:gravity="right"
+                android:textSize="20sp"
+                android:textColor="@color/colorBlue"
+                android:text="0.00" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:id="@+id/activity_controller"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <FrameLayout
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+        </FrameLayout>
     </LinearLayout>
 
+    <ExpandableListView
+        android:id="@+id/navList"
+        android:layout_gravity= "left|start"
+        android:background="@android:color/white"
+        android:divider="@color/dividerColor"
+        android:dividerHeight="0.5dp"
+        android:indicatorLeft="?android:attr/expandableListPreferredItemIndicatorLeft"
+        android:layout_width="235dp"
+        android:layout_height="match_parent">
 
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/nav"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:background="@color/colorWhite"
-        app:menu="@menu/a_p_i_drawmenu"
-        android:layout_gravity="start">
-    </com.google.android.material.navigation.NavigationView>
+    </ExpandableListView>
 
 </androidx.drawerlayout.widget.DrawerLayout>
