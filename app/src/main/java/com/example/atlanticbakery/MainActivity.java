@@ -97,10 +97,10 @@ public class MainActivity extends AppCompatActivity {
             appUpdater.setDisplay(Display.DIALOG);
             appUpdater.setUpdateFrom(UpdateFrom.GITHUB);
             appUpdater.setGitHubUserAndRepo("laikamanor","mobile-pos-v2");
-            appUpdater.setTitleOnUpdateAvailable("Update Available");
+            appUpdater.setTitleOnUpdateAvailable("Update Available!!!! v" + BuildConfig.VERSION_NAME);
             appUpdater.setContentOnUpdateAvailable("Check Out the latest version of an app");
             appUpdater.setTitleOnUpdateNotAvailable("No Update Available");
-            appUpdater.setContentOnUpdateAvailable("No Update Available");
+            appUpdater.setContentOnUpdateAvailable("Have Update Available");
             appUpdater.setButtonUpdate("Update Now?");
             appUpdater.setCancelable(false);
             appUpdater.start();
