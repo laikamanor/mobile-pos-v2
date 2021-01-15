@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.github.javiersantos.appupdater.AppUpdater;
 import com.github.javiersantos.appupdater.enums.Display;
+import com.github.javiersantos.appupdater.enums.UpdateFrom;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -92,11 +93,16 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             mLastClickTime = SystemClock.elapsedRealtime();
-            AppUpdater appUpdater = new AppUpdater(getBaseContext());
-            appUpdater.setGitHubUserAndRepo("laikamanor","mobile-pos-v2");
-            appUpdater.setDisplay(Display.SNACKBAR);
+            AppUpdater appUpdater = new AppUpdater(MainActivity.this);
             appUpdater.setDisplay(Display.DIALOG);
-            appUpdater.setDisplay(Display.NOTIFICATION);
+            appUpdater.setUpdateFrom(UpdateFrom.GITHUB);
+            appUpdater.setGitHubUserAndRepo("laikamanor","mobile-pos-v2");
+            appUpdater.setTitleOnUpdateAvailable("Update Available");
+            appUpdater.setContentOnUpdateAvailable("Check Out the latest version of an app");
+            appUpdater.setTitleOnUpdateNotAvailable("No Update Available");
+            appUpdater.setContentOnUpdateAvailable("No Update Available");
+            appUpdater.setButtonUpdate("Update Now?");
+            appUpdater.setCancelable(false);
             appUpdater.start();
 //
 //            MyLogin myLogin = new MyLogin();
