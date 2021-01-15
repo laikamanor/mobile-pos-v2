@@ -89,21 +89,26 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
 
         login.setOnClickListener(v -> {
-            if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
-                return;
-            }
-            mLastClickTime = SystemClock.elapsedRealtime();
-            AppUpdater appUpdater = new AppUpdater(MainActivity.this);
-            appUpdater.setDisplay(Display.DIALOG);
-            appUpdater.setUpdateFrom(UpdateFrom.GITHUB);
-            appUpdater.setGitHubUserAndRepo("laikamanor","mobile-pos-v2");
-            appUpdater.setTitleOnUpdateAvailable("Update Available!!!! v" + BuildConfig.VERSION_NAME);
-            appUpdater.setContentOnUpdateAvailable("Check Out the latest version of an app");
-            appUpdater.setTitleOnUpdateNotAvailable("No Update Available");
-            appUpdater.setContentOnUpdateAvailable("Have Update Available");
-            appUpdater.setButtonUpdate("Update Now?");
-            appUpdater.setCancelable(false);
-            appUpdater.start();
+//            if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
+//                return;
+//            }
+//            mLastClickTime = SystemClock.elapsedRealtime();
+          try{
+              AppUpdater appUpdater = new AppUpdater(MainActivity.this);
+              appUpdater.setDisplay(Display.DIALOG);
+              appUpdater.setUpdateFrom(UpdateFrom.GITHUB);
+              appUpdater.setGitHubUserAndRepo("laikamanor","mobile-pos-v2");
+              appUpdater.setTitleOnUpdateAvailable("Update Available!!!!");
+              appUpdater.setContentOnUpdateAvailable("Check Out the latest version of an app");
+              appUpdater.setTitleOnUpdateNotAvailable("No Update Available");
+              appUpdater.setContentOnUpdateAvailable("Have Update Available");
+              appUpdater.setButtonUpdate("Update Now?");
+              appUpdater.setCancelable(false);
+              appUpdater.start();
+          }catch (Exception ex){
+              Toast.makeText(MainActivity.this,ex.toString(), Toast.LENGTH_SHORT).show();
+          }
+//            Toast.makeText(getBaseContext(), "asas", Toast.LENGTH_SHORT).show();
 //
 //            MyLogin myLogin = new MyLogin();
 //            myLogin.execute("");
