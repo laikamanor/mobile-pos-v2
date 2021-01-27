@@ -17,11 +17,9 @@
                 android:orientation="vertical"
                 android:id="@+id/linear">
 
-
                 <FrameLayout
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="9dp"
                     android:padding="5dp">
 
                     <AutoCompleteTextView
@@ -34,7 +32,6 @@
                         android:textSize="25sp"
                         android:layout_marginLeft="20dp"
                         android:layout_marginRight="20dp"
-                        android:layout_marginTop="10dp"
                         android:hint="Search"/>
 
                     <Button
@@ -61,51 +58,121 @@
                     android:id="@+id/progWait"
                     style="?android:attr/progressBarStyle"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"/>
+                    android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
                 <TextView
                     android:id="@+id/lblSelectedType"
-                    android:layout_width="match_parent"
+                    android:layout_width="123dp"
                     android:layout_height="wrap_content"
-                    android:text="Type: "
-                    android:layout_marginRight="20dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginTop="10dp"
+                    android:layout_marginRight="10dp"
                     android:layout_marginBottom="5dp"
-                    android:textSize="20sp"/>
+                    android:text="Type: "
+                    android:textSize="15sp" />
 
                 <Spinner
                     android:id="@+id/spinner"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="20dp"
-                    android:layout_marginLeft="20dp"
+                    android:layout_marginLeft="10dp"
                     android:layout_marginTop="10dp"
-                    android:layout_marginBottom="5dp"/>
+                    android:layout_marginRight="20dp"
+                    android:layout_marginBottom="5dp" />
+
+            </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/lblMode"
+                        android:layout_width="75dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginRight="10dp"
+                        android:layout_marginBottom="5dp"
+                        android:visibility="gone"
+                        android:text="Mode: "
+                        android:textSize="15sp" />
+
+                    <Spinner
+                        android:id="@+id/spinnerMode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="10dp"
+                        android:visibility="gone"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginRight="20dp"
+                        android:layout_marginBottom="5dp" />
+
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/lblHaveQuantity"
+                        android:layout_width="75dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginRight="10dp"
+                        android:layout_marginBottom="5dp"
+                        android:visibility="gone"
+                        android:text="Have Quantity: "
+                        android:textSize="15sp" />
+                    <Spinner
+                        android:id="@+id/spinnerHaveQuantity"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="10dp"
+                        android:visibility="gone"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginRight="20dp"
+                        android:layout_marginBottom="5dp" />
+
+                </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
                 <TextView
                     android:id="@+id/lblItemGroup"
-                    android:layout_width="match_parent"
+                    android:layout_width="100dp"
                     android:layout_height="wrap_content"
                     android:text="Item Group: "
-                    android:layout_marginRight="20dp"
+                    android:layout_marginRight="10dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginTop="10dp"
                     android:layout_marginBottom="5dp"
                     android:visibility="gone"
-                    android:textSize="20sp"/>
+                    android:textSize="15sp"/>
 
                 <Spinner
                     android:id="@+id/spinnerItemGroup"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="20dp"
+                    android:layout_marginRight="10dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginTop="10dp"
                     android:visibility="gone"
                     android:layout_marginBottom="5dp"/>
 
+            </LinearLayout>
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -119,7 +186,8 @@
                         android:layout_marginTop="10dp"
                     android:background="@color/colorPrimary"
                     android:textColor="@color/colorWhite"
-                    android:text="Back" />
+                    android:text="Back"
+                        android:textSize="15sp"/>
 
                     <Button
                         android:id="@+id/btnRefresh"
@@ -130,59 +198,76 @@
                         android:layout_marginRight="20dp"
                         android:background="@color/colorBlue"
                         android:text="Refresh"
+                        android:textSize="15sp"
                         android:textColor="@color/colorWhite" />
                 </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
                 <TextView
                     android:id="@+id/lblSapNumber"
-                    android:layout_width="match_parent"
+                    android:layout_width="150dp"
                     android:layout_height="wrap_content"
-                    android:text="#: "
-                    android:layout_marginRight="20dp"
                     android:layout_marginLeft="20dp"
-                    android:textSize="20sp"/>
+                    android:layout_marginRight="5dp"
+                    android:layout_marginTop="5dp"
+                    android:text="#: "
+                    android:textSize="15sp" />
 
                 <TextView
                     android:id="@+id/lblFromBranch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Branch#: "
-                    android:layout_marginRight="20dp"
-                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginLeft="5dp"
                     android:layout_marginTop="5dp"
-                    android:textSize="20sp"/>
+                    android:textSize="15sp"/>
 
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
                 <TextView
                     android:id="@+id/lblType"
-                    android:layout_width="match_parent"
+                    android:layout_width="100dp"
                     android:layout_height="wrap_content"
                     android:text="Type: "
-                    android:layout_marginRight="20dp"
+                    android:layout_marginRight="10dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginTop="10dp"
                     android:layout_marginBottom="5dp"
-                    android:textSize="20sp"/>
-
+                    android:textSize="15sp"/>
                 <Spinner
                     android:id="@+id/spinnerType"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="20dp"
-                    android:layout_marginLeft="20dp"
+                    android:layout_marginLeft="10dp"
                     android:layout_marginTop="10dp"
-                    android:layout_marginBottom="5dp"/>
+                    android:layout_marginRight="10dp"
+                    android:layout_marginBottom="5dp" />
 
+            </LinearLayout>
+
+                <FrameLayout
+                    android:id="@+id/container"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"></FrameLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="400dp"
                     android:orientation="vertical"
                     android:id="@+id/layout">
 
                     <ScrollView
                         android:layout_width="match_parent"
-                        android:layout_height="400dp"
-                        android:layout_marginTop="10dp">
+                        android:layout_height="wrap_content">
 
                         <GridLayout
                             android:id="@+id/grid"
@@ -205,7 +290,7 @@
                     android:layout_marginTop="10dp"
                     android:background="@color/colorPrimary"
                     android:textColor="@color/colorWhite"
-                    android:textSize="20sp"
+                    android:textSize="15sp"
                     android:text="DONE" />
             </LinearLayout>
         </ScrollView>
@@ -217,12 +302,6 @@
         android:id="@+id/activity_controller"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-
-        <FrameLayout
-            android:id="@+id/container"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-        </FrameLayout>
     </LinearLayout>
 
     <ExpandableListView

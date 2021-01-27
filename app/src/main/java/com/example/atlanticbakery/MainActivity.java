@@ -1,11 +1,24 @@
 package com.example.atlanticbakery;
 
+import android.Manifest;
+import android.app.Activity;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.SystemClock;
 import android.text.Html;
 import android.view.KeyEvent;
@@ -16,6 +29,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,7 +41,13 @@ import com.github.javiersantos.appupdater.enums.UpdateFrom;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -55,8 +75,10 @@ public class MainActivity extends AppCompatActivity {
     ProgressBar progressBar;
     TextView txtMessage;
     //End Declaring layout button,editTexts and progress bar
-
+    String gText = "";
     long mLastClickTime = 0;
+    long queueid;
+    DownloadManager manager;
 
     private OkHttpClient client;
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -89,31 +111,188 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
 
         login.setOnClickListener(v -> {
-//            if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
-//                return;
-//            }
-//            mLastClickTime = SystemClock.elapsedRealtime();
-          try{
-              AppUpdater appUpdater = new AppUpdater(MainActivity.this);
-              appUpdater.setDisplay(Display.DIALOG);
-              appUpdater.setUpdateFrom(UpdateFrom.GITHUB);
-              appUpdater.setGitHubUserAndRepo("laikamanor","mobile-pos-v2");
-              appUpdater.setTitleOnUpdateAvailable("Update Available");
-              appUpdater.setContentOnUpdateAvailable("Check Out the latest version of an app");
-              appUpdater.setTitleOnUpdateNotAvailable("No Update Available");
-              appUpdater.setContentOnUpdateAvailable("Have Update Available");
-              appUpdater.setButtonUpdate("Update Now?");
-              appUpdater.setCancelable(false);
-              appUpdater.start();
-          }catch (Exception ex){
-              Toast.makeText(MainActivity.this,ex.toString(), Toast.LENGTH_SHORT).show();
-          }
+            if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
+                return;
+            }
+            mLastClickTime = SystemClock.elapsedRealtime();
+//          try{
+//              AppUpdater appUpdater = new AppUpdater(MainActivity.this);
+//              appUpdater.setDisplay(Display.DIALOG);
+//              appUpdater.setUpdateFrom(UpdateFrom.GITHUB);
+//              appUpdater.setGitHubUserAndRepo("laikamanor","mobile-pos-v2");
+//              appUpdater.setTitleOnUpdateAvailable("Update Available");
+//              appUpdater.setContentOnUpdateAvailable("Check Out the latest version of an app");
+//              appUpdater.setTitleOnUpdateNotAvailable("No Update Available");
+//              appUpdater.setContentOnUpdateAvailable("Have Update Available");
+//              appUpdater.setButtonUpdate("Update Now?");
+//              appUpdater.setCancelable(false);
+//              appUpdater.start();
+//          }catch (Exception ex){
+//              Toast.makeText(MainActivity.this,ex.toString(), Toast.LENGTH_SHORT).show();
+//          }
 //            Toast.makeText(getBaseContext(), "asas", Toast.LENGTH_SHORT).show();
 //
-//            MyLogin myLogin = new MyLogin();
-//            myLogin.execute("");
+            if(isNetworkAvailable()){
+                BackTask backTask = new BackTask();
+                backTask.execute("https://raw.githubusercontent.com/laikamanor/files/master/file.txt");
+
+                BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        String action = intent.getAction();
+                        if(DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)){
+                            DownloadManager.Query req_query = new DownloadManager.Query();
+                            req_query.setFilterById(queueid);
+                            Cursor c = manager.query(req_query);
+                            if(c.moveToFirst()){
+                                int columnIndex = c.getColumnIndex(DownloadManager.COLUMN_STATUS);
+                                if(DownloadManager.STATUS_SUCCESSFUL == c.getInt(columnIndex)){
+                                    openDownloads(MainActivity.this);
+                                }
+                            }
+                        }
+                    }
+                };
+//                here
+                registerReceiver(broadcastReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+            }else {
+                MyLogin myLogin = new MyLogin();
+                myLogin.execute("");
+            }
         });
     }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
+    public static void openDownloads(@NonNull Activity activity) {
+        if (isSamsung()) {
+            Intent intent = activity.getPackageManager()
+                    .getLaunchIntentForPackage("com.sec.android.app.myfiles");
+            intent.setAction("samsung.myfiles.intent.action.LAUNCH_MY_FILES");
+            intent.putExtra("samsung.myfiles.intent.extra.START_PATH",
+                    getDownloadsFile().getPath());
+            activity.startActivity(intent);
+        }
+        else activity.startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS));
+    }
+
+    public static boolean isSamsung() {
+        String manufacturer = Build.MANUFACTURER;
+        if (manufacturer != null) return manufacturer.toLowerCase().equals("samsung");
+        return false;
+    }
+
+    public static File getDownloadsFile() {
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+    }
+
+    //background process to download the file from internet
+    private class BackTask extends AsyncTask<String,Integer,Void>{
+        LoadingDialog loadingDialog = new LoadingDialog(MainActivity.this);
+        String text="";
+        protected void onPreExecute(){
+            super.onPreExecute();
+            //display progress dialog
+            loadingDialog.startLoadingDialog();
+        }
+        protected Void doInBackground(String...params){
+            URL url;
+            try {
+                //create url object to point to the file location on internet
+                url = new URL(params[0]);
+                //make a request to server
+                HttpURLConnection con=(HttpURLConnection)url.openConnection();
+                //get InputStream instance
+                InputStream is=con.getInputStream();
+                //create BufferedReader object
+                BufferedReader br=new BufferedReader(new InputStreamReader(is));
+                String line;
+                //read content of the file line by line
+                while((line=br.readLine())!=null){
+                    text+=line;
+
+                }
+
+                br.close();
+
+            }catch (Exception e) {
+                e.printStackTrace();
+                loadingDialog.dismissDialog();
+            }
+
+            return null;
+
+        }
+
+
+//        https://github.com/laikamanor/mobile-pos-v2/releases/download/v1.17/AtlanticBakery.apk
+        protected void onPostExecute(Void result){
+            loadingDialog.dismissDialog();
+            gText = text;
+            if(Double.parseDouble(text) > Double.parseDouble(BuildConfig.VERSION_NAME)){
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                    if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED){
+                        String[] permission = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
+                        requestPermissions(permission,1000);
+                    }else {
+                        startDownload(text);
+                    }
+                }
+            }else {
+                MyLogin myLogin = new MyLogin();
+                myLogin.execute("");
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode){
+            case 1000 : {
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    startDownload(gText);
+                }
+            }
+        }
+    }
+
+    public void startDownload(String text){
+        final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setCancelable(false);
+        builder.setMessage("There is a version (v" + text + ") available do you want to update now?");
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+//            https://github.com/laikamanor/mobile-pos-v2/releases/download/v1.17/Atlantic.Bakery.apk
+//            https://github.com/laikamanor/mobile-pos-v2/releases/download/v1.17/Atlantic.Bakery.apk
+            public void onClick(DialogInterface dialog, int which) {
+                DownloadManager.Request request = new DownloadManager.Request(Uri.parse("https://github.com/laikamanor/mobile-pos-v2/releases/download/v1.17/Atlantic.Bakery.apk"));
+                request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE | DownloadManager.Request.NETWORK_WIFI);
+                request.setTitle("Download Atlantic Bakery");
+                request.setDescription("Downloading File...");
+                request.allowScanningByMediaScanner();
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "Atlantic Bakery_v" + text + ".apk");
+                manager = (DownloadManager)getSystemService(Context.DOWNLOAD_SERVICE);
+                queueid = manager.enqueue(request);
+                dialog.dismiss();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        builder.show();
+    }
+
 
 
     @Override
@@ -176,17 +355,17 @@ public class MainActivity extends AppCompatActivity {
                         .method("GET", null)
                         .build();
                 Response response = null;
-
                 response = client.newCall(request).execute();
                 return response.body().string();
             } catch (Exception ex) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        ex.printStackTrace();
                         txtMessage.setText("");
                         progressBar.setVisibility(View.GONE);
                         login.setEnabled(true);
-                        if(ex.getMessage().contains("Failed to connect to") || ex.getMessage().contains("timeout")){
+                        if(ex.getMessage().contains("Failed to connect to") || ex.getMessage().contains("timeout") || ex.getMessage().contains("Unable to resolve host")){
                             isNoInternet();
                         }else{
                             showMessage("Validation", ex.getMessage());
@@ -247,6 +426,7 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        ex.printStackTrace();
                         txtMessage.setText("");
                         progressBar.setVisibility(View.GONE);
                         login.setEnabled(true);

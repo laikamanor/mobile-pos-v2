@@ -21,6 +21,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -29,6 +30,7 @@ import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,14 +45,20 @@ import com.example.atlanticbakery.Adapter.CustomExpandableListAdapter;
 import com.example.atlanticbakery.Helper.FragmentNavigationManager_API_ItemInfo;
 import com.example.atlanticbakery.Interface.NavigationManager;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -88,7 +96,9 @@ public class API_ItemInfo extends AppCompatActivity {
 
     static boolean isSubmit = false;
     private OkHttpClient client;
+    int uomGroup = 0;
     ProgressBar progressBar;
+    Spinner spinnerAltUom;
     @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,6 +118,7 @@ public class API_ItemInfo extends AppCompatActivity {
         btnAddCart = findViewById(R.id.btnAddCart);
         btnBack = findViewById(R.id.btnBack);
         progressBar = findViewById(R.id.progressBar);
+        spinnerAltUom = findViewById(R.id.spinnerZXC);
         progressBar.setVisibility(View.GONE);
         deliveredQuantity = getIntent().getDoubleExtra("deliveredQuantity", 0);
         receivedQuantity = getIntent().getIntExtra("receivedQuantity", 0);
@@ -117,16 +128,20 @@ public class API_ItemInfo extends AppCompatActivity {
         myDb4 = new DatabaseHelper4(this);
         myDb3 = new DatabaseHelper3(this);
 
+        title = getIntent().getStringExtra("title");
+        hidden_title = getIntent().getStringExtra("hiddenTitle");
+        itemName = getIntent().getStringExtra("item");
+
+        if(hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request")) {
+            System.out.println("uom group: " + getIntent().getStringExtra("uomGroup"));
+            uomGroup = Integer.parseInt(getIntent().getStringExtra("uomGroup"));
+            loadAltUom(uomGroup);
+        }
 
         mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
         mActivityTitle = getTitle().toString();
         expandableListView = (ExpandableListView)findViewById(R.id.navList);
         navigationManager = FragmentNavigationManager_API_ItemInfo.getmInstance(this);
-
-
-        title = getIntent().getStringExtra("title");
-        hidden_title = getIntent().getStringExtra("hiddenTitle");
-        itemName = getIntent().getStringExtra("item");
 
         SharedPreferences sharedPreferences = getSharedPreferences("LOGIN", MODE_PRIVATE);
         String fullName = Objects.requireNonNull(sharedPreferences.getString("fullname", ""));
@@ -175,44 +190,52 @@ public class API_ItemInfo extends AppCompatActivity {
 //                        btnAddCart.setEnabled(true);
 //            }else if (qty <= 0) {
 //                Toast.makeText(getBaseContext(), "Input atleast 1 quantity", Toast.LENGTH_SHORT).show();
-                    } else {
+                    }else if((Double.parseDouble(txtQuantity.getText().toString()) <= 0) && (hidden_title.equals("API Menu Items") || hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API System Transfer Item") || hidden_title.equals("API Item Request"))){
+                        Toast.makeText(getBaseContext(), "Input atleast 1 quantity", Toast.LENGTH_SHORT).show();
+                        txtQuantity.requestFocus();
+                    }
+                    else {
                         double quantity = (txtQuantity.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtQuantity.getText().toString()));
-                        int int_quantity =  (txtQuantity.getText().toString().isEmpty() ? 0 : Integer.parseInt(txtQuantity.getText().toString()));
+                        double int_quantity =  (txtQuantity.getText().toString().isEmpty() ? 0 : Double.parseDouble(txtQuantity.getText().toString()));
 //                double double_quantity = getIntent().getDoubleExtra("quantity",0.0);
                         boolean isInserted = false;
                         String uom = getIntent().getStringExtra("uom");
                         if(hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request")){
-                            isInserted = myDb4.insertData(itemName, quantity, title, 1,uom);
+                            isInserted = myDb4.insertData(itemName, quantity, title, 1,spinnerAltUom.getSelectedItem().toString());
                         }else if(hidden_title.equals("API Received from SAP")){
                             int id = getIntent().getIntExtra("id",0);
                             isInserted = myDb3.updateSelected(Integer.toString(id),1, quantity);
                         }else if(hidden_title.equals("API System Transfer Item")){
                             int id = getIntent().getIntExtra("id",0);
                             isInserted = myDb3.updateSelected(Integer.toString(id),1, quantity);
-                        }else if(hidden_title.equals("API Received from Production") || hidden_title.equals("API Received from Item Request")){
+                        }else if(hidden_title.equals("API Received from Production") || hidden_title.equals("API Item Request For Transfer")){
                             int id = getIntent().getIntExtra("id",0);
                             isInserted = myDb3.updateSelected(Integer.toString(id),1, quantity);
                         }
                         else if(hidden_title.equals("API Inventory Count") || hidden_title.equals("API Pull Out Count")){
                             double double_quantity =  getIntent().getDoubleExtra("quantity",0.0);
-                            isInserted = myDb3.insertData("", "", itemName, double_quantity, int_quantity, 0, "", 0,hidden_title,1,uom,0);
+                            isInserted = myDb3.insertData("", "", itemName, double_quantity, int_quantity, 0, "", 0,hidden_title,1,uom,0,0,0,0);
                         }
                         else if(hidden_title.equals("API Menu Items")){
-                            double discountPercent = (txtDiscount.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtDiscount.getText().toString()));
-                            double price = getIntent().getDoubleExtra("price",0.00);
-                            int isFree = (checkFree.isChecked() ? 1 : 0);
-                            double totalPrice = (txtTotalPrice.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtTotalPrice.getText().toString()));
-                            isInserted = myDb.insertData(quantity, discountPercent, price, isFree, totalPrice, itemName, "Main Inventory",uom);
+                            double price = Double.parseDouble(lblPrice.getText().toString().replace("₱",""));
+                            double priceBefore = quantity * price;
+                            double doubleTotalPrice = Double.parseDouble(txtTotalPrice.getText().toString());
+                            double calculatedDiscount = ((priceBefore - doubleTotalPrice) / priceBefore) * 100;
+                            if(calculatedDiscount > 10){
+                                Toast.makeText(getBaseContext(), "10% is the maximum discount!", Toast.LENGTH_SHORT).show();
+                                txtDiscount.requestFocus();
+                                txtDiscount.setSelection(txtDiscount.getText().length());
+                            }else{
+                                double discountPercent = (txtDiscount.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtDiscount.getText().toString()));
+                                int isFree = (checkFree.isChecked() ? 1 : 0);
+                                double totalPrice = (txtTotalPrice.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtTotalPrice.getText().toString()));
+                                isInserted = myDb.insertData(quantity, discountPercent, price, isFree, totalPrice, itemName, "Main Inventory",uom);
+                            }
                         }
                         if (isInserted) {
                             isSubmit = true;
                             Toast.makeText(getBaseContext(), "Item Added", Toast.LENGTH_SHORT).show();
                             closeKeyboard();
-//                    Intent intent;
-//                    intent = new Intent(getBaseContext(), APIReceived.class);
-//                    intent.putExtra("title", title);
-//                    intent.putExtra("hiddenTitle", hidden_title);
-//                    startActivity(intent);
                             finish();
                         } else {
                             Toast.makeText(getBaseContext(), "Item Not Added", Toast.LENGTH_SHORT).show();
@@ -233,11 +256,15 @@ public class API_ItemInfo extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 double received_quantity;
-                int quantity;
+                double quantity;
                 if (txtQuantity.getText().toString().isEmpty()) {
-                    quantity = 0;
+                    quantity = 0.00;
                 } else {
-                    quantity = Integer.parseInt(txtQuantity.getText().toString());
+                    if(txtQuantity.getText().toString().substring(0,1).equals(".")){
+                        quantity = Double.parseDouble( "0" + txtQuantity.getText().toString().trim());
+                    }else{
+                        quantity = Double.parseDouble(txtQuantity.getText().toString().trim());
+                    }
                 }
 
                 if(hidden_title.equals("API Menu Items")){
@@ -299,17 +326,16 @@ public class API_ItemInfo extends AppCompatActivity {
                         double qty = (txtQuantity.getText().toString().isEmpty() ? 0.00 : Double.parseDouble(txtQuantity.getText().toString()));
                         double priceBefore = qty * price;
                         try {
-                            if (Double.parseDouble(txtDiscount.getText().toString()) > 25) {
-                                txtDiscount.setText("25");
+                            if (Double.parseDouble(txtDiscount.getText().toString()) > 10) {
+                                txtDiscount.setText("10");
                                 txtDiscount.setSelection(txtDiscount.getText().length() - 1);
                             }
                             if (txtDiscount.getText().toString().isEmpty()) {
+                                txtDiscount.setSelection(txtDiscount.getText().length());
+                            } else if (Double.parseDouble(txtQuantity.getText().toString()) < 0) {
                                 txtDiscount.setText("0");
                                 txtDiscount.setSelection(txtDiscount.getText().length());
-                            } else if (Integer.parseInt(txtQuantity.getText().toString()) < 0) {
-                                txtDiscount.setText("0");
-                                txtDiscount.setSelection(txtDiscount.getText().length());
-                            } else if (Integer.parseInt(txtQuantity.getText().toString()) > 0) {
+                            } else if (Double.parseDouble(txtQuantity.getText().toString()) > 0) {
                                 double totalAmount;
                                 if (!checkFree.isChecked()) {
                                     discountPercent = Double.parseDouble(txtDiscount.getText().toString());
@@ -359,10 +385,7 @@ public class API_ItemInfo extends AppCompatActivity {
                     if (txtTotalPrice.hasFocus()) {
                         try {
                             if (!checkFree.isChecked()) {
-                                if(txtTotalPrice.getText().toString().isEmpty()){
-                                    txtDiscount.setText("100.0");
-                                }
-                                if (Double.parseDouble(txtTotalPrice.getText().toString()) > priceBefore) {
+                                 if (Double.parseDouble(txtTotalPrice.getText().toString()) > priceBefore) {
                                     double doubleTotalPrice = Double.parseDouble(txtTotalPrice.getText().toString());
                                     double calculatedDiscount = ((priceBefore - doubleTotalPrice) / priceBefore) * 100;
                                     txtDiscount.setText(Double.toString(calculatedDiscount));
@@ -429,6 +452,91 @@ public class API_ItemInfo extends AppCompatActivity {
         getSupportActionBar().setHomeButtonEnabled(true);
         Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + title + " </font>"));
         lblItem.setText(itemName);
+    }
+
+    public void loadAltUom(int id){
+//        JSONObject jsonObject = new JSONObject();
+//        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+//        RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+        String IPaddress = sharedPreferences2.getString("IPAddress", "");
+        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+        String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+        okhttp3.Request request = new okhttp3.Request.Builder()
+                .url(IPaddress + "/api/uom_grp/alt_uom/get_all/" + id)
+                .method("GET", null)
+                .addHeader("Authorization", "Bearer " + token)
+                .addHeader("Content-Type", "application/json")
+                .build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, okhttp3.Response response) {
+                String result = "";
+                try {
+                    result = response.body().string();
+//                            System.out.println(result);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                List<String> items = new ArrayList<>();
+                String finalResult = result;
+                API_ItemInfo.this.runOnUiThread(() -> {
+                    try {
+                        if(finalResult.substring(0,1).equals("{")){
+                            JSONObject jj = new JSONObject(finalResult);
+                            boolean isSuccess = jj.getBoolean("success");
+                            if (isSuccess) {
+                                JSONArray jsonArray;
+                                String uomDefault = "";
+                                jsonArray = jj.getJSONArray("data");
+                                for (int i = 0; i < jsonArray.length(); i++) {
+                                    JSONObject jsonObjectData = jsonArray.getJSONObject(i);
+                                    items.add(jsonObjectData.getString("alt_uom"));
+                                    if(jsonObjectData.getBoolean("default")){
+                                        uomDefault = jsonObjectData.getString("alt_uom");
+                                    }
+                                }
+                                ArrayAdapter<String> adapter = new ArrayAdapter<>(API_ItemInfo.this, android.R.layout.simple_spinner_item, items);
+                                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                                spinnerAltUom.setAdapter(adapter);
+                                spinnerAltUom.setSelection(adapter.getPosition(uomDefault));
+                            } else {
+                                String msg = jj.getString("message");
+                                if (msg.equals("Token is invalid")) {
+                                    final AlertDialog.Builder builder = new AlertDialog.Builder(API_ItemInfo.this);
+                                    builder.setCancelable(false);
+                                    builder.setMessage("Your session is expired. Please login again.");
+                                    builder.setPositiveButton("OK", (dialog, which) -> {
+                                        pc.loggedOut(API_ItemInfo.this);
+                                        pc.removeToken(API_ItemInfo.this);
+                                        startActivity(uic.goTo(API_ItemInfo.this, MainActivity.class));
+                                        finish();
+                                        dialog.dismiss();
+                                    });
+                                    builder.show();
+                                } else {
+                                    Toast.makeText(getBaseContext(), "Error \n" + msg, Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        }else {
+                            Toast.makeText(getBaseContext(), finalResult, Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -522,6 +630,20 @@ public class API_ItemInfo extends AppCompatActivity {
                     intent = new Intent(getBaseContext(), APIReceived.class);
                     intent.putExtra("title", "Item Request");
                     intent.putExtra("hiddenTitle", "API Item Request");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Item Request For Transfer")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Item Request For Transfer");
+                    intent.putExtra("hiddenTitle", "API Item Request For Transfer");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Production Order List")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Production Order List");
+                    intent.putExtra("hiddenTitle", "API Production Order List");
                     startActivity(intent);
                     finish();
                 }
@@ -803,7 +925,7 @@ public class API_ItemInfo extends AppCompatActivity {
 //        }
 
 
-        if (hidden_title.equals("API Received Item") || hidden_title.equals("API Received from SAP") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request") || hidden_title.equals("API Inventory Count") || hidden_title.equals("API Pull Out Count") || hidden_title.equals("API System Transfer Item") || hidden_title.equals("API Received from Production") || hidden_title.equals("API Received from Item Request")) {
+        if (hidden_title.equals("API Received Item") || hidden_title.equals("API Received from SAP") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request") || hidden_title.equals("API Inventory Count") || hidden_title.equals("API Pull Out Count") || hidden_title.equals("API System Transfer Item") || hidden_title.equals("API Received from Production") || hidden_title.equals("API Item Request For Transfer")) {
             checkFree.setVisibility(View.GONE);
             lblPrice.setVisibility(View.GONE);
             lblPercent.setVisibility(View.GONE);
@@ -812,7 +934,7 @@ public class API_ItemInfo extends AppCompatActivity {
             if (hidden_title.equals("API Received from SAP") || hidden_title.equals("API System Transfer Item") || hidden_title.equals("API Received from Production")) {
                 lblReceivedQuantity.setVisibility(View.VISIBLE);
                 lblVariance.setVisibility((hidden_title.equals("API Received from Production") ? View.GONE : View.VISIBLE));
-                lblReceivedQuantity.setText((hidden_title.equals("API Received from Production") ? "Planned Qty.: " + deliveredQuantity + "\n" + "Received Qty. :" + receivedQuantity : "Delivered Qty.: " + deliveredQuantity));
+                lblReceivedQuantity.setText((hidden_title.equals("API Received from Production") ? "Received Qty. :" + receivedQuantity : "Delivered Qty.: " + deliveredQuantity));
             }else if(hidden_title.equals("API Inventory Count")){
                 SharedPreferences sharedPreferences2 = getSharedPreferences("LOGIN", MODE_PRIVATE);
                 String isManager = sharedPreferences2.getString("isManager", "");
@@ -871,7 +993,7 @@ public class API_ItemInfo extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     public String minusPlus(String operator) {
-        int quantity;
+        double quantity;
         if(txtDiscount.getText().toString().isEmpty() && !checkFree.isChecked()){
             txtDiscount.setText("0");
         }
@@ -881,7 +1003,7 @@ public class API_ItemInfo extends AppCompatActivity {
         if (txtQuantity.getText().toString().isEmpty()) {
             quantity = 0;
         } else {
-            quantity = Integer.parseInt(txtQuantity.getText().toString());
+            quantity = Double.parseDouble(txtQuantity.getText().toString());
         }
         if (operator.equals("+")) {
             quantity += 1;
@@ -895,7 +1017,7 @@ public class API_ItemInfo extends AppCompatActivity {
             double variance = quantity - received_quantity;
             lblVariance.setText("Variance: " + variance);
         }
-        return Integer.toString(quantity);
+        return Double.toString(quantity);
     }
 
     public  void onBtnLogout(){

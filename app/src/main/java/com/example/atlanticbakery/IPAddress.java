@@ -61,7 +61,7 @@ public class IPAddress extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             SharedPreferences sharedPreferences = getSharedPreferences("CONFIG", MODE_PRIVATE);
                             SharedPreferences.Editor editor = sharedPreferences.edit();
-                            editor.putString("IPAddress", "http://" + txtIPAddress.getText().toString().trim()).apply();
+                            editor.putString("IPAddress", txtIPAddress.getText().toString().trim()).apply();
 
                             Intent intent = new Intent(IPAddress.this, MainActivity.class);
                             startActivity(intent);

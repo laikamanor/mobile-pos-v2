@@ -329,6 +329,20 @@ public class API_SalesLogs extends AppCompatActivity implements DatePickerDialog
                     startActivity(intent);
                     finish();
                 }
+                else if(selectedItem.equals("Item Request For Transfer")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Item Request For Transfer");
+                    intent.putExtra("hiddenTitle", "API Item Request For Transfer");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Production Order List")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Production Order List");
+                    intent.putExtra("hiddenTitle", "API Production Order List");
+                    startActivity(intent);
+                    finish();
+                }
                 else if(selectedItem.equals("Inventory Count")) {
                     intent = new Intent(getBaseContext(), APIReceived.class);
                     intent.putExtra("title", "Inventory Count");

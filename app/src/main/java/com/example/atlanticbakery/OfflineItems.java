@@ -277,6 +277,20 @@ public class OfflineItems extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                 }
+                else if(selectedItem.equals("Item Request For Transfer")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Item Request For Transfer");
+                    intent.putExtra("hiddenTitle", "API Item Request For Transfer");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Production Order List")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Production Order List");
+                    intent.putExtra("hiddenTitle", "API Production Order List");
+                    startActivity(intent);
+                    finish();
+                }
                 else if(selectedItem.equals("Inventory Count")) {
                     intent = new Intent(getBaseContext(), APIReceived.class);
                     intent.putExtra("title", "Inventory Count");
@@ -560,8 +574,8 @@ public class OfflineItems extends AppCompatActivity {
             tableLayout.addView(tableColumn);
 
             JSONObject jsonObject = new JSONObject(result);
+            System.out.println("Printt: " + jsonObject);
             JSONObject jsonObjectHeader = jsonObject.getJSONObject("header");
-            System.out.println(jsonObjectHeader);
             String sHeader = "";
             if(type.equals("Sales") || type.equals("Transfer Item")) {
                 sHeader = "Transdate: " + jsonObjectHeader.getString("transdate") + "\n" +

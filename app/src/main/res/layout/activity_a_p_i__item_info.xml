@@ -65,6 +65,13 @@
                 android:textSize="30sp"
                 android:text="Received Qty. : 0" />
 
+            <Spinner
+                android:id="@+id/spinnerZXC"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="visible"
+                />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="83dp"
@@ -87,7 +94,7 @@
                     android:layout_marginTop="20dp"
                     android:background="@android:color/white"
                     android:gravity="center_horizontal"
-                    android:inputType="number"
+                    android:inputType="numberDecimal"
                     android:text=""
                     android:textAlignment="center"
                     android:textSize="30sp"

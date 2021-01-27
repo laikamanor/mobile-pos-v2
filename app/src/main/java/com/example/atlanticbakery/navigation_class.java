@@ -19,10 +19,10 @@ public class navigation_class {
         }else if(parentItem.equals("Sales")) {
             return Arrays.asList("Sales", "Shopping Cart");
         }else if(parentItem.equals("Inventory")){
-            return Arrays.asList("Received from SAP", "Received from System Transfer Item","Manual Received Item", "Manual Transfer Item");
+            return Arrays.asList("Received from SAP", "Received from System Transfer Item","Manual Received Item", "Manual Transfer Item","Item Request","Item Request For Transfer");
         }else if(parentItem.equals("Production")){
-            return Arrays.asList("Item Request","Issue For Production", "Confirm Issue For Production", "Received from Production");
-//            return Arrays.asList("Item Request","Received from Item Request", "Issue For Production", "Confirm Issue For Production", "Received from Production");
+//            return Arrays.asList("Item Request","Issue For Production", "Confirm Issue For Production", "Received from Production");
+            return Arrays.asList("Production Order List", "Issue For Production", "Confirm Issue For Production", "Received from Production");
         }else if(parentItem.equals("Logs")){
             return Arrays.asList("Logs");
         }else if(parentItem.equals("Count")){

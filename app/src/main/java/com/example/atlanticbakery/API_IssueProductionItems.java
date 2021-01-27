@@ -295,6 +295,20 @@ public class API_IssueProductionItems extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                 }
+                else if(selectedItem.equals("Item Request For Transfer")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Item Request For Transfer");
+                    intent.putExtra("hiddenTitle", "API Item Request For Transfer");
+                    startActivity(intent);
+                    finish();
+                }
+                else if(selectedItem.equals("Production Order List")) {
+                    intent = new Intent(getBaseContext(), APIReceived.class);
+                    intent.putExtra("title", "Production Order List");
+                    intent.putExtra("hiddenTitle", "API Production Order List");
+                    startActivity(intent);
+                    finish();
+                }
                 else if(selectedItem.equals("Inventory Count")) {
                     intent = new Intent(getBaseContext(), APIReceived.class);
                     intent.putExtra("title", "Inventory Count");
@@ -943,7 +957,7 @@ public class API_IssueProductionItems extends AppCompatActivity {
 //                                    base += "id: " + id + "\n Item Code: " + itemCode + "\n Planned Qty: " + plannedQty;
                                     myReference.add(itemCode);
                                     myID.add("0");
-                                    myAmount.add(df.format(plannedQty) +" " + uom);
+                                    myAmount.add(plannedQty + uom);
                                 }
                                 for (int i = 0; i < jsonArrayForIssue.length(); i++) {
                                     JSONObject jsonObjectForIssue = jsonArrayForIssue.getJSONObject(i);
@@ -951,7 +965,7 @@ public class API_IssueProductionItems extends AppCompatActivity {
                                     double plannedQty = jsonObjectForIssue.getDouble("quantity");
                                     myReference2.add(itemCode);
                                     myID2.add("0");
-                                    myAmount2.add(df.format(plannedQty) + " " + uom);
+                                    myAmount2.add(plannedQty + " " + uom);
                                 }
                                 MyAdapter adapter = new MyAdapter(getBaseContext(), myReference, myID,myAmount);
                                 ListView listView = findViewById(R.id.listView1);

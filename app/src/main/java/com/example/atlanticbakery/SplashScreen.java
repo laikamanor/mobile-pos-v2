@@ -32,7 +32,7 @@ public class SplashScreen extends AppCompatActivity {
         Objects.requireNonNull(getSupportActionBar()).hide();
 
         TextView txtTitle = findViewById(R.id.textView9);
-        txtTitle.setText(getString(R.string.app_name).toUpperCase());
+        txtTitle.setText(getString(R.string.app_name).toUpperCase() +"\n v." + BuildConfig.VERSION_NAME);
 
         Handler handler = new Handler();
         Runnable r = new Runnable() {
