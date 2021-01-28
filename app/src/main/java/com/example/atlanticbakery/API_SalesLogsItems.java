@@ -513,9 +513,9 @@ public class API_SalesLogsItems extends AppCompatActivity {
         String[] columns;
         String typeTrans = getIntent().getStringExtra("type");
         if(typeTrans.equals("Received Transactions")) {
-            columns = new String[]{"Item", "Qty.", "Actual Qty.", "Variance"};
+            columns = new String[]{"Item", "Qty.", "Actual Qty.", "Variance", "Uom"};
         }else if(typeTrans.equals("Transfer Transactions")){
-            columns = new String[]{"Item", "Qty."};
+            columns = new String[]{"Item", "Qty.", "Uom"};
         }else{
             columns = new String[]{"Item", "Qty.", "Price", "Gross", "Disc. %", "Disc. Amt.", "Total"};
         }
@@ -712,6 +712,16 @@ public class API_SalesLogsItems extends AppCompatActivity {
                                 }
                             }
                             tableRow.addView(lblColumn4);
+
+                            if(typeTrans.equals("Received Transactions")){
+                                TextView lblColumn8 = new TextView(getBaseContext());
+                                lblColumn8.setText(jsonObjectRecRow.getString("inv_uom"));
+                                lblColumn8.setBackgroundColor(Color.WHITE);
+                                lblColumn8.setPadding(10, 10, 10, 10);
+                                lblColumn8.setTextSize(15);
+                                lblColumn8.setTextColor(Color.BLACK);
+                                tableRow.addView(lblColumn8);
+                            }
                         }
 
                         if(typeTrans.equals("Sales Transactions")){
@@ -738,6 +748,15 @@ public class API_SalesLogsItems extends AppCompatActivity {
                             lblColumn6.setBackgroundColor(Color.WHITE);
                             lblColumn6.setPadding(10, 10, 10, 10);
                             tableRow.addView(lblColumn6);
+                        }
+
+                        if(typeTrans.equals("Transfer Transactions")){
+                            lblColumn3.setText(jsonObjectRecRow.getString("inv_uom"));
+                            lblColumn3.setBackgroundColor(Color.WHITE);
+                            lblColumn3.setPadding(10, 10, 10, 10);
+                            lblColumn3.setTextSize(15);
+                            lblColumn3.setTextColor(Color.BLACK);
+                            tableRow.addView(lblColumn3);
                         }
 
                         runOnUiThread(new Runnable() {

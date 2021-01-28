@@ -1715,7 +1715,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             }else if( hiddenTitle.equals("API Item Request For Transfer")){
                 columns = new String[]{"Item", "Delivered Qty.", "Actual Qty."};
             }else{
-                columns = new String[]{"Item", "Qty."};
+                columns = new String[]{"Item", "Qty.", "Uom"};
             }
 
             for (String s : columns) {
@@ -1886,6 +1886,17 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                         lblColumn2.setTextSize(15);
                         lblColumn2.setPadding(10, 10, 10, 10);
                         tableRow.addView(lblColumn2);
+
+                        if(hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Transfer Item")){
+                            TextView lblColumn4 = new TextView(API_SelectedItems.this);
+                            lblColumn4.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                            lblColumn4.setTag(id);
+                            lblColumn4.setBackgroundColor(Color.WHITE);
+                            lblColumn4.setText(cursor.getString(5));
+                            lblColumn4.setTextSize(13);
+                            lblColumn4.setPadding(10, 10, 10, 10);
+                            tableRow.addView(lblColumn4);
+                        }
 
                         TextView lblColumn3 = new TextView(API_SelectedItems.this);
                         lblColumn3.setGravity(View.TEXT_ALIGNMENT_CENTER);
