@@ -19,6 +19,7 @@ import android.text.method.PasswordTransformationMethod;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,6 +36,7 @@ import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -119,7 +121,7 @@ public class APIReceived extends AppCompatActivity {
     private OkHttpClient client;
     JSONObject globalJsonObject;
     Button btnBack,btnRefresh;
-    String appName = "";
+    String appName = "",whseCode = "",gBranch;
     @SuppressLint({"WrongConstant", "SetTextI18n"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -678,6 +680,264 @@ public class APIReceived extends AppCompatActivity {
             }
         }
     }
+
+    public void showWarehouses(TextView lblSelectedBranch){
+        AlertDialog _dialog = null;
+        AlertDialog.Builder dialogSelectWarehouse = new AlertDialog.Builder(APIReceived.this);
+        dialogSelectWarehouse.setTitle("Select Warehouse");
+        dialogSelectWarehouse.setCancelable(false);
+        LinearLayout layout = new LinearLayout(getBaseContext());
+        layout.setPadding(40, 40, 40, 40);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        AutoCompleteTextView txtSearchBranch = new AutoCompleteTextView(getBaseContext());
+        txtSearchBranch.setTextSize(13);
+        layout.addView(txtSearchBranch);
+        final List<String>[] warehouses = new List[]{returnBranches()};
+        final ArrayList<String>[] myReference = new ArrayList[]{getReference(warehouses[0], txtSearchBranch.getText().toString().trim())};
+        final ArrayList<String>[] myID = new ArrayList[]{getID(warehouses[0], txtSearchBranch.getText().toString().trim())};
+        final List<String>[] listItems = new List[]{getListItems(warehouses[0])};
+
+        TextView btnSearchBranch = new TextView(getBaseContext());
+        btnSearchBranch.setBackgroundColor(Color.parseColor("#0b8a0f"));
+        btnSearchBranch.setPadding(20,20,20,20);
+        btnSearchBranch.setTextColor(Color.WHITE);
+        btnSearchBranch.setTextSize(13);
+        btnSearchBranch.setText("Search");
+        ListView listView = new ListView(getBaseContext());
+        btnSearchBranch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                myReference[0] = getReference(warehouses[0], txtSearchBranch.getText().toString().trim());
+                myID[0] = getID(warehouses[0], txtSearchBranch.getText().toString().trim());
+                listItems[0] = getListItems(warehouses[0]);
+
+                APIReceived.MyAdapter adapter = new APIReceived.MyAdapter(APIReceived.this, myReference[0], myID[0]);
+
+                listView.setAdapter(adapter);
+            }
+        });
+
+        layout.addView(btnSearchBranch);
+
+
+        LinearLayout.LayoutParams layoutParamsWarehouses = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,300);
+        layoutParamsWarehouses.setMargins(10,10,10,10);
+        listView.setLayoutParams(layoutParamsWarehouses);
+
+        txtSearchBranch.setAdapter(fillItems(listItems[0]));
+        APIReceived.MyAdapter adapter = new APIReceived.MyAdapter(APIReceived.this, myReference[0], myID[0]);
+        dialogSelectWarehouse.setView(layout);
+
+        dialogSelectWarehouse.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        _dialog = dialogSelectWarehouse.show();
+        listView.setAdapter(adapter);
+
+        AlertDialog final_dialog = _dialog;
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        TextView textView = view.findViewById(R.id.txtIDs);
+                        TextView textView1 = view.findViewById(R.id.txtReference);
+                        lblSelectedBranch.setText(textView1.getText().toString());
+                        lblSelectedBranch.setTag(textView1.getText().toString());
+                        final_dialog.dismiss();
+                    }
+                });
+            }
+        });
+        layout.addView(listView);
+    }
+
+    public List<String> getListItems(List<String> warehouses){
+        List<String> result = new ArrayList<String>();
+        for(String temp : warehouses){
+            if(!temp.contains("Select Warehouse")){
+                result.add(temp);
+            }
+        }
+        return result;
+    }
+
+    public ArrayList<String> getReference(List<String> warehouses,String value){
+        ArrayList<String> result = new ArrayList<String>();
+        for(String temp : warehouses){
+            if(!temp.contains("Select Warehouse")){
+                if (!value.isEmpty()) {
+                    if (value.trim().toLowerCase().equals(temp.toLowerCase())) {
+                        result.add(temp);
+                    }
+                }else{
+                    result.add(temp);
+//                    myID.add("0");
+                }
+            }
+        }
+        return result;
+    }
+
+    public ArrayList<String> getID(List<String> warehouses,String value){
+        ArrayList<String> result = new ArrayList<String>();
+        for(String temp : warehouses){
+            if(!temp.contains("Select Warehouse")){
+                if (!value.isEmpty()) {
+                    if (value.trim().contains(temp)) {
+                        result.add("0");
+//                        myID.add("0");
+                    }
+                }else{
+                    result.add("0");
+//                    myID.add("0");
+                }
+            }
+        }
+        return result;
+    }
+
+    class MyAdapter extends ArrayAdapter<String> {
+        Context rContext;
+        ArrayList<String> myReference;
+        ArrayList<String> myIds;
+
+        MyAdapter(Context c, ArrayList<String> reference, ArrayList<String> id) {
+            super(c, R.layout.custom_list_view_sales_logs, R.id.txtReference, reference);
+            this.rContext = c;
+            this.myReference = reference;
+            this.myIds = id;
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+            LayoutInflater layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View row = layoutInflater.inflate(R.layout.custom_list_view_sales_logs, parent, false);
+            TextView textView1 = row.findViewById(R.id.txtReference);
+            TextView textView2 = row.findViewById(R.id.txtIDs);
+
+            textView1.setText(myReference.get(position));
+            textView2.setText(myIds.get(position));
+            textView2.setVisibility(View.INVISIBLE);
+
+            return row;
+        }
+    }
+
+
+    public void hmReturnBranches(){
+        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+        String IPaddress = sharedPreferences2.getString("IPAddress", "");
+        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN", MODE_PRIVATE);
+        String token = Objects.requireNonNull(sharedPreferences.getString("token", ""));
+        String URL = IPaddress + "/api/whse/get_all";
+        okhttp3.Request request = new okhttp3.Request.Builder()
+                .url(URL)
+                .method("GET", null)
+                .addHeader("Authorization", "Bearer " + token)
+                .addHeader("Content-Type", "application/json")
+                .build();
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try  {
+                    client = new OkHttpClient();
+                    client.newCall(request).enqueue(new Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    e.printStackTrace();
+//                                    Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                            Cursor cursor = myDb8.getAllData();
+                            while (cursor.moveToNext()){
+                                String module = cursor.getString(3);
+                                if(module.contains("Warehouse")){
+//                                    System.out.println(cursor.getString(4));
+                                    if(hidden_title.equals("API Item Request")){
+                                        if(cursor.getString(4).toLowerCase().contains("prod")){
+                                            gBranch = cursor.getString(4);
+                                        }
+                                    }else{
+                                        gBranch = cursor.getString(4);
+                                    }
+                                }else{
+                                    System.out.println("ELSE: " + cursor.getString(4));
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onResponse(Call call, okhttp3.Response response) {
+                            try {
+//                                System.out.println(response.body().string());
+                                String sResult = response.body().string();
+                                gBranch = sResult;
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.start();
+    }
+
+    public List<String> returnBranches(){
+        List<String> result = new ArrayList<>();
+        result.add("Select Warehouse");
+        System.out.println("whaaaat : " + gBranch);
+        try{
+            if(!gBranch.isEmpty()){
+                if(gBranch.substring(0,1).equals("{")){
+                    JSONObject jsonObjectResponse = new JSONObject(gBranch);
+                    if(!jsonObjectResponse.isNull("data") && jsonObjectResponse.getBoolean("success")){
+                        JSONArray jsonArray = jsonObjectResponse.getJSONArray("data");
+                        for(int i = 0; i < jsonArray.length(); i++){
+                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+//                            String branch = jsonObject.getString("whsecode") + "," + jsonObject.getString("whsename");
+                            String branch = jsonObject.getString("whsename");
+                            result.add(branch);
+
+                        }
+                    }else{
+                        Toast.makeText(getBaseContext(),"Error \n" + jsonObjectResponse.getString("message"), Toast.LENGTH_SHORT).show();
+                    }
+                }else{
+                    Toast.makeText(getBaseContext(),"Error \n" + gBranch, Toast.LENGTH_SHORT).show();
+                }
+            }else{
+                Toast.makeText(getBaseContext(),"Error \n" + gBranch, Toast.LENGTH_SHORT).show();
+            }
+        }catch (Exception ex){
+            ex.printStackTrace();
+            Toast.makeText(getBaseContext(), "Front-end Error \n" + ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return result;
+    }
+
     public void loadData() {
         if (hidden_title.equals("API Received from SAP")) {
             if (myDb3.countItems(hidden_title) > 0) {
@@ -1789,7 +2049,8 @@ public class APIReceived extends AppCompatActivity {
                                                 store_quantity = jsonObject1.getInt("sales_count");
                                                 auditor_quantity = jsonObject1.getInt("auditor_count");
                                                 variance_quantity = jsonObject1.getInt("variance");
-                                                uom = jsonObject1.getString("uom");
+//                                                uom = jsonObject1.getString("uom");
+                                                uom = "";
                                             }
 
                                             break;

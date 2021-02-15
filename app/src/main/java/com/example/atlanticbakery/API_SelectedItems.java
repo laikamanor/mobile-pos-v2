@@ -168,7 +168,8 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             layout.setPadding(40, 40, 40, 40);
             layout.setOrientation(LinearLayout.VERTICAL);
 
-            TextView lblSelectedBranch = new TextView(getBaseContext());
+            TextView lblFromSelectedBranch = new TextView(getBaseContext());
+            TextView lblToSelectedBranch = new TextView(getBaseContext());
             EditText txtSAPNumber = new EditText(getBaseContext());
             EditText txtSupplier = new EditText(getBaseContext());
             LinearLayout.LayoutParams layoutParamsBranch = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -189,48 +190,86 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                     txtSupplier.setLayoutParams(layoutParamsBranch);
                     layout.addView(txtSupplier);
                 }else{
-                    TextView lblBranch = new TextView(getBaseContext());
-                    lblBranch.setText((hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Item Request")) ? "*From Warehouse:" : "*To Warehouse:");
-                    lblBranch.setTextColor(Color.rgb(0,0,0));
-                    lblBranch.setTextSize(15);
-                    lblBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    layout.addView(lblBranch);
+                    TextView lblFromBranch = new TextView(getBaseContext());
+                    lblFromBranch.setText((hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Item Request")) ? "*From Warehouse:" : "*To Warehouse:");
+                    lblFromBranch.setTextColor(Color.rgb(0,0,0));
+                    lblFromBranch.setTextSize(15);
+                    lblFromBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    layout.addView(lblFromBranch);
 
-                    LinearLayout layoutBranch = new LinearLayout(getBaseContext());
-                    layoutBranch.setOrientation(LinearLayout.HORIZONTAL);
+                    LinearLayout layoutFromBranch = new LinearLayout(getBaseContext());
+                    LinearLayout.LayoutParams layoutParamsFromBranch = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                    layoutParamsFromBranch.setMargins(20,0,0,20);
+                    layoutFromBranch.setLayoutParams(layoutParamsFromBranch);
+                    layoutFromBranch.setOrientation(LinearLayout.HORIZONTAL);
 
                     LinearLayout.LayoutParams layoutParamsBranch2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 
                     LinearLayout.LayoutParams layoutParamsBranch3 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
                     layoutParamsBranch3.setMargins(10,0,0,0);
 
-                    lblSelectedBranch.setText("N/A");
-                    lblSelectedBranch.setTextColor(Color.rgb(0,0,0));
-                    lblSelectedBranch.setTextSize(15);
-                    lblSelectedBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    lblSelectedBranch.setLayoutParams(layoutParamsBranch2);
-                    layoutBranch.addView(lblSelectedBranch);
+                    lblFromSelectedBranch.setText("N/A");
+                    lblFromSelectedBranch.setTextColor(Color.rgb(0,0,0));
+                    lblFromSelectedBranch.setTextSize(15);
+                    lblFromSelectedBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    lblFromSelectedBranch.setLayoutParams(layoutParamsBranch2);
+                    layoutFromBranch.addView(lblFromSelectedBranch);
 
-                    TextView btnSelectBranch = new TextView(getBaseContext());
-                    btnSelectBranch.setText("...");
-                    btnSelectBranch.setPadding(20,10,20,10);
-                    btnSelectBranch.setBackgroundColor(Color.BLACK);
-                    btnSelectBranch.setTextColor(Color.WHITE);
-                    btnSelectBranch.setTextSize(15);
-                    btnSelectBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                    btnSelectBranch.setLayoutParams(layoutParamsBranch3);
+                    TextView btnFromSelectBranch = new TextView(getBaseContext());
+                    btnFromSelectBranch.setText("...");
+                    btnFromSelectBranch.setPadding(20,10,20,10);
+                    btnFromSelectBranch.setBackgroundColor(Color.BLACK);
+                    btnFromSelectBranch.setTextColor(Color.WHITE);
+                    btnFromSelectBranch.setTextSize(15);
+                    btnFromSelectBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    btnFromSelectBranch.setLayoutParams(layoutParamsBranch3);
 
-                    btnSelectBranch.setOnClickListener(new View.OnClickListener() {
+                    btnFromSelectBranch.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            showWarehouses(lblSelectedBranch);
+                            showWarehouses(lblFromSelectedBranch);
                         }
                     });
+                    layoutFromBranch.addView(btnFromSelectBranch);
+                    layout.addView(layoutFromBranch);
 
-                    layoutBranch.addView(btnSelectBranch);
-
-
-                    layout.addView(layoutBranch);
+//                    TextView lblToBranch = new TextView(getBaseContext());
+//                    lblToBranch.setText((hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Item Request")) ? "*To Warehouse:" : "*From Warehouse:");
+//                    lblToBranch.setTextColor(Color.rgb(0,0,0));
+//                    lblToBranch.setTextSize(15);
+//                    lblToBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+//
+//                    LinearLayout layoutToBranch = new LinearLayout(getBaseContext());
+//                    LinearLayout.LayoutParams layoutParamsToBranch = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+//                    layoutParamsToBranch.setMargins(20,0,0,20);
+//                    layoutToBranch.setLayoutParams(layoutParamsFromBranch);
+//                    layoutToBranch.setOrientation(LinearLayout.HORIZONTAL);
+//
+//                    lblToSelectedBranch.setText("N/A");
+//                    lblToSelectedBranch.setTextColor(Color.rgb(0,0,0));
+//                    lblToSelectedBranch.setTextSize(15);
+//                    lblToSelectedBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+//                    lblToSelectedBranch.setLayoutParams(layoutParamsBranch2);
+//                    layoutToBranch.addView(lblToSelectedBranch);
+//
+//                    TextView btnToSelectBranch = new TextView(getBaseContext());
+//                    btnToSelectBranch.setText("...");
+//                    btnToSelectBranch.setPadding(20,10,20,10);
+//                    btnToSelectBranch.setBackgroundColor(Color.BLACK);
+//                    btnToSelectBranch.setTextColor(Color.WHITE);
+//                    btnToSelectBranch.setTextSize(15);
+//                    btnToSelectBranch.setGravity(View.TEXT_ALIGNMENT_CENTER);
+//                    btnToSelectBranch.setLayoutParams(layoutParamsBranch3);
+//
+//                    btnToSelectBranch.setOnClickListener(new View.OnClickListener() {
+//                        @Override
+//                        public void onClick(View view) {
+//                            showWarehouses(lblToSelectedBranch);
+//                        }
+//                    });
+//                    layoutToBranch.addView(btnToSelectBranch);
+//                    layout.addView(lblToBranch);
+//                    layout.addView(layoutToBranch);
 
                 }
 
@@ -321,11 +360,11 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             String finalSupplier = supplier;
             myDialog.setPositiveButton("Submit", (dialogInterface, i) -> {
                 String type = getIntent().getStringExtra("type");
-                if(lblSelectedBranch.getText().toString().equals("N/A") && hiddenTitle.equals("API Received Item") && type.equals("SAPIT")){
+                if(lblFromSelectedBranch.getText().toString().equals("N/A") && hiddenTitle.equals("API Received Item") && type.equals("SAPIT")){
                     Toast.makeText(getBaseContext(), "Please select from Warehouse", Toast.LENGTH_SHORT).show();
-                }else if(lblSelectedBranch.getText().toString().equals("N/A") && hiddenTitle.equals("API Transfer Item")){
+                }else if(lblFromSelectedBranch.getText().toString().equals("N/A") && hiddenTitle.equals("API Transfer Item")){
                     Toast.makeText(getBaseContext(), "Please select to Warehouse", Toast.LENGTH_SHORT).show();
-                }else if(lblSelectedBranch.getText().toString().equals("N/A") && hiddenTitle.equals("API Item Request")) {
+                }else if(lblFromSelectedBranch.getText().toString().equals("N/A") && hiddenTitle.equals("API Item Request")) {
                     Toast.makeText(getBaseContext(), "Please select to Warehouse", Toast.LENGTH_SHORT).show();
                 }else if(txtRemarks.getText().toString().isEmpty()){
                     Toast.makeText(getBaseContext(), "Remarks field is empty", Toast.LENGTH_SHORT).show();
@@ -342,9 +381,9 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                                     String whseCode = "";
                                     if(hiddenTitle.equals("API Received Item") || hiddenTitle.equals("API Transfer Item") || hiddenTitle.equals("API Item Request")) {
                                         if (hiddenTitle.equals("API Received Item") && type.equals("SAPIT")) {
-                                            whseCode = findWarehouseCode(lblSelectedBranch.getText().toString());
+                                            whseCode = findWarehouseCode(lblFromSelectedBranch.getText().toString());
                                         }else if(!hiddenTitle.equals("API Received Item")){
-                                            whseCode = findWarehouseCode(lblSelectedBranch.getText().toString());
+                                            whseCode = findWarehouseCode(lblFromSelectedBranch.getText().toString());
                                         }
                                     }
 
@@ -723,7 +762,6 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
         AutoCompleteTextView txtSearchBranch = new AutoCompleteTextView(getBaseContext());
         txtSearchBranch.setTextSize(13);
         layout.addView(txtSearchBranch);
-
         final List<String>[] warehouses = new List[]{returnBranches()};
         final ArrayList<String>[] myReference = new ArrayList[]{getReference(warehouses[0], txtSearchBranch.getText().toString().trim())};
         final ArrayList<String>[] myID = new ArrayList[]{getID(warehouses[0], txtSearchBranch.getText().toString().trim())};
@@ -794,15 +832,6 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
         for(String temp : warehouses){
             if(!temp.contains("Select Warehouse")){
                 result.add(temp);
-//                if (!txtSearchBranch.getText().toString().trim().isEmpty()) {
-//                    if (txtSearchBranch.getText().toString().trim().contains(temp)) {
-//                        myReference.add(temp);
-//                        myID.add("0");
-//                    }
-//                }else{
-//                    myReference.add(temp);
-//                    myID.add("0");
-//                }
             }
         }
         return result;
@@ -872,7 +901,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
 
             textView1.setText(myReference.get(position));
             textView2.setText(myIds.get(position));
-            textView2.setVisibility(View.INVISIBLE);
+            textView2.setVisibility(View.GONE);
 
             return row;
         }
@@ -1623,6 +1652,40 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
         thread.start();
     }
 
+    public List<String> returnBranches(){
+        List<String> result = new ArrayList<>();
+        result.add("Select Warehouse");
+        System.out.println("whaaaat : " + gBranch);
+        try{
+            if(!gBranch.isEmpty()){
+                if(gBranch.substring(0,1).equals("{")){
+                    JSONObject jsonObjectResponse = new JSONObject(gBranch);
+                    if(!jsonObjectResponse.isNull("data") && jsonObjectResponse.getBoolean("success")){
+                        JSONArray jsonArray = jsonObjectResponse.getJSONArray("data");
+                        for(int i = 0; i < jsonArray.length(); i++){
+                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+//                            String branch = jsonObject.getString("whsecode") + "," + jsonObject.getString("whsename");
+                            String branch = jsonObject.getString("whsename");
+                            result.add(branch);
+
+                        }
+                    }else{
+                        Toast.makeText(getBaseContext(),"Error \n" + jsonObjectResponse.getString("message"), Toast.LENGTH_SHORT).show();
+                    }
+                }else{
+                    Toast.makeText(getBaseContext(),"Error \n" + gBranch, Toast.LENGTH_SHORT).show();
+                }
+            }else{
+                Toast.makeText(getBaseContext(),"Error \n" + gBranch, Toast.LENGTH_SHORT).show();
+            }
+        }catch (Exception ex){
+            ex.printStackTrace();
+            Toast.makeText(getBaseContext(), "Front-end Error \n" + ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return result;
+    }
+
+
     public String findWarehouseCode(String value){
         try{
             JSONObject jsonObjectResponse = new JSONObject(gBranch);
@@ -1639,27 +1702,6 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
         }
         return "";
     }
-
-    public List<String> returnBranches(){
-        List<String> result = new ArrayList<>();
-        result.add("Select Warehouse");
-//        System.out.println(gBranch);
-       try{
-           JSONObject jsonObjectResponse = new JSONObject(gBranch);
-           JSONArray jsonArray = jsonObjectResponse.getJSONArray("data");
-           for(int i = 0; i < jsonArray.length(); i++){
-               JSONObject jsonObject = jsonArray.getJSONObject(i);
-//                            String branch = jsonObject.getString("whsecode") + "," + jsonObject.getString("whsename");
-               String branch = jsonObject.getString("whsename");
-               result.add(branch);
-
-           }
-       }catch (Exception ex){
-           Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
-       }
-        return result;
-    }
-
 
     @SuppressLint({"SetTextI18n", "RtlHardcoded"})
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -1703,6 +1745,9 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
             btnProceed.setVisibility(View.VISIBLE);
 
             TableRow tableColumn = new TableRow(API_SelectedItems.this);
+            tableColumn.setBackgroundColor(Color.rgb(242, 245, 242));
+            LinearLayout.LayoutParams layoutParamsTableColumn = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT,1.0f);
+            tableColumn.setLayoutParams(layoutParamsTableColumn);
             final TableLayout tableLayout = findViewById(R.id.table_main);
             tableLayout.removeAllViews();
             System.out.println("TITLE: " + hiddenTitle);
@@ -1714,7 +1759,10 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 columns = new String[]{"Item", "Planned Qty.", "Actual Qty."};
             }else if( hiddenTitle.equals("API Item Request For Transfer")){
                 columns = new String[]{"Item", "Delivered Qty.", "Actual Qty."};
-            }else{
+            }else if(hiddenTitle.equals("API Pull Out Count")){
+                columns = new String[]{"Item", "Qty."};
+            }
+            else{
                 columns = new String[]{"Item", "Qty.", "Uom"};
             }
 
@@ -2142,9 +2190,7 @@ public class API_SelectedItems extends AppCompatActivity implements DatePickerDi
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                System.out.println("SAPAR DAPAT: " + jsonObject);
                 MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-                System.out.println("DITOOOO? "+ jsonObject);
                 RequestBody body = RequestBody.create(JSON, jsonObject.toString());
 
                 SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);

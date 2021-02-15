@@ -132,11 +132,11 @@ public class API_ItemInfo extends AppCompatActivity {
         hidden_title = getIntent().getStringExtra("hiddenTitle");
         itemName = getIntent().getStringExtra("item");
 
-        if(hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request")) {
-            System.out.println("uom group: " + getIntent().getStringExtra("uomGroup"));
-            uomGroup = Integer.parseInt(getIntent().getStringExtra("uomGroup"));
-            loadAltUom(uomGroup);
-        }
+//        if(hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request")) {
+//            System.out.println("uom group: " + getIntent().getStringExtra("uomGroup"));
+//            uomGroup = Integer.parseInt(getIntent().getStringExtra("uomGroup"));
+//            loadAltUom(uomGroup);
+//        }
 
         mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
         mActivityTitle = getTitle().toString();
@@ -201,7 +201,7 @@ public class API_ItemInfo extends AppCompatActivity {
                         boolean isInserted = false;
                         String uom = getIntent().getStringExtra("uom");
                         if(hidden_title.equals("API Received Item") || hidden_title.equals("API Transfer Item") || hidden_title.equals("API Item Request")){
-                            isInserted = myDb4.insertData(itemName, quantity, title, 1,spinnerAltUom.getSelectedItem().toString());
+                            isInserted = myDb4.insertData(itemName, quantity, title, 1,uom);
                         }else if(hidden_title.equals("API Received from SAP")){
                             int id = getIntent().getIntExtra("id",0);
                             isInserted = myDb3.updateSelected(Integer.toString(id),1, quantity);
@@ -345,6 +345,7 @@ public class API_ItemInfo extends AppCompatActivity {
                                 }
                             }
                         } catch (Exception ex) {
+                            ex.printStackTrace();
                             if (txtDiscount.getText().toString().equals("")) {
                                 txtTotalPrice.setText(Double.toString(priceBefore));
                             }
@@ -474,6 +475,7 @@ public class API_ItemInfo extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        e.printStackTrace();
                         Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -855,6 +857,7 @@ public class API_ItemInfo extends AppCompatActivity {
                 response = client.newCall(request).execute();
                 return response.body().string();
             } catch (Exception ex) {
+                ex.printStackTrace();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -893,6 +896,7 @@ public class API_ItemInfo extends AppCompatActivity {
 
                 }
             } catch (Exception ex) {
+                ex.printStackTrace();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {

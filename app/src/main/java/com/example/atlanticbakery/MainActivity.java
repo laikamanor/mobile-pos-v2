@@ -1,7 +1,11 @@
-package com.example.atlanticbakery;
+    package com.example.atlanticbakery;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,7 +13,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
@@ -19,31 +22,18 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.SystemClock;
-import android.text.Html;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-
-import com.github.javiersantos.appupdater.AppUpdater;
-import com.github.javiersantos.appupdater.enums.Display;
-import com.github.javiersantos.appupdater.enums.UpdateFrom;
+import com.google.android.material.textfield.TextInputLayout;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -53,12 +43,15 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
+    Button btnSignIn;
+    urlList_class urlc = new urlList_class();
+    utility_class utilityc = new utility_class();
+    TextInputLayout txtUsername,txtPassword;
+
     DatabaseHelper myDb = new DatabaseHelper(this);
     DatabaseHelper2 myDb2;
     DatabaseHelper3 myDb3;
@@ -66,28 +59,25 @@ public class MainActivity extends AppCompatActivity {
     DatabaseHelper5 myDb5;
     DatabaseHelper8 myDb8;
 
-    int userid,isManager = 0,isSales = 0, isProduction = 0,isAdmin = 0;
-    boolean isManagerB = false,isSalesB=false,isProductionB = false,isAdminB = false;
-    String fullName="",whse = "",resultToken = "",branch = "";
-    //Declaring layout button,editTexts and progress bar
-    Button login;
-    EditText username, password;
-    ProgressBar progressBar;
-    TextView txtMessage;
-    //End Declaring layout button,editTexts and progress bar
     String gText = "";
     long mLastClickTime = 0;
     long queueid;
     DownloadManager manager;
 
     private OkHttpClient client;
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    int userid,isManager = 0,isSales = 0, isProduction = 0,isAdmin = 0;
+    boolean isManagerB = false,isSalesB=false,isProductionB = false,isAdminB = false;
+    String fullName="",whse = "",resultToken = "",branch = "";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + getString(R.string.app_name) + "</font>"));
+        Objects.requireNonNull(getSupportActionBar()).hide();
+
+        btnSignIn = findViewById(R.id.btnSignIn);
+        txtUsername = findViewById(R.id.username);
+        txtPassword = findViewById(R.id.password);
 
         myDb2 = new DatabaseHelper2(this);
         myDb3 = new DatabaseHelper3(this);
@@ -96,70 +86,130 @@ public class MainActivity extends AppCompatActivity {
         myDb8 = new DatabaseHelper8(this);
 
         client = new OkHttpClient();
-
-        //Getting values from button,editTexts and progress bar
-        login = findViewById(R.id.button);
-        username = findViewById(R.id.editText);
-        password = findViewById(R.id.editText2);
-        progressBar = findViewById(R.id.progressBar2);
-        txtMessage = findViewById(R.id.txtMessage);
-        progressBar.setVisibility(View.GONE);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        login.setOnClickListener(v -> {
-            if(SystemClock.elapsedRealtime() - mLastClickTime < 1000){
-                return;
-            }
-            mLastClickTime = SystemClock.elapsedRealtime();
-//          try{
-//              AppUpdater appUpdater = new AppUpdater(MainActivity.this);
-//              appUpdater.setDisplay(Display.DIALOG);
-//              appUpdater.setUpdateFrom(UpdateFrom.GITHUB);
-//              appUpdater.setGitHubUserAndRepo("laikamanor","mobile-pos-v2");
-//              appUpdater.setTitleOnUpdateAvailable("Update Available");
-//              appUpdater.setContentOnUpdateAvailable("Check Out the latest version of an app");
-//              appUpdater.setTitleOnUpdateNotAvailable("No Update Available");
-//              appUpdater.setContentOnUpdateAvailable("Have Update Available");
-//              appUpdater.setButtonUpdate("Update Now?");
-//              appUpdater.setCancelable(false);
-//              appUpdater.start();
-//          }catch (Exception ex){
-//              Toast.makeText(MainActivity.this,ex.toString(), Toast.LENGTH_SHORT).show();
-//          }
-//            Toast.makeText(getBaseContext(), "asas", Toast.LENGTH_SHORT).show();
 //
-            if(isNetworkAvailable()){
-                BackTask backTask = new BackTask();
-                backTask.execute("https://raw.githubusercontent.com/laikamanor/files/master/file.txt");
+//        if(isNetworkAvailable()){
+//            BackTask backTask = new BackTask();
+//            backTask.execute("https://raw.githubusercontent.com/laikamanor/files/master/file.txt");
+//
+//            BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+//                @Override
+//                public void onReceive(Context context, Intent intent) {
+//                    String action = intent.getAction();
+//                    if(DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)){
+//                        DownloadManager.Query req_query = new DownloadManager.Query();
+//                        req_query.setFilterById(queueid);
+//                        Cursor c = manager.query(req_query);
+//                        if(c.moveToFirst()){
+//                            int columnIndex = c.getColumnIndex(DownloadManager.COLUMN_STATUS);
+//                            if(DownloadManager.STATUS_SUCCESSFUL == c.getInt(columnIndex)){
+//                                openDownloads(MainActivity.this);
+//                            }
+//                        }
+//                    }
+//                }
+//            };
+//            registerReceiver(broadcastReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+//        }
 
-                BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        String action = intent.getAction();
-                        if(DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)){
-                            DownloadManager.Query req_query = new DownloadManager.Query();
-                            req_query.setFilterById(queueid);
-                            Cursor c = manager.query(req_query);
-                            if(c.moveToFirst()){
-                                int columnIndex = c.getColumnIndex(DownloadManager.COLUMN_STATUS);
-                                if(DownloadManager.STATUS_SUCCESSFUL == c.getInt(columnIndex)){
-                                    openDownloads(MainActivity.this);
+
+        btnSignIn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+//                int n = 5;
+//                for(int i = 0; i <= 10; i ++){
+//                    System.out.println("HPH1009" + generateShit(n));
+//                }
+
+//                tryHTTPURLCon tryHTTPURLCon = new tryHTTPURLCon();
+//                tryHTTPURLCon.execute("http://122.54.198.84/api/auth/login?username=gord&password=qwe1234");
+
+                if (isNetworkAvailable()) {
+                    BackTask backTask = new BackTask();
+                    backTask.execute("https://raw.githubusercontent.com/laikamanor/files/master/file.txt");
+
+                    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                            String action = intent.getAction();
+                            if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)) {
+                                DownloadManager.Query req_query = new DownloadManager.Query();
+                                req_query.setFilterById(queueid);
+                                Cursor c = manager.query(req_query);
+                                if (c.moveToFirst()) {
+                                    int columnIndex = c.getColumnIndex(DownloadManager.COLUMN_STATUS);
+                                    if (DownloadManager.STATUS_SUCCESSFUL == c.getInt(columnIndex)) {
+                                        openDownloads(MainActivity.this);
+                                    }
                                 }
                             }
                         }
-                    }
-                };
-//                here
-                registerReceiver(broadcastReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
-            }else {
-                MyLogin myLogin = new MyLogin();
-                myLogin.execute("");
+                    };
+                    registerReceiver(broadcastReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+                } else {
+                    isNoInternet();
+                }
             }
         });
+    }
+
+    public static class login extends AsyncTask<String, Void, String> {
+        URL url;
+        HttpURLConnection urlConnection = null;
+        public AsyncResponse delegate = null;
+
+        public login(AsyncResponse delegate) {
+            this.delegate = delegate;
+        }
+
+        // you may separate this or combined to caller class.
+        public interface AsyncResponse {
+            void processFinish(String output);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            System.out.println("Waiting...");
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try{
+                url = new URL(strings[0]);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("GET");
+//               urlConnection.setRequestProperty("Authorization", "Bearer ");
+                api_class api_class = new api_class();
+                int responseCode = urlConnection.getResponseCode();
+                if(responseCode == 200){
+                    return api_class.readStream(urlConnection.getInputStream());
+                }else {
+                    return api_class.readStream(urlConnection.getErrorStream());
+                }
+            }catch (Exception ex){
+                ex.printStackTrace();
+            }
+            return "";
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            delegate.processFinish(s);
+        }
+    }
+
+
+
+    public String generateShit(int n){
+        String AlphaNumericString = "abcdefghijklmnopqrstuvxyz"+ "0123456789";
+        StringBuilder sb = new StringBuilder(n);
+        for (int i = 0; i < n; i++) {
+            int index = (int)(AlphaNumericString.length() * Math.random());
+            sb.append(AlphaNumericString
+                    .charAt(index));
+        }
+        return sb.toString();
     }
 
     private boolean isNetworkAvailable() {
@@ -191,14 +241,38 @@ public class MainActivity extends AppCompatActivity {
         return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
     }
 
+    public void saveToken(String token){
+        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN",MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("token",token).apply();
+    }
+
+    public  void saveLoggedIn(){
+        String susername = txtUsername.getEditText().getText().toString();
+        String spassword = txtPassword.getEditText().getText().toString();
+        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN",MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("username",susername).apply();
+        editor.putString("password",spassword).apply();
+        editor.putString("fullname",fullName).apply();
+        editor.putString("branch",branch).apply();
+        editor.putString("userid",Integer.toString(userid)).apply();
+        editor.putString("whse",whse).apply();
+        editor.putString("isManager",Integer.toString(isManager)).apply();
+        editor.putString("isSales",Integer.toString(isSales)).apply();
+        editor.putString("isProduction",Integer.toString(isProduction)).apply();
+        editor.putString("isAdmin",Integer.toString(isAdmin)).apply();
+//        uc.insetLoginLogs(MainActivity.this, susername);
+//        uc.checkCutOff(MainActivity.this, susername);
+    }
+
     //background process to download the file from internet
-    private class BackTask extends AsyncTask<String,Integer,Void>{
-        LoadingDialog loadingDialog = new LoadingDialog(MainActivity.this);
+    private class BackTask extends AsyncTask<String,Integer,Void> {
         String text="";
         protected void onPreExecute(){
             super.onPreExecute();
             //display progress dialog
-            loadingDialog.startLoadingDialog();
+            btnSignIn.setEnabled(false);
         }
         protected Void doInBackground(String...params){
             URL url;
@@ -215,24 +289,27 @@ public class MainActivity extends AppCompatActivity {
                 //read content of the file line by line
                 while((line=br.readLine())!=null){
                     text+=line;
-
                 }
-
                 br.close();
-
             }catch (Exception e) {
                 e.printStackTrace();
-                loadingDialog.dismissDialog();
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        btnSignIn.setEnabled(true);
+                    }
+                });
+
             }
-
             return null;
-
         }
 
 
-//        https://github.com/laikamanor/mobile-pos-v2/releases/download/v1.17/AtlanticBakery.apk
+        //        https://github.com/laikamanor/mobile-pos-v2/releases/download/v1.17/AtlanticBakery.apk
         protected void onPostExecute(Void result){
-            loadingDialog.dismissDialog();
+            btnSignIn.setEnabled(false);
+            btnSignIn.setText("Wait...");
             gText = text;
             if(Double.parseDouble(text) > Double.parseDouble(BuildConfig.VERSION_NAME)){
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
@@ -243,9 +320,60 @@ public class MainActivity extends AppCompatActivity {
                         startDownload(text);
                     }
                 }
-            }else {
-                MyLogin myLogin = new MyLogin();
-                myLogin.execute("");
+            }else{
+                String sUsername = txtUsername.getEditText().getText().toString().trim();
+                String sPassword = txtPassword.getEditText().getText().toString().trim();
+                SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
+                String IPAddress = sharedPreferences2.getString("IPAddress", "");
+                login login = (MainActivity.login) new login(new login.AsyncResponse() {
+                    @Override
+                    public void processFinish(String output) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    if (output.substring(0, 1).equals("{")) {
+                                        JSONObject jsonObject = new JSONObject(output);
+                                        String msg = jsonObject.getString("message");
+                                        if (jsonObject.getBoolean("success")) {
+                                            JSONObject jsonObjectData = jsonObject.getJSONObject("data");
+                                            userid = jsonObjectData.getInt("id");
+                                            resultToken = jsonObject.getString("token");
+                                            fullName = jsonObjectData.getString("fullname");
+                                            whse = jsonObjectData.getString("whse");
+                                            branch = jsonObjectData.getString("branch");
+                                            isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
+                                            isSalesB = (!jsonObjectData.isNull("isSales") && jsonObjectData.getBoolean("isSales"));
+                                            isProductionB = (!jsonObjectData.isNull("isProduction") && jsonObjectData.getBoolean("isProduction"));
+                                            isAdminB = (!jsonObjectData.isNull("isAdmin") && jsonObjectData.getBoolean("isAdmin"));
+                                            isAdmin = (isAdminB ? 1 : 0);
+                                            isManager = (isManagerB ? 1 : 0);
+                                            isSales = (isSalesB ? 1 : 0);
+                                            isProduction = (isProductionB ? 1 : 0);
+                                            saveToken(resultToken);
+                                            saveLoggedIn();
+                                            myDb8.truncateTable();
+                                            downloadsJSONS(resultToken);
+                                        } else {
+                                            btnSignIn.setText("Sign In");
+                                            btnSignIn.setEnabled(true);
+                                            Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
+                                        }
+                                    }else{
+                                        btnSignIn.setEnabled(true);
+                                        btnSignIn.setText("Sign In");
+                                        Toast.makeText(getBaseContext(), output, Toast.LENGTH_SHORT).show();
+                                    }
+                                } catch (Exception ex) {
+                                    btnSignIn.setText("Sign In");
+                                    btnSignIn.setEnabled(true);
+                                    ex.printStackTrace();
+                                    Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                    }
+                }).execute(IPAddress + "/api/auth/login?username=" + sUsername + "&password=" + sPassword);
             }
         }
     }
@@ -304,139 +432,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 
-    public void returnResult() {
-        progressBar.setVisibility(View.VISIBLE);
-        login.setEnabled(false);
-        String us = username.getText().toString();
-        String ps = password.getText().toString();
-
-        SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-        String IPaddress = sharedPreferences2.getString("IPAddress", "");
-        okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(IPaddress + "/api/auth/login?username=" + us + "&password=" + ps)
-                .method("GET", null)
-                .build();
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                formatResponse(e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                String answer = response.body().string();
-                formatResponse(answer);
-            }
-        });
-        progressBar.setVisibility(View.GONE);
-        login.setEnabled(true);
-    }
-
-    private class MyLogin extends AsyncTask<String, Void, String> {
-        String us = username.getText().toString().trim();
-        String ps = password.getText().toString().trim();
-
-        @Override
-        protected void onPreExecute() {
-            txtMessage.setText("Logging In...");
-            progressBar.setVisibility(View.VISIBLE);
-            login.setEnabled(false);
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                client = new OkHttpClient();
-                SharedPreferences sharedPreferences2 = getSharedPreferences("CONFIG", MODE_PRIVATE);
-                String IPAddress = sharedPreferences2.getString("IPAddress", "");
-//                System.out.println("IP Address: " + IPAddress);
-                okhttp3.Request request = new okhttp3.Request.Builder()
-                        .url(IPAddress + "/api/auth/login?username=" + us + "&password=" + ps)
-                        .method("GET", null)
-                        .build();
-                Response response = null;
-                response = client.newCall(request).execute();
-                return response.body().string();
-            } catch (Exception ex) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ex.printStackTrace();
-                        txtMessage.setText("");
-                        progressBar.setVisibility(View.GONE);
-                        login.setEnabled(true);
-                        if(ex.getMessage().contains("Failed to connect to") || ex.getMessage().contains("timeout") || ex.getMessage().contains("Unable to resolve host")){
-                            isNoInternet();
-                        }else{
-                            showMessage("Validation", ex.getMessage());
-                        }
-                    }
-                });
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            try {
-                if(s != null) {
-                    if(s.substring(0,1).equals("{")){
-                        JSONObject jsonObject1 = new JSONObject(s);
-                        String msg = jsonObject1.getString("message");
-                        if (jsonObject1.getBoolean("success")) {
-                            JSONObject jsonObjectData = jsonObject1.getJSONObject("data");
-                            userid = jsonObjectData.getInt("id");
-                            resultToken = jsonObject1.getString("token");
-                            fullName = jsonObjectData.getString("fullname");
-                            whse = jsonObjectData.getString("whse");
-                            branch = jsonObjectData.getString("branch");
-                            isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
-                            isSalesB = (!jsonObjectData.isNull("isSales") && jsonObjectData.getBoolean("isSales"));
-                            isProductionB = (!jsonObjectData.isNull("isProduction") && jsonObjectData.getBoolean("isProduction"));
-                            isAdminB = (!jsonObjectData.isNull("isAdmin") && jsonObjectData.getBoolean("isAdmin"));
-                            isAdmin = (isAdminB ? 1 : 0);
-                            isManager = (isManagerB ? 1 : 0);
-                            isSales = (isSalesB ? 1 : 0);
-                            isProduction = (isProductionB ? 1 : 0);
-                            saveToken(resultToken);
-                            saveLoggedIn();
-
-                            myDb8.truncateTable();
-
-                            downloadsJSONS(jsonObject1.getString("token"));
-                        } else {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    txtMessage.setText("");
-                                    progressBar.setVisibility(View.GONE);
-                                    login.setEnabled(true);
-                                    showMessage("Validation",  msg);
-                                }
-                            });
-                        }
-                    }else{
-                        txtMessage.setText("");
-                        progressBar.setVisibility(View.GONE);
-                        login.setEnabled(true);
-                        showMessage("Validation",  s);
-                    }
-                }
-            } catch (Exception ex) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ex.printStackTrace();
-                        txtMessage.setText("");
-                        progressBar.setVisibility(View.GONE);
-                        login.setEnabled(true);
-                        showMessage("Validation", ex.getMessage());
-                    }
-                });
-            }
-        }
-    }
-
     public void  isNoInternet(){
         final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setCancelable(false);
@@ -447,8 +442,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
-                MyLogin myLogin = new MyLogin();
-                myLogin.execute();
+                btnSignIn.performClick();
             }
         });
 
@@ -468,14 +462,17 @@ public class MainActivity extends AppCompatActivity {
                 isProduction = (isProductionB ? 1 : 0);;
                 isAdmin = (isAdminB ? 1 : 0);
                 saveToken(resultToken);
-                saveLoggedIn();
-                openAPIMainMenu();
 
                 myDb.truncateTable();
                 myDb2.truncateTable();
                 myDb3.truncateTable();
                 myDb4.truncateTable();
                 myDb5.truncateTable();
+
+                saveLoggedIn();
+                Intent intent = new Intent(MainActivity.this, API_Nav2.class);
+                startActivity(intent);
+                finish();
 
                 dialog.dismiss();
             }
@@ -556,9 +553,8 @@ public class MainActivity extends AppCompatActivity {
         String gToken = "";
         @Override
         protected void onPreExecute() {
-            txtMessage.setText("Downloading Resources...");
-            progressBar.setVisibility(View.VISIBLE);
-            login.setEnabled(false);
+            btnSignIn.setText("Downloading Resources...");
+            btnSignIn.setEnabled(false);
         }
 
         public MyDownloads(JSONObject jsonObjectData, String token){
@@ -600,8 +596,6 @@ public class MainActivity extends AppCompatActivity {
                             boolean apiSuccess = jsonObjectResponse.getBoolean("success");
                             if(apiSuccess){
                                 String re = jsonObjectResponse.toString();
-//                            System.out.println(jsonObjectData.getString("from_module") + ": " + re);
-//                            System.out.println(jsonObjectData.getString("from_module"));
                                 boolean isSuccess = myDb8.insertData(jsonObjectData.getString("sURL"), jsonObjectData.getString("method"), re, jsonObjectData.getString("from_module"), jsonObjectData.getString("date_created"));
                                 if(isSuccess){
                                     appendJsons += jsonObjectData.getString("from_module") + " Resources downloaded \n";
@@ -617,9 +611,8 @@ public class MainActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                txtMessage.setText("");
-                                progressBar.setVisibility(View.GONE);
-                                login.setEnabled(true);
+                                btnSignIn.setText("Sign In");
+                                btnSignIn.setEnabled(true);
                                 ex.printStackTrace();
                                 Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
                             }
@@ -632,9 +625,8 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        txtMessage.setText("");
-                        progressBar.setVisibility(View.GONE);
-                        login.setEnabled(true);
+                        btnSignIn.setText("Sign In");
+                        btnSignIn.setEnabled(true);
                         ex.printStackTrace();
                         Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
                     }
@@ -648,29 +640,23 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String s) {
             try {
                 if (s != null) {
-//                    JSONObject jsonObject1 = new JSONObject(s);
-//                    String msg = jsonObject1.getString("message");
-//
-                    txtMessage.setText("");
                     Toast.makeText(getBaseContext(), s, Toast.LENGTH_SHORT).show();
-                    progressBar.setVisibility(View.GONE);
-                    login.setEnabled(true);
-
-                    openAPIMainMenu();
-
+                    btnSignIn.setEnabled(true);
                     myDb.truncateTable();
                     myDb2.truncateTable();
                     myDb3.truncateTable();
                     myDb4.truncateTable();
                     myDb5.truncateTable();
+
+                    Intent intent = new Intent(MainActivity.this, API_Nav2.class);
+                    startActivity(intent);
+                    finish();
                 }
             } catch (Exception ex) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        txtMessage.setText("");
-                        progressBar.setVisibility(View.GONE);
-                        login.setEnabled(true);
+                        btnSignIn.setEnabled(true);
                         ex.printStackTrace();
                         Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
                     }
@@ -679,120 +665,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-    public void showMessage(String title, String message){
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setCancelable(false);
-        builder.setTitle(title);
-        builder.setMessage(message);
-
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-
-        builder.show();
-    }
-
-    public void formatResponse(String temp){
-//        runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                Toast.makeText(getBaseContext(), temp, Toast.LENGTH_SHORT).show();
-//            }
-//        });
-        if(!temp.isEmpty() && temp.substring(0,1).equals("{")){
-            System.out.print(temp);
-            try{
-                JSONObject jsonObject1 = new JSONObject(temp);
-                String msg = jsonObject1.getString("message");
-                if(jsonObject1.getBoolean("success")){
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    JSONObject jsonObjectData = jsonObject1.getJSONObject("data");
-                    userid = jsonObjectData.getInt("id");
-                    resultToken = jsonObject1.getString("token");
-                    fullName = jsonObjectData.getString("fullname");
-                    whse = jsonObjectData.getString("whse");
-                    isManagerB = (!jsonObjectData.isNull("isManager") && jsonObjectData.getBoolean("isManager"));
-                    isSalesB = (!jsonObjectData.isNull("isSales") && jsonObjectData.getBoolean("isSales"));
-                    isProductionB = (!jsonObjectData.isNull("isProduction") && jsonObjectData.getBoolean("isProduction"));
-                    isAdminB = (!jsonObjectData.isNull("isAdmin") && jsonObjectData.getBoolean("isAdmin"));
-                    isAdmin = (isAdminB ? 1 : 0);
-                    isManager = (isManagerB ? 1 : 0);
-                    isSales = (isSalesB ? 1 : 0);
-                    isProduction = (isProductionB ? 1 : 0);
-                    saveToken(resultToken);
-                    saveLoggedIn();
-                    openAPIMainMenu();
-                    myDb.truncateTable();
-                    myDb2.truncateTable();
-                    myDb3.truncateTable();
-                    myDb4.truncateTable();
-                    myDb5.truncateTable();
-                }else{
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(getBaseContext(), "Error: \n" + msg, Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-            }catch (Exception ex){
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(getBaseContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        }else{
-            Runnable r = () -> {
-                Toast.makeText(getBaseContext(), temp, Toast.LENGTH_SHORT).show();
-            };
-        }
-    }
-
-    public  void saveLoggedIn(){
-        String susername = username.getText().toString();
-        String spassword = password.getText().toString();
-        SharedPreferences sharedPreferences = getSharedPreferences("LOGIN",MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("username",susername).apply();
-        editor.putString("password",spassword).apply();
-        editor.putString("fullname",fullName).apply();
-        editor.putString("branch",branch).apply();
-        editor.putString("userid",Integer.toString(userid)).apply();
-        editor.putString("whse",whse).apply();
-        editor.putString("isManager",Integer.toString(isManager)).apply();
-        editor.putString("isSales",Integer.toString(isSales)).apply();
-        editor.putString("isProduction",Integer.toString(isProduction)).apply();
-        editor.putString("isAdmin",Integer.toString(isAdmin)).apply();
-//        uc.insetLoginLogs(MainActivity.this, susername);
-//        uc.checkCutOff(MainActivity.this, susername);
-    }
-
-    public void saveToken(String token){
-        SharedPreferences sharedPreferences = getSharedPreferences("TOKEN",MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("token",token).apply();
-    }
-
-    public  void openAPIMainMenu(){
-        Intent intent = new Intent(this, API_Nav2.class);
-        startActivity(intent);
-        finish();
-    }
-
-    public  void openMainMenu(){
-        Intent intent = new Intent(this, Nav.class);
-        startActivity(intent);
-        finish();
+    @Override
+    public void onBackPressed() {
+        Intent a = new Intent(Intent.ACTION_MAIN);
+        a.addCategory(Intent.CATEGORY_HOME);
+        a.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(a);
     }
 }

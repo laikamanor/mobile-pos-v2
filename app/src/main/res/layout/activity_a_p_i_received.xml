@@ -33,7 +33,6 @@
                         android:layout_marginLeft="20dp"
                         android:layout_marginRight="20dp"
                         android:hint="Search"/>
-
                     <Button
                         android:id="@+id/btnRemove"
                         android:layout_width="50dp"
@@ -44,10 +43,10 @@
 
                 </FrameLayout>
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSearch"
                     android:layout_width="match_parent"
-                    android:layout_height="30dp"
+                    android:layout_height="40dp"
                     android:text="Search"
                     android:layout_marginLeft="20dp"
                     android:layout_marginRight="20dp"
@@ -177,10 +176,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnBack"
                     android:layout_width="100dp"
-                    android:layout_height="30dp"
+                    android:layout_height="40dp"
                     android:layout_marginRight="20dp"
                     android:layout_marginLeft="20dp"
                         android:layout_marginTop="10dp"
@@ -189,17 +188,17 @@
                     android:text="Back"
                         android:textSize="15sp"/>
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnRefresh"
-                        android:layout_width="100dp"
-                        android:layout_height="30dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
                         android:layout_marginLeft="20dp"
                         android:layout_marginTop="10dp"
                         android:layout_marginRight="20dp"
                         android:background="@color/colorBlue"
                         android:text="Refresh"
-                        android:textSize="15sp"
-                        android:textColor="@color/colorWhite" />
+                        android:textColor="@color/colorWhite"
+                        android:textSize="15sp" />
                 </LinearLayout>
 
             <LinearLayout

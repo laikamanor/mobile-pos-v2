@@ -22,34 +22,18 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         tools:targetApi="n">
+        <activity android:name=".Test">
+
+        </activity>
+        <activity android:name=".MainActivity" />
         <activity android:name=".API_IssueProductionItems" />
-        <activity android:name=".API_Nav2"></activity>
+        <activity android:name=".API_Nav2" />
         <activity android:name=".API_ReceivedSAP" />
         <activity android:name=".API_SelectedItems" />
-        <activity android:name=".API_Nav" />
         <activity android:name=".API_ItemInfo" />
-        <activity android:name=".ManualReceived" />
         <activity android:name=".APIReceived" />
-        <activity android:name=".APITransfer" />
-        <activity android:name=".Users" />
-        <activity android:name=".ItemReceivable" />
         <activity android:name=".API_SalesLogs" />
-        <activity android:name=".SalesInventory_Received" />
-        <activity android:name=".SalesInventory_AvailableItems" />
-        <activity android:name=".UpdateActualEndingBalance" />
-        <activity android:name=".ItemInfo2" />
-        <activity android:name=".StoreAuditorSelected" />
-        <activity android:name=".ReceivedSap2" />
-        <activity android:name=".Counter1" />
-        <activity android:name=".ReceivedSap" />
-        <activity android:name=".Received" />
-        <activity android:name=".CancelRecTrans" />
-        <activity android:name=".ScanQRCode" />
-        <activity android:name=".ScanCode" />
-        <activity android:name=".Inventory" />
-        <activity android:name=".ShoppingCart" />
-        <activity android:name=".ItemInfo" />
-        <activity android:name=".CreateUsers" /> <!-- <activity android:name=".AvailableItems" /> -->
+        <activity android:name=".ShoppingCart" /> <!-- <activity android:name=".AvailableItems" /> -->
         <activity android:name=".API_InventoryConfirmation" />
         <activity android:name=".OfflineList" />
         <activity android:name=".OfflineItems" />
@@ -62,10 +46,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".API_SalesLogsItems" />
-        <activity android:name=".MainActivity2" />
         <activity android:name=".IPAddress" />
-        <activity android:name=".Nav" />
-        <activity android:name=".MainActivity" />
 
         <uses-library
             android:name="org.apache.http.legacy"

@@ -1252,10 +1252,24 @@ public class ShoppingCart extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     final String customerName = lblCustomer.getText().toString().trim();
-                                    String tendertype = cmbTenderType.getSelectedItem().toString();
+                                    String tendertype = cmbTenderType.getAdapter() == null || cmbTenderType.getSelectedItem().toString().trim().isEmpty() ? "" : cmbTenderType.getSelectedItem().toString();
+//                                   String tendertype = cmbTenderType.getSelectedItem().toString();
                                     if (cmbTenderType.getAdapter() == null) {
+//                                        runOnUiThread(new Runnable() {
+//
+//                                            @Override
+//                                            public void run() {
+//
+//                                            }
+//                                        });
                                         toastMsg("Please select Service Type", 0);
                                     } else if (customerName.isEmpty() && cmbTenderType.getSelectedItem().toString() == "AR Sales") {
+//                                        runOnUiThread(new Runnable() {
+//                                            @Override
+//                                            public void run() {
+//
+//                                            }
+//                                        });
                                         toastMsg("Name field is required", 0);
                                     }
                                     else {

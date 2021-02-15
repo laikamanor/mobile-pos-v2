@@ -1,81 +1,85 @@
 package com.example.atlanticbakery;
 
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
-import android.text.Html;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+import com.example.atlanticbakery.MainActivity;
+import com.example.atlanticbakery.R;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.Objects;
 
 public class IPAddress extends AppCompatActivity {
-
-    EditText txtIPAddress;
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    Button btnSubmit;
+    TextInputLayout txtIpAddress;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_i_p_address);
 
-        Objects.requireNonNull(getSupportActionBar()).setTitle(Html.fromHtml("<font color='#ffffff'>" + getString(R.string.app_name) + "</font>"));
+        Objects.requireNonNull(getSupportActionBar()).hide();
 
-        txtIPAddress = findViewById(R.id.txtIPAddress);
-        Button btnSubmit = findViewById(R.id.btnSubmit);
+        btnSubmit = findViewById(R.id.btnSubmit);
+        txtIpAddress = findViewById(R.id.ip_address);
 
-        checkCurrentLogin();
-
-        btnSubmit.setOnClickListener(view -> gotoLogin());
-
-    }
-
-    public void checkCurrentLogin() {
         SharedPreferences sharedPreferences = getSharedPreferences("CONFIG", MODE_PRIVATE);
-        String IPaddress = sharedPreferences.getString("IPAddress", "");
-        assert IPaddress != null;
-        if (!IPaddress.isEmpty()) {
+        String IPAddress = sharedPreferences.getString("IPAddress", "");
+        assert IPAddress != null;
+        if (!IPAddress.isEmpty()) {
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
             finish();
         }
-    }
 
-    public void gotoLogin() {
-        if(txtIPAddress.getText().toString().isEmpty()){
-            Toast.makeText(getBaseContext(), "IP Address field is required", Toast.LENGTH_SHORT).show();
-        }else{
-
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("Are you sure want to submit?")
-                    .setCancelable(false)
-                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+        btnSubmit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (txtIpAddress.getEditText().getText().toString().trim().isEmpty()) {
+                    Toast.makeText(getBaseContext(), "IP Address field is required", Toast.LENGTH_SHORT).show();
+                } else {
+                    AlertDialog.Builder alertDialog = new AlertDialog.Builder(IPAddress.this);
+                    alertDialog.setTitle("Message");
+                    alertDialog.setMessage("Are you sure you want to submit?");
+                    alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             SharedPreferences sharedPreferences = getSharedPreferences("CONFIG", MODE_PRIVATE);
                             SharedPreferences.Editor editor = sharedPreferences.edit();
-                            editor.putString("IPAddress", txtIPAddress.getText().toString().trim()).apply();
+                            editor.putString("IPAddress", txtIpAddress.getEditText().getText().toString().trim()).apply();
 
                             Intent intent = new Intent(IPAddress.this, MainActivity.class);
                             startActivity(intent);
                             finish();
                         }
-                    })
-                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    });
+
+                    alertDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
+                            dialog.dismiss();
                         }
                     });
-            AlertDialog alertDialog = builder.create();
-            alertDialog.show();
-        }
+
+                    alertDialog.show();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onBackPressed() {
+        Intent a = new Intent(Intent.ACTION_MAIN);
+        a.addCategory(Intent.CATEGORY_HOME);
+        a.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(a);
     }
 }
